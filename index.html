@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DoggiePaddle - Private Dog Pool Booking</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css" />
+</head>
+<body>
+  <nav class="container-fluid">
+    <ul><li><strong>DoggiePaddle</strong></li></ul>
+    <ul>
+      <li><a href="#book">Book Swim</a></li>
+      <li><a href="#treats">Treats</a></li>
+      <li><a href="/waiver/waiver.html" role="button">Waiver</a></li>
+    </ul>
+  </nav>
+
+  <main class="container">
+    <div class="grid">
+      <section>
+        <hgroup>
+          <h2>Private Dog Swim Sessions</h2>
+          <h3>Book your 20-minute solo dog pool slot</h3>
+        </hgroup>
+        <p>Temperature-controlled pool, one-on-one, safe & fun!</p>
+
+        <form id="booking-form">
+          <input type="text" name="name" placeholder="Your Name" required />
+          <input type="tel" name="phone" placeholder="Phone Number" required />
+          <input type="email" name="email" placeholder="Email Address" required />
+          <input type="date" name="date" required />
+          <input type="time" name="time" required />
+          <input type="number" name="dogs" placeholder="Number of Dogs (max 3)" min="1" max="3" required />
+
+          <label>
+            <input type="checkbox" required />
+            I agree to the <a href="/waiver/waiver.html" target="_blank">Waiver & Liability Release</a>
+          </label>
+
+          <button type="submit">Pay & Reserve (Test Mode)</button>
+        </form>
+      </section>
+    </div>
+  </main>
+
+  <section id="treats" aria-label="Treats Section">
+    <div class="container">
+      <article>
+        <hgroup>
+          <h2>Homemade Dog Treats</h2>
+          <h3>Buy directly, all natural</h3>
+        </hgroup>
+        <div class="grid">
+          <div>
+            <strong>Peanut Butter Bones – $10</strong><br />
+            <button onclick="window.location='https://buy.stripe.com/test_12345'">Buy</button>
+          </div>
+          <div>
+            <strong>Chicken Jerky – $12</strong><br />
+            <button onclick="window.location='https://buy.stripe.com/test_67890'">Buy</button>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <footer class="container">
+    <small><a href="#book">Book a Swim</a> • <a href="#treats">Treats</a></small>
+  </footer>
+
+  <script src="/scripts/booking.js"></script>
+</body>
+</html>
