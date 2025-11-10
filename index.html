@@ -1,135 +1,796 @@
 <!-- //index.html -->
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>DoggyPaddle — Private Dog Swim in St. Augustine</title>
-    <meta
-      name="description"
-      content="Book a private 20-minute swim session for up to 2 dogs at DoggyPaddle in St. Augustine, FL. Chlorine-safe pool. Owner supervision required."
-    />
-    <meta name="author" content="Jointwerx LLC" />
-    <link rel="canonical" href="https://doggypaddle.com/" />
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DoggyPaddle - Private Dog Pool Sessions in St. Augustine, FL</title>
+  <meta name="description" content="Book private 20-minute swim sessions for your dog at DoggyPaddle in St. Augustine, FL. Safe chlorine-treated pool. $25 per session or $100 for 5 sessions. Gift cards available." />
+  <meta name="author" content="Jointwerx LLC" />
+  <meta name="keywords" content="dog swimming, dog pool, St. Augustine pet services, dog exercise, private dog swim" />
+  <link rel="canonical" href="https://doggypaddle.com/" />
 
-    <!-- Open Graph for social sharing -->
-    <meta property="og:title" content="DoggyPaddle — Book Private Dog Pool Sessions" />
-    <meta
-      property="og:description"
-      content="Private, chlorine-safe dog pool in St. Augustine. Book now for up to 2 dogs per 20-min session. Liability waiver required."
-    />
-    <meta property="og:image" content="/assets/logo.png" />
-    <meta property="og:url" content="https://doggypaddle.com/" />
-    <meta name="twitter:card" content="summary_large_image" />
+  <!-- Open Graph / Social Media -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="DoggyPaddle - Private Dog Pool Sessions" />
+  <meta property="og:description" content="Safe, private swimming sessions for dogs in St. Augustine. Book now!" />
+  <meta property="og:image" content="/assets/logo.png" />
+  <meta property="og:url" content="https://doggypaddle.com/" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="DoggyPaddle - Private Dog Pool Sessions" />
+  <meta name="twitter:description" content="Safe, private swimming sessions for dogs in St. Augustine. Book now!" />
 
-    <link rel="icon" href="/assets/logo.png" type="image/png" />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css"
-    />
-    <link rel="stylesheet" href="/assets/styles.css" />
-    <script async src="https://js.stripe.com/v3/buy-button.js"></script>
-  </head>
+  <!-- Favicon -->
+  <link rel="icon" href="/assets/logo.png" type="image/png" />
+  
+  <!-- Preconnect for performance -->
+  <link rel="preconnect" href="https://js.stripe.com" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  
+  <style>
+    /* CSS Reset & Base */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-  <body>
-    <nav class="container-fluid">
-      <ul>
-        <li><strong>DoggyPaddle</strong></li>
+    :root {
+      --primary: #028090;
+      --primary-dark: #05668d;
+      --secondary: #114B5F;
+      --accent: #F0A202;
+      --bg-light: #f9fbfd;
+      --white: #ffffff;
+      --text: #222;
+      --text-light: #666;
+      --border: #e0e0e0;
+      --shadow: rgba(0, 0, 0, 0.1);
+      --radius: 12px;
+      --transition: all 0.3s ease;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      font-size: 16px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: var(--text);
+      background: var(--bg-light);
+      overflow-x: hidden;
+    }
+
+    /* Navigation */
+    nav {
+      background: var(--white);
+      box-shadow: 0 2px 8px var(--shadow);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      padding: 1rem 0;
+    }
+
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--primary);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .logo-img {
+      height: 40px;
+      width: auto;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 1.5rem;
+      list-style: none;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .nav-links a {
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 500;
+      transition: var(--transition);
+      padding: 0.5rem 0;
+    }
+
+    .nav-links a:hover {
+      color: var(--primary);
+    }
+
+    .nav-links .btn-waiver {
+      background: var(--accent);
+      color: var(--white);
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      transition: var(--transition);
+    }
+
+    .nav-links .btn-waiver:hover {
+      background: #d88d00;
+      transform: translateY(-2px);
+    }
+
+    /* Container */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    /* Hero Section */
+    .hero {
+      background: linear-gradient(135deg, rgba(2, 128, 144, 0.95) 0%, rgba(17, 75, 95, 0.95) 100%), 
+                  url('/assets/Remi1.jpg') center/cover no-repeat;
+      color: var(--white);
+      padding: 6rem 1.5rem;
+      text-align: center;
+      margin-bottom: 0;
+      position: relative;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, rgba(2, 128, 144, 0.85) 0%, rgba(17, 75, 95, 0.85) 100%);
+      z-index: 0;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3rem);
+      margin-bottom: 1rem;
+      font-weight: 700;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .hero p {
+      font-size: clamp(1rem, 2.5vw, 1.25rem);
+      max-width: 600px;
+      margin: 0 auto 2rem;
+      opacity: 0.98;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+    }
+
+    .hero-cta {
+      display: inline-block;
+      background: var(--accent);
+      color: var(--white);
+      padding: 1rem 2rem;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 1.1rem;
+      transition: var(--transition);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .hero-cta:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Gallery Section */
+    .gallery-section {
+      background: var(--white);
+      padding: 3rem 0;
+      margin-bottom: 2rem;
+    }
+
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .gallery-grid img {
+      width: 100%;
+      height: 300px;
+      object-fit: cover;
+      border-radius: var(--radius);
+      box-shadow: 0 4px 12px var(--shadow);
+      transition: var(--transition);
+    }
+
+    .gallery-grid img:hover {
+      transform: scale(1.05);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    }
+
+    @media (max-width: 768px) {
+      .gallery-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+      }
+
+      .gallery-grid img {
+        height: 200px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .gallery-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .gallery-grid img {
+        height: 250px;
+      }
+    }
+
+    /* Pricing Cards */
+    .pricing-section {
+      margin-bottom: 3rem;
+    }
+
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    .price-card {
+      background: var(--white);
+      padding: 2rem;
+      border-radius: var(--radius);
+      box-shadow: 0 4px 16px var(--shadow);
+      text-align: center;
+      transition: var(--transition);
+      border: 2px solid transparent;
+    }
+
+    .price-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+      border-color: var(--primary);
+    }
+
+    .price-card.featured {
+      border-color: var(--accent);
+      position: relative;
+    }
+
+    .price-card.featured::before {
+      content: "BEST VALUE";
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--accent);
+      color: var(--white);
+      padding: 0.25rem 1rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .price-card h3 {
+      color: var(--secondary);
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .price {
+      font-size: 3rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin: 1rem 0;
+    }
+
+    .price-card ul {
+      list-style: none;
+      margin: 1.5rem 0;
+      text-align: left;
+    }
+
+    .price-card li {
+      padding: 0.5rem 0;
+      padding-left: 1.5rem;
+      position: relative;
+    }
+
+    .price-card li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    /* Section Styles */
+    section {
+      background: var(--white);
+      padding: 2.5rem;
+      border-radius: var(--radius);
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 12px var(--shadow);
+    }
+
+    h2 {
+      color: var(--secondary);
+      font-size: clamp(1.75rem, 4vw, 2.25rem);
+      margin-bottom: 1rem;
+      font-weight: 700;
+    }
+
+    h3 {
+      color: var(--text);
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+      font-weight: 600;
+    }
+
+    /* Form Styles */
+    .form-grid {
+      display: grid;
+      gap: 1.25rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    label {
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+      color: var(--text);
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 0.875rem;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: var(--transition);
+      font-family: inherit;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(2, 128, 144, 0.1);
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      margin: 1rem 0;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+      width: auto;
+      margin-top: 0.25rem;
+      cursor: pointer;
+    }
+
+    .checkbox-group label {
+      margin: 0;
+      cursor: pointer;
+      flex: 1;
+    }
+
+    /* Buttons */
+    button, .button {
+      background: var(--primary);
+      color: var(--white);
+      border: none;
+      padding: 1rem 2rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      display: inline-block;
+      text-decoration: none;
+      text-align: center;
+      width: 100%;
+    }
+
+    button:hover, .button:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(2, 128, 144, 0.3);
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .button-secondary {
+      background: var(--accent);
+    }
+
+    .button-secondary:hover {
+      background: #d88d00;
+    }
+
+    /* Calendar */
+    .calendar-container {
+      overflow-x: auto;
+      margin-top: 1.5rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 500px;
+    }
+
+    thead {
+      background: var(--primary);
+      color: var(--white);
+    }
+
+    th {
+      padding: 1rem;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    td {
+      padding: 1rem;
+      border: 1px solid var(--border);
+      text-align: center;
+      vertical-align: top;
+    }
+
+    td strong {
+      display: block;
+      font-size: 1.25rem;
+      margin-bottom: 0.5rem;
+      color: var(--secondary);
+    }
+
+    td small {
+      color: var(--text-light);
+      font-size: 0.85rem;
+    }
+
+    /* Alert/Info Boxes */
+    .info-box {
+      background: #e8f4f8;
+      border-left: 4px solid var(--primary);
+      padding: 1.25rem;
+      border-radius: 8px;
+      margin: 1.5rem 0;
+    }
+
+    .info-box p {
+      margin: 0;
+    }
+
+    /* Footer */
+    footer {
+      background: var(--secondary);
+      color: var(--white);
+      text-align: center;
+      padding: 2rem 1.5rem;
+      margin-top: 4rem;
+    }
+
+    footer p {
+      margin: 0.5rem 0;
+      opacity: 0.9;
+    }
+
+    footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+
+    /* Responsive Design */
+    @media (min-width: 768px) {
+      .form-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .form-group.full-width {
+        grid-column: 1 / -1;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .nav-container {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .nav-links {
+        justify-content: center;
+      }
+
+      section {
+        padding: 1.5rem;
+      }
+
+      .hero {
+        padding: 3rem 1.5rem;
+      }
+
+      .pricing-grid {
+        grid-template-columns: 1fr;
+      }
+
+      button, .button {
+        padding: 0.875rem 1.5rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 1rem;
+      }
+
+      section {
+        padding: 1.25rem;
+      }
+
+      .price {
+        font-size: 2.5rem;
+      }
+
+      input, select, textarea {
+        padding: 0.75rem;
+      }
+    }
+
+    /* Loading State */
+    .loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    /* Accessibility */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    /* Focus styles for accessibility */
+    a:focus, button:focus, input:focus, select:focus, textarea:focus {
+      outline: 3px solid var(--accent);
+      outline-offset: 2px;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Navigation -->
+  <nav>
+    <div class="nav-container">
+      <a href="/" class="logo">
+        <img src="/assets/logo.png" alt="DoggyPaddle Logo" class="logo-img" />
+        <span>DoggyPaddle</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="#pricing">Pricing</a></li>
+        <li><a href="#booking">Book Now</a></li>
+        <li><a href="#calendar">Schedule</a></li>
+        <li><a href="/waiver/waiver.html" class="btn-waiver">Waiver</a></li>
       </ul>
-      <ul>
-        <li><a href="#booking">Book</a></li>
-        <li><a href="#calendar">Calendar</a></li>
-        <li><a href="/waiver/waiver.html" role="button">Waiver</a></li>
-      </ul>
-    </nav>
+    </div>
+  </nav>
 
-    <main class="container">
-      <div class="grid">
-        <section>
-          <hgroup>
-            <h2>Book Your Swim</h2>
-            <h3>20-minute private swim for up to 2 dogs</h3>
-          </hgroup>
+  <!-- Hero Section -->
+  <div class="hero">
+    <div class="hero-content">
+      <h1>Private Dog Pool Sessions in St. Augustine</h1>
+      <p>Safe, chlorine-treated swimming for up to 2 dogs. Owner supervision included. 20-minute sessions with flexible scheduling.</p>
+      <a href="#booking" class="hero-cta">Book Your Session Today</a>
+    </div>
+  </div>
 
-          <form id="booking-form" method="POST">
-            <input type="text" name="firstName" placeholder="First Name" required />
-            <input type="text" name="lastName" placeholder="Last Name" required />
-            <input type="tel" name="phone" placeholder="Phone Number" required />
-            <input type="email" name="email" placeholder="Email Address" required />
-
-            <input
-              type="text"
-              name="dogNames"
-              placeholder="Dog Names (comma separated)"
-              required
-            />
-            <input
-              type="text"
-              name="dogBreeds"
-              placeholder="Breed(s) (comma separated)"
-              required
-            />
-            <select name="numDogs" required>
-              <option value="">Number of Dogs</option>
-              <option value="1">1</option>
-              <option value="2">2</option>
-            </select>
-
-            <label for="sessionTime">Requested Session Time</label>
-            <input
-              type="datetime-local"
-              name="sessionTime"
-              id="sessionTime"
-              required
-            />
-
-            <label>
-              <input type="checkbox" name="ownershipConfirmed" required />
-              I confirm I am the owner of the dog(s).
-            </label>
-
-            <label>
-              <input type="checkbox" name="waiverAck" required />
-              I have read and agree to the <a href="/waiver/waiver.html" target="_blank">Liability Waiver</a>.
-            </label>
-
-            <button type="submit">Submit + Pay</button>
-          </form>
-
-          <div style="margin-top: 2rem;">
-            <p>
-              Or pay directly using Stripe:
-            </p>
-            <stripe-buy-button
-              buy-button-id="buy_btn_1SRg5JAWz02AuqyyQNxXtKgW"
-              publishable-key="pk_live_51Jw6McAWz02Auqyy2ssxTNAhxp3vNGmAfUv4gbUA6NzT8jJb5FefT3lfqObiQwK5ClTRfkzzd3YQaFvZhWIIFsHX00biYat54r"
-            >
-            </stripe-buy-button>
-          </div>
-        </section>
-
-        <section id="calendar">
-          <h2>Available Time Slots</h2>
-          <p>Below is a live calendar of bookable times. Check before submitting.</p>
-          <div id="calendar-placeholder">
-            <!-- calendar.js will populate this -->
-          </div>
-        </section>
-
-        <section>
-          <h2>Add to Your Calendar</h2>
-          <p>
-            Download a reminder file for your calendar.
-          </p>
-          <a href="/assets/session-reminder.ics" download class="button">📅 Download .ics</a>
-        </section>
+  <!-- Image Gallery -->
+  <div class="gallery-section">
+    <div class="container">
+      <div class="gallery-grid">
+        <img src="/assets/Remi1.jpg" alt="Dog enjoying swim session at DoggyPaddle" loading="lazy" />
+        <img src="/assets/Remi2.jpg" alt="Happy dog swimming in our pool" loading="lazy" />
+        <img src="/assets/Remi3.jpg" alt="Dog having fun in the water" loading="lazy" />
+        <img src="/assets/Remi4.jpg" alt="Safe dog swimming environment" loading="lazy" />
       </div>
-    </main>
+    </div>
+  </div>
 
-    <!-- ✅ Include generated footer from earlier -->
-    <!-- Already implemented as requested -->
+  <!-- Main Content -->
+  <main class="container">
+    <!-- Pricing Section -->
+    <section id="pricing" class="pricing-section">
+      <h2>Simple, Transparent Pricing</h2>
+      <div class="pricing-grid">
+        <div class="price-card">
+          <h3>Single Session</h3>
+          <div class="price">$25</div>
+          <p>Perfect for trying us out</p>
+          <ul>
+            <li>20-minute swim time</li>
+            <li>Up to 2 dogs</li>
+            <li>Private pool access</li>
+            <li>Owner supervision required</li>
+          </ul>
+          <a href="#booking" class="button">Book Now</a>
+        </div>
 
-    <script src="/scripts/booking.js"></script>
-    <script src="/scripts/calendar.js"></script>
-  </body>
+        <div class="price-card featured">
+          <h3>5-Session Package</h3>
+          <div class="price">$100</div>
+          <p>Save $25 with our package</p>
+          <ul>
+            <li>Five 20-minute sessions</li>
+            <li>Up to 2 dogs per session</li>
+            <li>Private pool access</li>
+            <li>Flexible scheduling</li>
+            <li>$20 per session (save 20%)</li>
+          </ul>
+          <a href="#booking" class="button">Buy Package</a>
+        </div>
+
+        <div class="price-card">
+          <h3>Gift Card</h3>
+          <div class="price" style="font-size: 2rem;">Any Amount</div>
+          <p>Perfect gift for dog lovers</p>
+          <ul>
+            <li>Share via email</li>
+            <li>Printable with unique ID</li>
+            <li>Never expires</li>
+            <li>Redeemable for sessions</li>
+          </ul>
+          <a href="#booking" class="button button-secondary">Buy Gift Card</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Booking Form -->
+    <section id="booking">
+      <h2>Book Your Session</h2>
+      <p>Fill out the form below to reserve your private swim time. Payment will be processed via Stripe.</p>
+      
+      <div class="info-box">
+        <p><strong>Important:</strong> Maximum 2 dogs per session. Owner must be present or provide signed waiver for dog sitter.</p>
+      </div>
+
+      <form id="booking-form" class="form-grid">
+        <div class="form-group">
+          <label for="firstName">First Name *</label>
+          <input type="text" id="firstName" name="firstName" required />
+        </div>
+
+        <div class="form-group">
+          <label for="lastName">Last Name *</label>
+          <input type="text" id="lastName" name="lastName" required />
+        </div>
+
+        <div class="form-group">
+          <label for="phone">Phone Number *</label>
+          <input type="tel" id="phone" name="phone" required />
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email Address *</label>
+          <input type="email" id="email" name="email" required />
+        </div>
+
+        <div class="form-group full-width">
+          <label for="dogNames">Dog Name(s) *</label>
+          <input type="text" id="dogNames" name="dogNames" placeholder="e.g., Buddy, Max" required />
+        </div>
+
+        <div class="form-group full-width">
+          <label for="dogBreeds">Breed(s) *</label>
+          <input type="text" id="dogBreeds" name="dogBreeds" placeholder="e.g., Golden Retriever, Labrador" required />
+        </div>
+
+        <div class="form-group">
+          <label for="numDogs">Number of Dogs *</label>
+          <select id="numDogs" name="numDogs" required>
+            <option value="">Select...</option>
+            <option value="1">1 Dog</option>
+            <option value="2">2 Dogs</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="sessionTime">Preferred Date & Time *</label>
+          <input type="datetime-local" id="sessionTime" name="sessionTime" required />
+        </div>
+
+        <div class="form-group full-width">
+          <div class="checkbox-group">
+            <input type="checkbox" id="ownershipConfirmed" name="ownershipConfirmed" required />
+            <label for="ownershipConfirmed">I confirm I am the owner of the dog(s) or have authorization from the owner.</label>
+          </div>
+        </div>
+
+        <div class="form-group full-width">
+          <div class="checkbox-group">
+            <input type="checkbox" id="waiverAck" name="waiverAck" required />
+            <label for="waiverAck">I have read and agree to the <a href="/waiver/waiver.html" target="_blank">Liability Waiver</a>.</label>
+          </div>
+        </div>
+
+        <div class="form-group full-width">
+          <button type="submit">Submit Booking & Pay with Stripe</button>
+        </div>
+      </form>
+
+      <div style="margin-top: 2rem; padding: 1.5rem; background: #f5f5f5; border-radius: 8px; text-align: center;">
+        <p style="margin-bottom: 1rem;"><strong>Or pay directly using Stripe:</strong></p>
+        <stripe-buy-button
+          buy-button-id="buy_btn_1SRg5JAWz02AuqyyQNxXtKgW"
+          publishable-key="pk_live_51Jw6McAWz02Auqyy2ssxTNAhxp3vNGmAfUv4gbUA6NzT8jJb5FefT3lfqObiQwK5ClTRfkzzd3YQaFvZhWIIFsHX00biYat54r"
+        ></stripe-buy-button>
+      </div>
+    </section>
+
+    <!-- Calendar Section -->
+    <section id="calendar">
+      <h2>Available Time Slots</h2>
+      <p>View our current availability below. Book early to secure your preferred time!</p>
+      <div class="calendar-container">
+        <div id="calendar-placeholder"></div>
+      </div>
+    </section>
+
+    <!-- Calendar Reminder -->
+    <section>
+      <h2>Add to Your Calendar</h2>
+      <p>Don't forget your session! Download a calendar reminder file after booking.</p>
+      <a href="/assets/session-reminder.ics" download class="button button-secondary">📅 Download Calendar Reminder</a>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <p><strong>DoggyPaddle</strong> - A Jointwerx LLC Service</p>
+    <p>St. Augustine, FL | <a href="mailto:info@doggypaddle.com">info@doggypaddle.com</a></p>
+    <p>&copy; 2024 Jointwerx LLC. All rights reserved.</p>
+  </footer>
+
+  <!-- Scripts -->
+  <script async src="https://js.stripe.com/v3/buy-button.js"></script>
+  <script src="/scripts/booking.js"></script>
+  <script src="/scripts/calendar.js"></script>
+</body>
 </html>
