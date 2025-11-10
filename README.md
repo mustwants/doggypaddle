@@ -415,3 +415,283 @@ function clearAllData() {
   
   Logger.log('All data cleared!');
 }
+
+# DoggyPaddle Complete Setup Guide
+
+## 📋 Overview
+This guide will help you set up your DoggyPaddle website with Google Sheets backend for slot management.
+
+---
+
+## 🚀 Part 1: Google Sheets Setup (FREE & Economical!)
+
+### Step 1: Create Google Sheet
+1. Go to [Google Sheets](https://sheets.google.com)
+2. Create a new blank spreadsheet
+3. Name it: "DoggyPaddle Management"
+4. Note the Sheet ID from the URL:
+   ```
+   https://docs.google.com/spreadsheets/d/[THIS_IS_YOUR_SHEET_ID]/edit
+   ```
+
+### Step 2: Deploy Google Apps Script
+1. In your Google Sheet, click **Extensions** → **Apps Script**
+2. Delete any default code
+3. Paste the entire **Google Apps Script** code from the artifact
+4. Replace `YOUR_GOOGLE_SHEET_ID_HERE` with your actual Sheet ID
+5. Click **Save** (disk icon)
+6. Click **Deploy** → **New deployment**
+7. Settings:
+   - **Type**: Web app
+   - **Execute as**: Me
+   - **Who has access**: Anyone
+8. Click **Deploy**
+9. **Copy the Web App URL** - this is your API endpoint!
+
+### Step 3: Initialize Sheets
+1. In Apps Script editor, select function: `initializeSheets`
+2. Click **Run**
+3. Authorize the script (you'll need to grant permissions)
+4. Optional: Run `addSampleSlots` to add test data
+
+---
+
+## 📁 Part 2: File Structure
+
+Your website should have this structure:
+```
+/
+├── index.html (main page)
+├── assets/
+│   ├── logo.png
+│   ├── Remi1.jpg
+│   ├── Remi2.jpg
+│   ├── Remi3.jpg
+│   ├── Remi4.jpg
+│   └── styles.css
+├── scripts/
+│   ├── booking.js
+│   └── calendar.js
+├── waiver/
+│   └── waiver.html
+├── admin/
+│   └── index.html
+└── netlify.toml
+```
+
+---
+
+## 🔧 Part 3: Update Configuration
+
+### Update These Files:
+
+#### 1. `scripts/booking.js`
+Replace line 54:
+```javascript
+const endpoint = "YOUR_WEB_APP_URL_HERE";
+```
+
+#### 2. `scripts/calendar.js`
+Replace line 16:
+```javascript
+const API_ENDPOINT = "YOUR_WEB_APP_URL_HERE";
+```
+
+#### 3. `admin/index.html`
+Replace line 322:
+```javascript
+const API_ENDPOINT = "YOUR_WEB_APP_URL_HERE";
+```
+
+#### 4. `waiver/waiver.html`
+Replace line 488:
+```javascript
+const response = await fetch('YOUR_WEB_APP_URL_HERE', {
+```
+
+---
+
+## 🎨 Part 4: Netlify Deployment
+
+### Option A: Deploy via Netlify UI
+1. Go to [netlify.com](https://netlify.com)
+2. Sign up/Login (free account)
+3. Click **"Add new site"** → **"Deploy manually"**
+4. Drag your entire project folder
+5. Done! Your site is live
+
+### Option B: Deploy via GitHub
+1. Push your code to GitHub
+2. Connect Netlify to your repo
+3. Set build settings:
+   - **Build command**: (leave empty)
+   - **Publish directory**: `.` (root)
+4. Deploy!
+
+### Custom Domain (Optional)
+1. In Netlify: **Domain settings** → **Add custom domain**
+2. Follow DNS setup instructions
+3. Enable HTTPS (automatic with Netlify)
+
+---
+
+## 👨‍💼 Part 5: Admin Usage
+
+### Access Admin Panel
+Go to: `https://yourdomain.com/admin/index.html`
+
+### Managing Slots:
+
+#### Add Single Slot
+1. Select date
+2. Select time
+3. Click "Add Slot"
+
+#### Quick Add
+Click any time button (9am, 12pm, etc.) to instantly add for today
+
+#### Bulk Add Week
+Click "Add Default Week Schedule" to add 3 daily slots for next 7 days
+
+#### Delete Slots
+Click "Delete" button next to any slot
+
+### View Statistics
+Dashboard shows:
+- Available slots
+- Booked slots
+- This week's slots
+- This month's slots
+
+---
+
+## 📊 Part 6: Google Sheets Structure
+
+### Sheet 1: TimeSlots
+| ID | Date | Time | Duration | Status | Created At | Booking ID |
+|----|------|------|----------|--------|------------|------------|
+| slot-123 | 2024-11-15 | 10:00 | 20 | available | 2024-11-10... | |
+
+### Sheet 2: Bookings
+| Booking ID | First Name | Last Name | Email | Phone | Dog Names | ... |
+|------------|-----------|-----------|-------|-------|-----------|-----|
+
+### Sheet 3: Waivers
+| Waiver ID | Full Name | Date | Initials (1-5) | Timestamp | ... |
+|-----------|-----------|------|----------------|-----------|-----|
+
+---
+
+## 💰 Cost Breakdown (Economical!)
+
+| Service | Cost | What You Get |
+|---------|------|--------------|
+| **Google Sheets** | FREE | Unlimited sheets, 5M cells |
+| **Google Apps Script** | FREE | 90 min/day execution time |
+| **Netlify Hosting** | FREE | 100GB bandwidth, SSL included |
+| **Domain (optional)** | ~$12/year | Your own .com domain |
+| **Total** | **$0-12/year** | Full business website! |
+
+### Why This Is Better Than Alternatives:
+- ❌ **Calendly**: $12-20/month ($144-240/year)
+- ❌ **Acuity**: $16-50/month ($192-600/year)
+- ❌ **Square Appointments**: $0 + 2.9% + 30¢ per transaction
+- ✅ **Your Solution**: $0-12/year with MORE control!
+
+---
+
+## 🔐 Part 7: Security & Compliance
+
+### Waiver Features:
+- ✅ Must scroll entire document
+- ✅ Initial 5 separate sections
+- ✅ Electronic signature capture
+- ✅ Legal checkboxes
+- ✅ Timestamp and IP tracking
+- ✅ Stored in Google Sheets (encrypted at rest)
+- ✅ Florida & St. Johns County specific
+
+### Privacy:
+- Waivers stored in your Google Sheet (you own the data)
+- No third-party data sharing
+- Signatures saved as base64 (can be extracted to PDF if needed)
+
+---
+
+## 📱 Part 8: Testing Your Site
+
+### Test Checklist:
+- [ ] Open site on desktop browser
+- [ ] Open site on mobile phone
+- [ ] Navigate to waiver page
+- [ ] Scroll through waiver completely
+- [ ] Initial all 5 sections
+- [ ] Sign with mouse/finger
+- [ ] Submit waiver
+- [ ] View calendar
+- [ ] Click on a date with slots
+- [ ] Select a time slot
+- [ ] Verify it auto-fills booking form
+- [ ] Test admin panel (add/delete slots)
+- [ ] Check Google Sheets for data
+
+---
+
+## 🆘 Troubleshooting
+
+### Issue: "Cannot read property 'getRange'"
+**Fix**: Make sure Sheet ID is correct in Apps Script
+
+### Issue: Slots not showing on calendar
+**Fix**: 
+1. Check browser console for errors
+2. Verify API endpoint URL is correct
+3. Check Google Sheets has data in TimeSlots sheet
+
+### Issue: Waiver won't submit
+**Fix**:
+1. Make sure all initials are filled (2+ characters)
+2. Check all checkboxes are checked
+3. Verify signature is drawn
+4. Check browser console for errors
+
+### Issue: CORS errors
+**Fix**: In Apps Script deployment, make sure "Who has access" is set to "Anyone"
+
+---
+
+## 🎯 Next Steps After Setup
+
+1. **Test Everything**: Go through complete user flow
+2. **Add Real Slots**: Use admin panel to create your actual schedule
+3. **Test Booking Flow**: Complete a test booking end-to-end
+4. **Connect Stripe**: Replace test mode with live mode
+5. **Set Up Email Notifications**: Use Apps Script to send confirmations
+6. **Add Google Calendar Sync**: Optionally sync slots to Google Calendar
+
+---
+
+## 📞 Support Resources
+
+- **Netlify Docs**: https://docs.netlify.com
+- **Google Apps Script**: https://developers.google.com/apps-script
+- **Stripe Integration**: https://stripe.com/docs
+- **Your Assets**: VetMover.com | MilitaryGrad.com
+
+---
+
+## 🎉 You're Done!
+
+Your DoggyPaddle site is now:
+- ✅ Fully responsive (mobile-ready)
+- ✅ Legally compliant waiver system
+- ✅ Interactive booking calendar
+- ✅ Admin panel for slot management
+- ✅ Google Sheets backend (free!)
+- ✅ Ready for Stripe payments
+- ✅ Deployed on Netlify
+
+**Estimated Setup Time**: 30-45 minutes
+**Monthly Cost**: $0 (unless you want custom domain)
+
+🚀 Launch your dog swimming business!
