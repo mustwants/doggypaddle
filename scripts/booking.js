@@ -1,37 +1,49 @@
-document.getElementById("booking-form").addEventListener("submit", async function (e) {
-  e.preventDefault();
-  const form = this;
-  const data = Object.fromEntries(new FormData(form).entries());
+//scripts/booking.js
 
-  const payload = {
-    timestamp: new Date().toISOString(),
-    first_name: data.first_name,
-    last_name: data.last_name,
-    phone: data.phone,
-    email: data.email,
-    dog1_name: data.dog1_name,
-    dog2_name: data.dog2_name || "",
-    breed1: data.breed1,
-    breed2: data.breed2 || "",
-    num_dogs: data.num_dogs,
-    slot: data.slot,
-    signature: data.signature
-  };
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.getElementById("booking-form");
+  const submitButton = form.querySelector("button[type='submit']");
 
-  const webhookURL = "https://script.google.com/macros/s/AKfycbz6RDAN-mci6CMYZ5y46ZVHuJDWSYgqOTAjvneOTu9rcX7MC--emJDxMOUKDpjJ5GCZ/exec";
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    submitButton.disabled = true;
+    submitButton.textContent = "Submitting...";
 
-  try {
-    await fetch(webhookURL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
 
-    alert("Booking submitted! Redirecting to Stripe checkout...");
-    window.location.href = "https://buy.stripe.com/14AaEW1GV3vIgaK7fE5J60c"; // Stripe test
-  } catch (error) {
-    console.error("Booking error:", error);
-    alert("Error submitting booking. Please try again.");
-  }
+    // Validate required waiver checkbox
+    if (!data.waiverAck) {
+      alert("You must accept the liability waiver.");
+      submitButton.disabled = false;
+      submitButton.textContent = "Submit + Pay";
+      return;
+    }
+
+    // Google Apps Script Web App URL (Replace with your actual deployed URL)
+    const endpoint = "https://script.google.com/macros/s/YOUR_DEPLOYED_WEBAPP_ID/exec";
+
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      const result = await res.json();
+
+      if (result.status === "success") {
+        alert("Booking submitted! Redirecting to Stripe...");
+        window.location.href = "https://buy.stripe.com/14AaEW1GV3vIgaK7fE5J60c"; // Live buy link
+      } else {
+        throw new Error("Booking failed.");
+      }
+    } catch (err) {
+      console.error("Booking error:", err);
+      alert("Error submitting booking. Please try again or contact us.");
+    } finally {
+      submitButton.disabled = false;
+      submitButton.textContent = "Submit + Pay";
+    }
+  });
 });
-

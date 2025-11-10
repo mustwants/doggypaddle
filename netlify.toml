@@ -1,6 +1,11 @@
+# //netlify.toml
+
 [build]
-  publish = "./"
+  publish = "."
   command = ""
+
+[functions]
+  directory = "netlify/functions"
 
 [[redirects]]
   from = "/*"
