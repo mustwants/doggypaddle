@@ -1,8 +1,8 @@
-# doggiepaddle
+# doggypaddle
 
-/workspaces/doggiepaddle/
+/workspaces/doggypaddle/
     # doggiepaddle	
-    /workspaces/doggiepaddle/	
+    /workspaces/doggypaddle/	
 Created	├── index.html	
 Not Created	├── assets/	
 Not Created	│ ├── logo.png	
