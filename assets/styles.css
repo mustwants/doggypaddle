@@ -1,0 +1,43 @@
+/* DoggiePaddle custom styles */
+
+body {
+  background-color: #f9fdfc;
+}
+
+nav, footer {
+  background-color: #e6f7f4;
+}
+
+h1, h2, h3 {
+  color: #125d4c;
+}
+
+main.container {
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+
+form input,
+form select,
+form button {
+  margin-bottom: 1rem;
+}
+
+button[type="submit"] {
+  background-color: #23a393;
+  color: white;
+  border: none;
+}
+
+button[type="submit"]:hover {
+  background-color: #1c7d72;
+}
+
+a {
+  color: #23a393;
+}
+
+ul li strong {
+  font-weight: 600;
+  color: #125d4c;
+}

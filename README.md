@@ -1,14 +1,16 @@
 # doggiepaddle
 
 /workspaces/doggiepaddle/
-├── index.html
-├── assets/
-│   ├── logo.png
-│   ├── styles.css (optional for custom)
-├── scripts/
-│   ├── booking.js
-├── stripe/
-│   └── checkout.js (placeholder test-mode link)
-├── waiver/
-│   └── waiver.html (text + download link to dogpaddle.docx as PDF)
-├── netlify.toml
+    # doggiepaddle	
+    /workspaces/doggiepaddle/	
+Created	├── index.html	
+Not Created	├── assets/	
+Not Created	│ ├── logo.png	
+Not Created	│ ├── styles.css (optional for custom)	
+Created	├── scripts/	
+Created	│ ├── booking.js	
+Created	│ ├── netlify.toml	
+Created	├── waiver/	
+Created	│ └── waiver.html (text + download link to dogpaddle.docx as PDF)	
+Not Created	├── stripe/	
+Not Created	│ └── checkout.js (placeholder test-mode link)	

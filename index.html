@@ -3,16 +3,20 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>DoggiePaddle - Private Dog Pool Booking</title>
+  <title>DoggiePaddle – Private Swim Sessions</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css" />
+  <link rel="stylesheet" href="assets/styles.css" />
 </head>
 <body>
+
   <nav class="container-fluid">
-    <ul><li><strong>DoggiePaddle</strong></li></ul>
     <ul>
-      <li><a href="#book">Book Swim</a></li>
-      <li><a href="#treats">Treats</a></li>
-      <li><a href="/waiver/waiver.html" role="button">Waiver</a></li>
+      <li><strong>DoggiePaddle</strong></li>
+    </ul>
+    <ul>
+      <li><a href="#booking">Book</a></li>
+      <li><a href="/waiver/waiver.html">Waiver</a></li>
+      <li><a href="mailto:scott@mustwants.com" role="button">Contact</a></li>
     </ul>
   </nav>
 
@@ -20,55 +24,130 @@
     <div class="grid">
       <section>
         <hgroup>
-          <h2>Private Dog Swim Sessions</h2>
-          <h3>Book your 20-minute solo dog pool slot</h3>
+          <h2>Book Your Dog's Swim</h2>
+          <h3>Private 20-Minute Pool Sessions</h3>
         </hgroup>
-        <p>Temperature-controlled pool, one-on-one, safe & fun!</p>
 
-        <form id="booking-form">
-          <input type="text" name="name" placeholder="Your Name" required />
+        <p>Enjoy a private, safe, chlorine-treated pool for your dog. Sessions are limited to 1 household (max 2 dogs). Owner supervision required. No humans in pool. 🐾</p>
+
+        <form id="booking-form" name="booking">
+          <input type="text" name="first_name" placeholder="First Name" required />
+          <input type="text" name="last_name" placeholder="Last Name" required />
           <input type="tel" name="phone" placeholder="Phone Number" required />
           <input type="email" name="email" placeholder="Email Address" required />
-          <input type="date" name="date" required />
-          <input type="time" name="time" required />
-          <input type="number" name="dogs" placeholder="Number of Dogs (max 3)" min="1" max="3" required />
+
+          <input type="text" name="dog1_name" placeholder="Dog 1 Name" required />
+          <input type="text" name="breed1" placeholder="Breed of Dog 1" required />
+
+          <input type="text" name="dog2_name" placeholder="Dog 2 Name (optional)" />
+          <input type="text" name="breed2" placeholder="Breed of Dog 2 (optional)" />
+
+          <input type="number" name="num_dogs" placeholder="Number of Dogs (1 or 2)" min="1" max="2" required />
+
+          <select name="slot" required>
+            <option value="">Select a Time Slot</option>
+            <option value="2025-11-10 10:00am">Nov 10 @ 10:00am</option>
+            <option value="2025-11-10 10:30am">Nov 10 @ 10:30am</option>
+          </select>
+
+          <input type="text" name="signature" placeholder="Type your name to sign waiver" required />
 
           <label>
             <input type="checkbox" required />
-            I agree to the <a href="/waiver/waiver.html" target="_blank">Waiver & Liability Release</a>
+            I agree to the <a href="/waiver/waiver.html" target="_blank">Liability Waiver & Terms</a>
           </label>
 
-          <button type="submit">Pay & Reserve (Test Mode)</button>
+          <button type="submit">Pay & Reserve</button>
         </form>
       </section>
     </div>
   </main>
 
-  <section id="treats" aria-label="Treats Section">
+  <section aria-label="Subscribe example">
     <div class="container">
       <article>
         <hgroup>
-          <h2>Homemade Dog Treats</h2>
-          <h3>Buy directly, all natural</h3>
+          <h2>Stay in the Loop</h2>
+          <h3>Get updates on new hours & treats</h3>
         </hgroup>
-        <div class="grid">
-          <div>
-            <strong>Peanut Butter Bones – $10</strong><br />
-            <button onclick="window.location='https://buy.stripe.com/test_12345'">Buy</button>
-          </div>
-          <div>
-            <strong>Chicken Jerky – $12</strong><br />
-            <button onclick="window.location='https://buy.stripe.com/test_67890'">Buy</button>
-          </div>
-        </div>
+        <form class="grid">
+          <input type="text" id="firstname" name="firstname" placeholder="First Name" aria-label="First Name" required />
+          <input type="email" id="email" name="email" placeholder="Email" aria-label="Email" required />
+          <button type="submit" onclick="event.preventDefault()">Subscribe</button>
+        </form>
       </article>
     </div>
   </section>
 
   <footer class="container">
-    <small><a href="#book">Book a Swim</a> • <a href="#treats">Treats</a></small>
+    <small>
+      <a href="/waiver/waiver.html">Waiver</a> •
+      <a href="mailto:scott@mustwants.com">Contact</a>
+    </small>
   </footer>
 
-  <script src="/scripts/booking.js"></script>
+  <script src="scripts/booking.js"></script>
+
 </body>
+<footer style="background-color: #f8f9fa; padding: 2rem; border-top: 1px solid #ddd;">
+  <div style="max-width: 1200px; margin: auto; display: flex; flex-wrap: wrap; gap: 2rem; justify-content: space-between;">
+    <!-- Branding -->
+    <div style="flex: 1 1 250px;">
+      <h3 style="margin: 0 0 0.5rem 0; font-size: 1.25rem; color: #333;">VetMover™</h3>
+      <p style="margin: 0 0 1rem 0; color: #666;">Empowering military families with financial tools for informed real estate decisions.</p>
+      <p style="margin: 0; font-size: 0.9rem; color: #666;">
+        <span title="SDVOSB Certified">🏆 SDVOSB Certified</span> • 
+        <span title="Veteran Owned">🇺🇸 Veteran Owned</span>
+      </p>
+    </div>
+
+    <!-- Resources -->
+    <div style="flex: 1 1 180px;">
+      <h4 style="margin-bottom: 0.5rem;">Resources</h4>
+      <ul style="list-style: none; padding: 0; margin: 0;">
+        <li><a href="/about" style="text-decoration: none; color: #007bff;">👥 About Us</a></li>
+        <li><a href="/policies" style="text-decoration: none; color: #007bff;">📋 Policies</a></li>
+        <li><a href="/podcast" style="text-decoration: none; color: #007bff;">🎧 Listen to Our Podcast</a></li>
+        <li><a href="/app" style="text-decoration: none; color: #007bff;">📱 Download Our App</a></li>
+        <li><a href="/admin" style="text-decoration: none; color: #007bff;">⚙️ Admin</a></li>
+      </ul>
+    </div>
+
+    <!-- Military Tools -->
+    <div style="flex: 1 1 220px;">
+      <h4 style="margin-bottom: 0.5rem;">Military Resources</h4>
+      <ul style="list-style: none; padding: 0; margin: 0;">
+        <li><a href="/va-loan-benefits" style="text-decoration: none; color: #007bff;">🏠 VA Loan Benefits</a></li>
+        <li><a href="/pcs-guide" style="text-decoration: none; color: #007bff;">📦 PCS Planning Guide</a></li>
+        <li><a href="/bah-calculator" style="text-decoration: none; color: #007bff;">💰 BAH Calculator</a></li>
+        <li><a href="/military-housing" style="text-decoration: none; color: #007bff;">🏘️ Military Housing</a></li>
+      </ul>
+    </div>
+
+    <!-- Connect -->
+    <div style="flex: 1 1 180px;">
+      <h4 style="margin-bottom: 0.5rem;">Connect</h4>
+      <ul style="list-style: none; padding: 0; margin: 0;">
+        <li><a href="https://mustwants.com" target="_blank" style="text-decoration: none; color: #007bff;">🔗 MustWants.com</a></li>
+        <li><a href="https://militarygrad.com" target="_blank" style="text-decoration: none; color: #007bff;">🎓 MilitaryGrad.com</a></li>
+      </ul>
+      <div style="margin-top: 1rem;">
+        <a href="#" title="Facebook" style="margin-right: 0.5rem;">📘</a>
+        <a href="#" title="Instagram" style="margin-right: 0.5rem;">📷</a>
+        <a href="#" title="TikTok" style="margin-right: 0.5rem;">❌</a>
+        <a href="#" title="LinkedIn" style="margin-right: 0.5rem;">💼</a>
+        <a href="#" title="YouTube" style="margin-right: 0.5rem;">📺</a>
+        <a href="#" title="BlueSky">🦋</a>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align: center; font-size: 0.85rem; color: #999; margin-top: 2rem;">
+    <p>© 2025 <strong>VetMover™</strong> — Sponsored by <a href="https://mustwants.com" style="color: #007bff;">MustWants.com</a></p>
+    <p style="margin: 0;">VetMover™ is a trademark of MustWants. Built for military families, by military families. 🇺🇸</p>
+    <p style="margin: 0;">Powered by MustWants.com – Your trusted partner in military financial planning and real estate decisions.</p>
+  </div>
+</footer>
+
 </html>
+
