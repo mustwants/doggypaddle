@@ -13,8 +13,9 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentYear = new Date().getFullYear();
   let selectedSlot = null;
 
-  // API endpoint for fetching available slots (replace with your actual endpoint)
-  const API_ENDPOINT = "https://script.google.com/macros/s/YOUR_DEPLOYED_WEBAPP_ID/exec";
+  // API endpoint for fetching available slots
+  const API_ENDPOINT = window.DoggyPaddleConfig?.API_ENDPOINT ||
+                       "https://script.google.com/macros/s/YOUR_DEPLOYED_WEBAPP_ID/exec";
 
   // Mock available slots from admin (will be replaced by API call)
   let availableSlots = [

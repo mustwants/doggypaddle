@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DoggyPaddle Liability Waiver - St. Augustine, FL</title>
   <link rel="stylesheet" href="/assets/styles.css" />
+  <script src="/scripts/config.js"></script>
   <style>
     .waiver-header {
       background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
@@ -263,6 +264,22 @@
   </style>
 </head>
 <body>
+  <!-- Navigation -->
+  <nav>
+    <div class="nav-container">
+      <a href="/" class="logo">
+        <img src="/assets/logo.png" alt="DoggyPaddle Logo" class="logo-img" />
+        <span>DoggyPaddle</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="/#pricing">Book Session</a></li>
+        <li><a href="/store">Store</a></li>
+        <li><a href="/photos">Share Photos</a></li>
+        <li><a href="/waiver/waiver.html" class="btn-waiver">Waiver</a></li>
+      </ul>
+    </div>
+  </nav>
+
   <!-- Header -->
   <div class="waiver-header">
     <div class="container">
@@ -659,9 +676,12 @@
       localStorage.setItem('doggypaddle_waiver', JSON.stringify(waiverData));
       localStorage.setItem('doggypaddle_waiver_accepted', 'true');
 
-      // Send to server (replace with your endpoint)
+      // Send to server
       try {
-        const response = await fetch('YOUR_GOOGLE_APPS_SCRIPT_ENDPOINT', {
+        const endpoint = window.DoggyPaddleConfig?.API_ENDPOINT ||
+                        'https://script.google.com/macros/s/YOUR_DEPLOYED_WEBAPP_ID/exec';
+
+        const response = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'saveWaiver', data: waiverData })

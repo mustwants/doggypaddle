@@ -61,15 +61,16 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     try {
-      // Google Apps Script endpoint (replace with your deployed URL)
-      const endpoint = "https://script.google.com/macros/s/YOUR_DEPLOYED_WEBAPP_ID/exec";
+      // Get API endpoint from config
+      const endpoint = window.DoggyPaddleConfig?.API_ENDPOINT ||
+                       "https://script.google.com/macros/s/YOUR_DEPLOYED_WEBAPP_ID/exec";
 
       const response = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(bookingData),
+        body: JSON.stringify({ action: "saveBooking", booking: bookingData }),
       });
 
       if (!response.ok) {
@@ -79,12 +80,18 @@ document.addEventListener("DOMContentLoaded", () => {
       const result = await response.json();
 
       if (result.status === "success") {
+        // Save booking ID for reference
+        localStorage.setItem('doggypaddle_booking_id', result.bookingId);
+
         // Show success message
         showSuccessMessage();
 
-        // Redirect to Stripe checkout
+        // Redirect to Stripe checkout with booking metadata
+        const stripeUrl = window.DoggyPaddleConfig?.STRIPE?.singleSession ||
+                         "https://buy.stripe.com/14AaEW1GV3vIgaK7fE5J60c";
+
         setTimeout(() => {
-          window.location.href = "https://buy.stripe.com/test_YOUR_STRIPE_LINK";
+          window.location.href = stripeUrl;
         }, 2000);
       } else {
         throw new Error(result.message || "Booking submission failed");
