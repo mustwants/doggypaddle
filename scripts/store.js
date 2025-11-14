@@ -300,7 +300,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
-    // Save order to backend
+    // Save order to backend and localStorage
     try {
       const orderData = {
         customerName: 'Guest', // You can add a form to collect this
@@ -310,6 +310,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         total: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
         timestamp: new Date().toISOString()
       };
+
+      // Save to localStorage for admin viewing
+      const savedOrders = JSON.parse(localStorage.getItem('doggypaddle_orders') || '[]');
+      savedOrders.push(orderData);
+      localStorage.setItem('doggypaddle_orders', JSON.stringify(savedOrders));
 
       const response = await fetch(API_ENDPOINT, {
         method: 'POST',
@@ -338,4 +343,311 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Initialize
   await loadProducts();
   updateCartUI();
+
+  // ============================================
+  // ADMIN FUNCTIONALITY
+  // ============================================
+
+  const ADMIN_PASSWORD = 'doggypaddle2024';
+  let isAdminLoggedIn = localStorage.getItem('doggypaddle_admin_logged_in') === 'true';
+  let currentEditingProduct = null;
+
+  // Modal elements
+  const adminLoginModal = document.getElementById('admin-login-modal');
+  const adminPanel = document.getElementById('admin-panel');
+  const productFormModal = document.getElementById('product-form-modal');
+
+  // Buttons
+  const adminLoginBtn = document.getElementById('admin-login-btn');
+  const closeAdminLoginBtn = document.getElementById('close-admin-login');
+  const closeAdminPanelBtn = document.getElementById('close-admin-panel');
+  const closeProductFormBtn = document.getElementById('close-product-form');
+  const cancelProductFormBtn = document.getElementById('cancel-product-form');
+  const addProductBtn = document.getElementById('add-product-btn');
+
+  // Forms
+  const adminLoginForm = document.getElementById('admin-login-form');
+  const productForm = document.getElementById('product-form');
+
+  // Tab elements
+  const adminTabs = document.querySelectorAll('.admin-tab');
+  const adminProductsTab = document.getElementById('admin-products-tab');
+  const adminOrdersTab = document.getElementById('admin-orders-tab');
+
+  // Lists
+  const adminProductsList = document.getElementById('admin-products-list');
+  const adminOrdersList = document.getElementById('admin-orders-list');
+
+  // Admin Login Button Click
+  adminLoginBtn.addEventListener('click', () => {
+    if (isAdminLoggedIn) {
+      openAdminPanel();
+    } else {
+      adminLoginModal.style.display = 'flex';
+    }
+  });
+
+  // Close modals
+  closeAdminLoginBtn.addEventListener('click', () => {
+    adminLoginModal.style.display = 'none';
+  });
+
+  closeAdminPanelBtn.addEventListener('click', () => {
+    adminPanel.style.display = 'none';
+  });
+
+  closeProductFormBtn.addEventListener('click', () => {
+    productFormModal.style.display = 'none';
+  });
+
+  cancelProductFormBtn.addEventListener('click', () => {
+    productFormModal.style.display = 'none';
+  });
+
+  // Admin Login Form Submit
+  adminLoginForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const password = document.getElementById('admin-password').value;
+
+    if (password === ADMIN_PASSWORD) {
+      isAdminLoggedIn = true;
+      localStorage.setItem('doggypaddle_admin_logged_in', 'true');
+      adminLoginModal.style.display = 'none';
+      adminLoginBtn.textContent = 'Admin Panel';
+      showNotification('Login successful!');
+      openAdminPanel();
+    } else {
+      alert('Incorrect password. Please try again.');
+    }
+  });
+
+  // Tab Switching
+  adminTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const targetTab = tab.dataset.tab;
+
+      // Update active tab button
+      adminTabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+
+      // Update active tab content
+      document.querySelectorAll('.admin-tab-content').forEach(content => {
+        content.classList.remove('active');
+      });
+
+      if (targetTab === 'products') {
+        adminProductsTab.classList.add('active');
+        loadAdminProducts();
+      } else if (targetTab === 'orders') {
+        adminOrdersTab.classList.add('active');
+        loadAdminOrders();
+      }
+    });
+  });
+
+  // Add Product Button
+  addProductBtn.addEventListener('click', () => {
+    currentEditingProduct = null;
+    document.getElementById('product-form-title').textContent = 'Add Product';
+    productForm.reset();
+    productFormModal.style.display = 'flex';
+  });
+
+  // Product Form Submit
+  productForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const productData = {
+      id: currentEditingProduct?.id || `prod-${Date.now()}`,
+      name: document.getElementById('product-name').value,
+      description: document.getElementById('product-description').value,
+      price: parseFloat(document.getElementById('product-price').value),
+      category: document.getElementById('product-category').value,
+      imageUrl: document.getElementById('product-image').value,
+      inStock: document.getElementById('product-instock').checked
+    };
+
+    if (currentEditingProduct) {
+      // Update existing product
+      const index = products.findIndex(p => p.id === currentEditingProduct.id);
+      if (index !== -1) {
+        products[index] = productData;
+      }
+    } else {
+      // Add new product
+      products.push(productData);
+    }
+
+    // Save to backend (if available)
+    try {
+      await saveProductsToBackend();
+    } catch (error) {
+      console.warn('Could not save to backend:', error);
+    }
+
+    // Update local storage as fallback
+    localStorage.setItem('doggypaddle_products', JSON.stringify(products));
+
+    productFormModal.style.display = 'none';
+    renderProducts();
+    loadAdminProducts();
+    showNotification(currentEditingProduct ? 'Product updated!' : 'Product added!');
+  });
+
+  // Open Admin Panel
+  function openAdminPanel() {
+    adminPanel.style.display = 'flex';
+    loadAdminProducts();
+  }
+
+  // Load Admin Products
+  function loadAdminProducts() {
+    adminProductsList.innerHTML = products.map(product => `
+      <div class="admin-product-item">
+        <img src="${product.imageUrl}" alt="${product.name}" class="admin-product-image"
+             onerror="this.src='/assets/logo.png'" />
+        <div class="admin-item-details">
+          <div class="admin-item-name">
+            ${product.name}
+            <span class="stock-badge ${product.inStock ? 'in-stock' : 'out-of-stock'}">
+              ${product.inStock ? 'In Stock' : 'Out of Stock'}
+            </span>
+          </div>
+          <div class="admin-item-info">${product.category}</div>
+          <div class="admin-item-info">${product.description}</div>
+          <div class="admin-item-price">$${product.price.toFixed(2)}</div>
+        </div>
+        <div class="admin-item-actions">
+          <button class="admin-btn admin-btn-edit" data-product-id="${product.id}">Edit</button>
+          <button class="admin-btn admin-btn-toggle" data-product-id="${product.id}">
+            ${product.inStock ? 'Mark Out of Stock' : 'Mark In Stock'}
+          </button>
+          <button class="admin-btn admin-btn-delete" data-product-id="${product.id}">Delete</button>
+        </div>
+      </div>
+    `).join('');
+
+    // Add event listeners
+    adminProductsList.querySelectorAll('.admin-btn-edit').forEach(btn => {
+      btn.addEventListener('click', () => editProduct(btn.dataset.productId));
+    });
+
+    adminProductsList.querySelectorAll('.admin-btn-toggle').forEach(btn => {
+      btn.addEventListener('click', () => toggleProductStock(btn.dataset.productId));
+    });
+
+    adminProductsList.querySelectorAll('.admin-btn-delete').forEach(btn => {
+      btn.addEventListener('click', () => deleteProduct(btn.dataset.productId));
+    });
+  }
+
+  // Edit Product
+  function editProduct(productId) {
+    const product = products.find(p => p.id === productId);
+    if (!product) return;
+
+    currentEditingProduct = product;
+    document.getElementById('product-form-title').textContent = 'Edit Product';
+    document.getElementById('product-id').value = product.id;
+    document.getElementById('product-name').value = product.name;
+    document.getElementById('product-description').value = product.description;
+    document.getElementById('product-price').value = product.price;
+    document.getElementById('product-category').value = product.category;
+    document.getElementById('product-image').value = product.imageUrl;
+    document.getElementById('product-instock').checked = product.inStock;
+
+    productFormModal.style.display = 'flex';
+  }
+
+  // Toggle Product Stock
+  async function toggleProductStock(productId) {
+    const product = products.find(p => p.id === productId);
+    if (!product) return;
+
+    product.inStock = !product.inStock;
+
+    try {
+      await saveProductsToBackend();
+    } catch (error) {
+      console.warn('Could not save to backend:', error);
+    }
+
+    localStorage.setItem('doggypaddle_products', JSON.stringify(products));
+    renderProducts();
+    loadAdminProducts();
+    showNotification(`Product marked as ${product.inStock ? 'in stock' : 'out of stock'}`);
+  }
+
+  // Delete Product
+  async function deleteProduct(productId) {
+    if (!confirm('Are you sure you want to delete this product?')) return;
+
+    products = products.filter(p => p.id !== productId);
+
+    try {
+      await saveProductsToBackend();
+    } catch (error) {
+      console.warn('Could not save to backend:', error);
+    }
+
+    localStorage.setItem('doggypaddle_products', JSON.stringify(products));
+    renderProducts();
+    loadAdminProducts();
+    showNotification('Product deleted');
+  }
+
+  // Save Products to Backend
+  async function saveProductsToBackend() {
+    // This would save to your Google Apps Script backend
+    // For now, we'll just use localStorage
+    // You can implement backend saving later
+    return Promise.resolve();
+  }
+
+  // Load Admin Orders
+  async function loadAdminOrders() {
+    // Try to load orders from localStorage
+    const orders = [];
+
+    // Check for saved orders
+    const savedOrders = JSON.parse(localStorage.getItem('doggypaddle_orders') || '[]');
+    orders.push(...savedOrders);
+
+    if (orders.length === 0) {
+      adminOrdersList.innerHTML = '<div class="empty-cart">No orders yet</div>';
+      return;
+    }
+
+    adminOrdersList.innerHTML = orders.map((order, index) => `
+      <div class="admin-order-item">
+        <div class="admin-item-details">
+          <div class="admin-item-name">Order #${index + 1}</div>
+          <div class="admin-item-info">Customer: ${order.customerName || 'Guest'}</div>
+          <div class="admin-item-info">Email: ${order.email || 'N/A'}</div>
+          <div class="admin-item-info">Items: ${order.items?.length || 0}</div>
+          <div class="admin-item-info">Date: ${new Date(order.timestamp).toLocaleString()}</div>
+          <div class="admin-item-price">Total: $${order.total?.toFixed(2) || '0.00'}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // Update Admin Button Text
+  if (isAdminLoggedIn) {
+    adminLoginBtn.textContent = 'Admin Panel';
+  }
+
+  // Load products from localStorage if available
+  const savedProducts = localStorage.getItem('doggypaddle_products');
+  if (savedProducts && products.length === sampleProducts.length) {
+    try {
+      const parsedProducts = JSON.parse(savedProducts);
+      if (parsedProducts.length > 0) {
+        products = parsedProducts;
+        renderProducts();
+      }
+    } catch (error) {
+      console.warn('Could not load saved products:', error);
+    }
+  }
 });
