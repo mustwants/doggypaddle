@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DoggyPaddle Store - Pet Treats & Accessories</title>
+  <meta name="description" content="Shop dog treats, swimming accessories, and DoggyPaddle merchandise. Quality products for your furry friend!" />
+  <link rel="stylesheet" href="/assets/styles.css" />
+  <script src="/scripts/config.js"></script>
+  <style>
+    .store-hero {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+      color: white;
+      padding: 4rem 1.5rem;
+      text-align: center;
+    }
+
+    .store-hero h1 {
+      font-size: clamp(2rem, 4vw, 2.5rem);
+      margin-bottom: 1rem;
+    }
+
+    .category-filter {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      margin: 2rem 0;
+      flex-wrap: wrap;
+    }
+
+    .category-btn {
+      padding: 0.75rem 1.5rem;
+      border: 2px solid var(--primary);
+      background: white;
+      color: var(--primary);
+      border-radius: 25px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 600;
+    }
+
+    .category-btn:hover,
+    .category-btn.active {
+      background: var(--primary);
+      color: white;
+      transform: translateY(-2px);
+    }
+
+    .products-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    .product-card {
+      background: white;
+      border-radius: var(--radius);
+      box-shadow: 0 4px 12px var(--shadow);
+      overflow: hidden;
+      transition: transform 0.3s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .product-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    }
+
+    .product-image {
+      width: 100%;
+      height: 250px;
+      object-fit: cover;
+      background: var(--bg-light);
+    }
+
+    .product-details {
+      padding: 1.5rem;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .product-category {
+      font-size: 0.85rem;
+      color: var(--text-light);
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .product-name {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--secondary);
+      margin-bottom: 0.75rem;
+    }
+
+    .product-description {
+      color: var(--text-light);
+      margin-bottom: 1rem;
+      flex: 1;
+    }
+
+    .product-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: auto;
+    }
+
+    .product-price {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .add-to-cart-btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.25rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .add-to-cart-btn:hover {
+      background: #d88d00;
+      transform: scale(1.05);
+    }
+
+    .add-to-cart-btn.in-cart {
+      background: var(--primary);
+    }
+
+    .out-of-stock {
+      opacity: 0.6;
+    }
+
+    .out-of-stock-badge {
+      background: #dc3545;
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+
+    /* Cart Sidebar */
+    .cart-sidebar {
+      position: fixed;
+      right: -400px;
+      top: 0;
+      width: 400px;
+      height: 100vh;
+      background: white;
+      box-shadow: -4px 0 12px rgba(0, 0, 0, 0.2);
+      transition: right 0.3s ease;
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .cart-sidebar.open {
+      right: 0;
+    }
+
+    .cart-header {
+      background: var(--primary);
+      color: white;
+      padding: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .cart-close {
+      background: transparent;
+      border: none;
+      color: white;
+      font-size: 2rem;
+      cursor: pointer;
+      padding: 0;
+      width: 36px;
+      height: 36px;
+    }
+
+    .cart-items {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem;
+    }
+
+    .cart-item {
+      display: flex;
+      gap: 1rem;
+      padding: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .cart-item-image {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+
+    .cart-item-details {
+      flex: 1;
+    }
+
+    .cart-item-name {
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .cart-item-price {
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    .cart-item-quantity {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      margin-top: 0.5rem;
+    }
+
+    .qty-btn {
+      background: var(--bg-light);
+      border: 1px solid var(--border);
+      width: 28px;
+      height: 28px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .remove-item {
+      color: #dc3545;
+      cursor: pointer;
+      font-size: 0.9rem;
+      margin-top: 0.5rem;
+    }
+
+    .cart-footer {
+      border-top: 2px solid var(--border);
+      padding: 1.5rem;
+    }
+
+    .cart-total {
+      display: flex;
+      justify-content: space-between;
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .checkout-btn {
+      width: 100%;
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 1.25rem;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .checkout-btn:hover {
+      background: var(--primary-dark);
+    }
+
+    .cart-badge {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: var(--accent);
+      color: white;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      transition: all 0.3s ease;
+      z-index: 9999;
+    }
+
+    .cart-badge:hover {
+      transform: scale(1.1);
+    }
+
+    .cart-count {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background: #dc3545;
+      color: white;
+      width: 25px;
+      height: 25px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+
+    .empty-cart {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-light);
+    }
+
+    @media (max-width: 768px) {
+      .cart-sidebar {
+        width: 100%;
+        right: -100%;
+      }
+
+      .products-grid {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav>
+    <div class="nav-container">
+      <a href="/" class="logo">
+        <img src="/assets/logo.png" alt="DoggyPaddle Logo" class="logo-img" />
+        <span>DoggyPaddle</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="/#pricing">Book Session</a></li>
+        <li><a href="/store">Store</a></li>
+        <li><a href="/photos">Share Photos</a></li>
+        <li><a href="/waiver/waiver.html" class="btn-waiver">Waiver</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <div class="store-hero">
+    <h1>DoggyPaddle Store</h1>
+    <p>Premium treats, accessories, and merchandise for your furry friend</p>
+  </div>
+
+  <!-- Main Content -->
+  <main class="container">
+    <!-- Category Filter -->
+    <div class="category-filter">
+      <button class="category-btn active" data-category="all">All Products</button>
+      <button class="category-btn" data-category="Treats">Treats</button>
+      <button class="category-btn" data-category="Accessories">Accessories</button>
+      <button class="category-btn" data-category="Toys">Toys</button>
+      <button class="category-btn" data-category="Merchandise">Merchandise</button>
+    </div>
+
+    <!-- Products Grid -->
+    <div id="products-container">
+      <div id="products-grid" class="products-grid">
+        <!-- Products will be loaded here -->
+      </div>
+    </div>
+  </main>
+
+  <!-- Cart Floating Button -->
+  <div id="cart-badge" class="cart-badge" style="display: none;">
+    🛒
+    <span id="cart-count" class="cart-count">0</span>
+  </div>
+
+  <!-- Cart Sidebar -->
+  <div id="cart-sidebar" class="cart-sidebar">
+    <div class="cart-header">
+      <h2>Shopping Cart</h2>
+      <button class="cart-close" id="close-cart">&times;</button>
+    </div>
+    <div id="cart-items" class="cart-items"></div>
+    <div class="cart-footer">
+      <div class="cart-total">
+        <span>Total:</span>
+        <span id="cart-total">$0.00</span>
+      </div>
+      <button class="checkout-btn" id="checkout-btn">Checkout with Stripe</button>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <p><strong>DoggyPaddle</strong> - A Jointwerx LLC Service</p>
+    <p>St. Augustine, St. Johns County, Florida</p>
+    <div style="display: flex; justify-content: center; gap: 2rem; margin: 1rem 0; flex-wrap: wrap;">
+      <a href="https://vetmover.com" target="_blank">VetMover.com</a>
+      <a href="https://militarygrad.com" target="_blank">MilitaryGrad.com</a>
+      <a href="mailto:info@doggypaddle.com">Contact Us</a>
+    </div>
+    <p>&copy; 2024 Jointwerx LLC. All rights reserved.</p>
+  </footer>
+
+  <script src="/scripts/store.js"></script>
+</body>
+</html>
