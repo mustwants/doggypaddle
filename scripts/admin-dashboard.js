@@ -460,6 +460,9 @@ function loadPhotos() {
           ${status !== 'approved' ? `<button class="admin-btn admin-btn-edit" onclick="approvePhoto('${photo.timestamp}')">✓ Approve</button>` : ''}
           ${status !== 'rejected' ? `<button class="admin-btn admin-btn-delete" onclick="rejectPhoto('${photo.timestamp}')">✗ Reject</button>` : ''}
           ${status !== 'pending' ? `<button class="admin-btn admin-btn-toggle" onclick="resetPhotoStatus('${photo.timestamp}')">Reset</button>` : ''}
+          <button class="admin-btn admin-btn-edit" onclick="downloadPhoto('${photo.timestamp}')" title="Download photo">⬇ Download</button>
+          <button class="admin-btn admin-btn-edit" onclick="shareToFacebook('${photo.timestamp}')" title="Share to Facebook" style="background: #1877f2;">📘 Share FB</button>
+          <button class="admin-btn admin-btn-secondary" onclick="editPhotoCaption('${photo.timestamp}')" title="Edit caption">✏️ Edit</button>
         </div>
       </div>
     `;
@@ -508,6 +511,82 @@ window.resetPhotoStatus = function(timestamp) {
     localStorage.setItem('doggypaddle_photos', JSON.stringify(photos));
     loadPhotos();
     showNotification('Photo status reset to pending.', 'success');
+  }
+};
+
+// Download photo
+window.downloadPhoto = function(timestamp) {
+  const photos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
+  const photo = photos.find(p => p.timestamp === timestamp);
+
+  if (photo) {
+    // Create a temporary link element
+    const link = document.createElement('a');
+    link.href = photo.imageUrl;
+    link.download = `doggypaddle-${photo.dogName.replace(/\s+/g, '-')}-${timestamp}.jpg`;
+
+    // For base64 images, we need to handle differently
+    if (photo.imageUrl.startsWith('data:')) {
+      link.download = `doggypaddle-${photo.dogName.replace(/\s+/g, '-')}-${timestamp}.jpg`;
+    }
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    showNotification('Photo downloaded!', 'success');
+  }
+};
+
+// Share to Facebook
+window.shareToFacebook = function(timestamp) {
+  const photos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
+  const photo = photos.find(p => p.timestamp === timestamp);
+
+  if (photo) {
+    // Create share text
+    const shareText = photo.caption
+      ? `🐕 ${photo.dogName} at DoggyPaddle! ${photo.caption}`
+      : `🐕 ${photo.dogName} enjoying DoggyPaddle!`;
+
+    // For base64 images, we need to inform the user they need to download first
+    if (photo.imageUrl.startsWith('data:')) {
+      alert(
+        'To share this photo to Facebook:\n\n' +
+        '1. Click "Download" to save the photo\n' +
+        '2. Go to Facebook and create a new post\n' +
+        '3. Upload the downloaded photo\n' +
+        '4. Add this caption:\n\n' +
+        shareText
+      );
+
+      // Copy caption to clipboard
+      navigator.clipboard.writeText(shareText).then(() => {
+        showNotification('Caption copied to clipboard!', 'success');
+      });
+    } else {
+      // For external URLs, we can use Facebook share dialog
+      const fbShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(photo.imageUrl)}&quote=${encodeURIComponent(shareText)}`;
+      window.open(fbShareUrl, 'facebook-share-dialog', 'width=800,height=600');
+      showNotification('Opening Facebook share dialog...', 'success');
+    }
+  }
+};
+
+// Edit photo caption
+window.editPhotoCaption = function(timestamp) {
+  const photos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
+  const photo = photos.find(p => p.timestamp === timestamp);
+
+  if (photo) {
+    const newCaption = prompt('Edit caption for ' + photo.dogName + ':', photo.caption || '');
+
+    if (newCaption !== null) { // User didn't cancel
+      photo.caption = newCaption;
+      localStorage.setItem('doggypaddle_photos', JSON.stringify(photos));
+      loadPhotos();
+      showNotification('Caption updated!', 'success');
+    }
   }
 };
 
