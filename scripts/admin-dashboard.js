@@ -544,21 +544,78 @@ window.shareToFacebook = function(timestamp) {
   const photo = photos.find(p => p.timestamp === timestamp);
 
   if (photo) {
-    // Create share text
+    const fbPageUrl = window.DoggyPaddleConfig?.SOCIAL?.facebook || 'https://www.facebook.com/dogpad';
+
+    // Create share text with hashtags and page mention
     const shareText = photo.caption
-      ? `🐕 ${photo.dogName} at DoggyPaddle! ${photo.caption}`
-      : `🐕 ${photo.dogName} enjoying DoggyPaddle!`;
+      ? `🐕 ${photo.dogName} had a splash-tastic time at DoggyPaddle! ${photo.caption}\n\n#DoggyPaddle #DogSwimming #HappyDogs\n\nVisit us: ${fbPageUrl}`
+      : `🐕 ${photo.dogName} had a splash-tastic time at DoggyPaddle!\n\n#DoggyPaddle #DogSwimming #HappyDogs\n\nVisit us: ${fbPageUrl}`;
 
     // For base64 images, we need to inform the user they need to download first
     if (photo.imageUrl.startsWith('data:')) {
-      alert(
-        'To share this photo to Facebook:\n\n' +
-        '1. Click "Download" to save the photo\n' +
-        '2. Go to Facebook and create a new post\n' +
-        '3. Upload the downloaded photo\n' +
-        '4. Add this caption:\n\n' +
-        shareText
-      );
+      const modal = document.createElement('div');
+      modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+      `;
+
+      modal.innerHTML = `
+        <div style="
+          background: white;
+          padding: 2rem;
+          border-radius: 12px;
+          max-width: 500px;
+          width: 90%;
+        ">
+          <h3 style="margin-top: 0; color: #1877f2;">📘 Share to Facebook</h3>
+          <p><strong>Step 1:</strong> Click "Download" to save the photo first</p>
+          <p><strong>Step 2:</strong> Go to your <a href="${fbPageUrl}" target="_blank" style="color: #1877f2;">DoggyPaddle Facebook page</a></p>
+          <p><strong>Step 3:</strong> Create a new post and upload the photo</p>
+          <p><strong>Step 4:</strong> Use this caption (already copied!):</p>
+          <textarea readonly style="
+            width: 100%;
+            height: 120px;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: inherit;
+            resize: vertical;
+          ">${shareText}</textarea>
+          <div style="margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: flex-end;">
+            <button onclick="window.open('${fbPageUrl}', '_blank')" style="
+              background: #1877f2;
+              color: white;
+              border: none;
+              padding: 0.75rem 1.5rem;
+              border-radius: 4px;
+              cursor: pointer;
+              font-weight: 500;
+            ">Open Facebook Page</button>
+            <button onclick="this.closest('div[style*=fixed]').remove()" style="
+              background: #ddd;
+              color: #333;
+              border: none;
+              padding: 0.75rem 1.5rem;
+              border-radius: 4px;
+              cursor: pointer;
+              font-weight: 500;
+            ">Close</button>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(modal);
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.remove();
+      });
 
       // Copy caption to clipboard
       navigator.clipboard.writeText(shareText).then(() => {
