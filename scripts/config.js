@@ -21,7 +21,7 @@ const CONFIG = {
   // The URL should look like: https://script.google.com/macros/s/AKfycbw...LONG_ID.../exec
   //
   // ⚠️ IMPORTANT: This placeholder URL will cause CORS errors. You MUST replace it!
-  API_ENDPOINT: 'https://script.google.com/macros/s/YOUR_DEPLOYED_WEBAPP_ID/exec',
+  API_ENDPOINT: 'https://script.google.com/macros/s/AKfycbxAocAQFFOWNr1CtW_njxjZsl69lcaitNpv_ZBfYKnlekOK0ir49sfUxV9-J9MRxUdTmA/exec',
 
   // Google OAuth Configuration
   // To get your Client ID:
