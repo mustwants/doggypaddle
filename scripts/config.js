@@ -12,7 +12,15 @@
 
 const CONFIG = {
   // Google Apps Script Web App URL
-  // Replace this with your deployed Web App URL
+  //
+  // SETUP REQUIRED: Follow the instructions in /backend/README.md to:
+  // 1. Set up your Google Apps Script backend
+  // 2. Deploy it as a Web App
+  // 3. Copy the Web App URL and paste it here
+  //
+  // The URL should look like: https://script.google.com/macros/s/AKfycbw...LONG_ID.../exec
+  //
+  // ⚠️ IMPORTANT: This placeholder URL will cause CORS errors. You MUST replace it!
   API_ENDPOINT: 'https://script.google.com/macros/s/YOUR_DEPLOYED_WEBAPP_ID/exec',
 
   // Stripe Configuration

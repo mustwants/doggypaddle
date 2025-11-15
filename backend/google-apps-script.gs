@@ -4,15 +4,33 @@
 // SETUP INSTRUCTIONS:
 // 1. Create a new Google Sheet named "DoggyPaddle Management"
 // 2. Copy the Sheet ID from the URL (the long string between /d/ and /edit)
-// 3. Replace YOUR_GOOGLE_SHEET_ID_HERE below with your Sheet ID
-// 4. Go to Extensions > Apps Script in your Google Sheet
-// 5. Paste this entire code
-// 6. Click Deploy > New deployment
-// 7. Select "Web app" as type
-// 8. Set "Execute as" to "Me"
-// 9. Set "Who has access" to "Anyone"
-// 10. Click Deploy and copy the Web App URL
-// 11. Update the API_ENDPOINT in your website files with this URL
+//    Example: https://docs.google.com/spreadsheets/d/SHEET_ID_HERE/edit
+// 3. Replace YOUR_GOOGLE_SHEET_ID_HERE below with your actual Sheet ID
+// 4. In your Google Sheet, go to Extensions > Apps Script
+// 5. Delete any existing code and paste this entire file
+// 6. Save the project (File > Save or Ctrl/Cmd+S)
+// 7. Run the "initializeSheets" function once to create the sheets
+//    - Click the function dropdown, select "initializeSheets", then click Run
+//    - You may need to authorize the script (click "Review Permissions" and allow)
+// 8. Click Deploy > New deployment
+// 9. Click the gear icon next to "Select type" and choose "Web app"
+// 10. Configure deployment:
+//     - Description: "DoggyPaddle Backend API"
+//     - Execute as: "Me"
+//     - Who has access: "Anyone" (IMPORTANT: This must be "Anyone" for CORS to work)
+// 11. Click "Deploy"
+// 12. Copy the Web App URL (it will look like: https://script.google.com/macros/s/LONG_ID/exec)
+// 13. Update the API_ENDPOINT in your website's scripts/config.js with this URL
+// 14. IMPORTANT: After making any changes to this script, you must create a NEW deployment
+//     - Go to Deploy > Manage deployments
+//     - Click "New deployment"
+//     - Follow steps 9-11 again
+//
+// TROUBLESHOOTING CORS ERRORS:
+// - Make sure "Who has access" is set to "Anyone" in your deployment settings
+// - After code changes, create a NEW deployment (don't just redeploy the old one)
+// - Clear your browser cache and try again
+// - Check that your config.js has the correct Web App URL
 
 // CONFIGURATION - Replace with your actual Sheet ID
 const SHEET_ID = 'YOUR_GOOGLE_SHEET_ID_HERE';
@@ -25,6 +43,11 @@ const PHOTOS_SHEET_NAME = 'Photos';
 
 // Main entry point for GET requests
 function doGet(e) {
+  // Handle CORS preflight
+  if (e.parameter.method === 'OPTIONS') {
+    return createCORSResponse({});
+  }
+
   const action = e.parameter.action;
 
   try {
@@ -532,11 +555,33 @@ function getSheet(sheetName) {
   return sheet;
 }
 
-// Helper: Create JSON response
+// Helper: Create JSON response with CORS headers
 function createResponse(data) {
-  return ContentService
+  const output = ContentService
     .createTextOutput(JSON.stringify(data))
     .setMimeType(ContentService.MimeType.JSON);
+
+  // Add CORS headers to allow requests from any origin
+  return addCORSHeaders(output);
+}
+
+// Helper: Add CORS headers to response
+function addCORSHeaders(output) {
+  // Allow requests from any origin (you can restrict this to specific domains)
+  output.setHeader('Access-Control-Allow-Origin', '*');
+  output.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  output.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  output.setHeader('Access-Control-Max-Age', '3600');
+  return output;
+}
+
+// Helper: Create CORS preflight response
+function createCORSResponse(data) {
+  const output = ContentService
+    .createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+
+  return addCORSHeaders(output);
 }
 
 // ADMIN FUNCTIONS - Call these manually from Script Editor
