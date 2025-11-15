@@ -1,20 +1,22 @@
-// scripts/booking.js
+// scripts/booking.js - Enhanced with Cart Support
 
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("booking-form");
   const submitButton = form.querySelector("button[type='submit']");
 
-  // Set minimum date/time to now
-  const sessionTimeInput = document.getElementById("sessionTime");
-  const now = new Date();
-  const minDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
-    .toISOString()
-    .slice(0, 16);
-  sessionTimeInput.min = minDateTime;
+  // Display cart summary in booking section
+  displayCartSummary();
 
   // Form validation
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
+
+    // Check if cart has items
+    const cart = JSON.parse(localStorage.getItem('doggypaddle_booking_cart')) || [];
+    if (cart.length === 0) {
+      alert("Your cart is empty. Please select time slots from the calendar above.");
+      return;
+    }
 
     // Disable button to prevent double submission
     submitButton.disabled = true;
@@ -45,17 +47,14 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // Validate date is in the future
-    const selectedDate = new Date(data.sessionTime);
-    if (selectedDate <= new Date()) {
-      alert("Please select a future date and time.");
-      resetForm();
-      return;
-    }
+    // Get pricing info
+    const pricing = JSON.parse(localStorage.getItem('checkout_pricing') || '{}');
 
     // Format data for submission
     const bookingData = {
       ...data,
+      sessions: cart,
+      pricing: pricing,
       timestamp: new Date().toISOString(),
       status: "pending",
     };
@@ -86,9 +85,15 @@ document.addEventListener("DOMContentLoaded", () => {
         // Show success message
         showSuccessMessage();
 
-        // Redirect to Stripe checkout with booking metadata
+        // Clear cart after successful booking
+        localStorage.removeItem('doggypaddle_booking_cart');
+        localStorage.removeItem('checkout_cart');
+        localStorage.removeItem('checkout_pricing');
+
+        // Redirect to Stripe checkout
+        // For now, using the single session URL - you'll need to create a custom checkout
         const stripeUrl = window.DoggyPaddleConfig?.STRIPE?.singleSession ||
-                         "https://buy.stripe.com/14AaEW1GV3vIgaK7fE5J60c";
+                         "https://buy.stripe.com/placeholder";
 
         setTimeout(() => {
           window.location.href = stripeUrl;
@@ -104,9 +109,116 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  function displayCartSummary() {
+    const cart = JSON.parse(localStorage.getItem('doggypaddle_booking_cart')) || [];
+    const bookingSection = document.getElementById('booking');
+
+    // Remove existing cart summary if present
+    const existingSummary = document.getElementById('cart-summary-display');
+    if (existingSummary) existingSummary.remove();
+
+    if (cart.length === 0) {
+      return; // No cart to display
+    }
+
+    // Calculate pricing
+    const PRICE_PER_SLOT = 25;
+    const DISCOUNT_THRESHOLD = 5;
+    const totalSlots = cart.length;
+    const fullPriceSlots = totalSlots - Math.floor(totalSlots / DISCOUNT_THRESHOLD);
+    const freeSlots = Math.floor(totalSlots / DISCOUNT_THRESHOLD);
+    const subtotal = totalSlots * PRICE_PER_SLOT;
+    const discount = freeSlots * PRICE_PER_SLOT;
+    const total = fullPriceSlots * PRICE_PER_SLOT;
+
+    // Create cart summary element
+    const summaryDiv = document.createElement('div');
+    summaryDiv.id = 'cart-summary-display';
+    summaryDiv.className = 'cart-summary-display';
+    summaryDiv.innerHTML = `
+      <div class="cart-summary-header">
+        <h3>Your Selected Sessions</h3>
+        <button type="button" class="edit-cart-btn" onclick="document.getElementById('booking-cart-sidebar').classList.add('open')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+          Edit Cart
+        </button>
+      </div>
+      <div class="cart-summary-items">
+        ${cart.map(item => `
+          <div class="cart-summary-item">
+            <div class="item-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+            </div>
+            <div class="item-details">
+              <div class="item-date">${formatDateLong(item.date)}</div>
+              <div class="item-time">${formatTime(item.time)} (${item.duration} min)</div>
+            </div>
+            <div class="item-price">$${item.price}</div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="cart-summary-pricing">
+        ${freeSlots > 0 ? `
+          <div class="pricing-discount-badge">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>
+            You're saving $${discount.toFixed(2)} with ${freeSlots} free session${freeSlots > 1 ? 's' : ''}!
+          </div>
+        ` : ''}
+        <div class="pricing-row">
+          <span>Subtotal (${totalSlots} session${totalSlots > 1 ? 's' : ''})</span>
+          <span>$${subtotal.toFixed(2)}</span>
+        </div>
+        ${discount > 0 ? `
+          <div class="pricing-row discount">
+            <span>Discount (${freeSlots} free)</span>
+            <span>-$${discount.toFixed(2)}</span>
+          </div>
+        ` : ''}
+        <div class="pricing-row total">
+          <span>Total Amount</span>
+          <span>$${total.toFixed(2)}</span>
+        </div>
+      </div>
+    `;
+
+    // Insert at the beginning of the booking section
+    const firstElement = bookingSection.querySelector('h2');
+    if (firstElement) {
+      firstElement.after(summaryDiv);
+    } else {
+      bookingSection.insertBefore(summaryDiv, bookingSection.firstChild);
+    }
+  }
+
+  function formatTime(timeString) {
+    const [hours, minutes] = timeString.split(":");
+    const hour = parseInt(hours);
+    const ampm = hour >= 12 ? "pm" : "am";
+    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+    return `${displayHour}:${minutes}${ampm}`;
+  }
+
+  function formatDateLong(dateString) {
+    const date = new Date(dateString + 'T12:00:00');
+    return date.toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      year: "numeric"
+    });
+  }
+
   function resetForm() {
     submitButton.disabled = false;
-    submitButton.textContent = "Submit Booking & Pay with Stripe";
+    submitButton.textContent = "Complete Booking & Pay with Stripe";
     form.classList.remove("loading");
   }
 
@@ -186,27 +298,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Email validation
   const emailInput = document.getElementById("email");
-  emailInput.addEventListener("blur", () => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (emailInput.value && !emailRegex.test(emailInput.value)) {
-      emailInput.style.borderColor = "#dc3545";
-      showTooltip(emailInput, "Please enter a valid email address");
-    } else if (emailInput.value) {
-      emailInput.style.borderColor = "#28a745";
-    }
-  });
+  if (emailInput) {
+    emailInput.addEventListener("blur", () => {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (emailInput.value && !emailRegex.test(emailInput.value)) {
+        emailInput.style.borderColor = "#dc3545";
+        showTooltip(emailInput, "Please enter a valid email address");
+      } else if (emailInput.value) {
+        emailInput.style.borderColor = "#28a745";
+      }
+    });
+  }
 
   // Phone validation
   const phoneInput = document.getElementById("phone");
-  phoneInput.addEventListener("blur", () => {
-    const phoneRegex = /^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/;
-    if (phoneInput.value && !phoneRegex.test(phoneInput.value)) {
-      phoneInput.style.borderColor = "#dc3545";
-      showTooltip(phoneInput, "Please enter a valid phone number");
-    } else if (phoneInput.value) {
-      phoneInput.style.borderColor = "#28a745";
-    }
-  });
+  if (phoneInput) {
+    phoneInput.addEventListener("blur", () => {
+      const phoneRegex = /^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/;
+      if (phoneInput.value && !phoneRegex.test(phoneInput.value)) {
+        phoneInput.style.borderColor = "#dc3545";
+        showTooltip(phoneInput, "Please enter a valid phone number");
+      } else if (phoneInput.value) {
+        phoneInput.style.borderColor = "#28a745";
+      }
+    });
+  }
 
   function showTooltip(element, message) {
     const existing = element.parentElement.querySelector(".tooltip");
@@ -231,9 +347,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
     setTimeout(() => tooltip.remove(), 3000);
   }
+
+  // Listen for cart changes to update the summary
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'doggypaddle_booking_cart') {
+      displayCartSummary();
+    }
+  });
+
+  // Also listen for custom event from calendar
+  window.addEventListener('cartUpdated', () => {
+    displayCartSummary();
+  });
 });
 
-// Add animation keyframes
+// Add styles for cart summary
 const style = document.createElement("style");
 style.textContent = `
   @keyframes slideIn {
@@ -244,6 +372,184 @@ style.textContent = `
     to {
       transform: translateX(0);
       opacity: 1;
+    }
+  }
+
+  .cart-summary-display {
+    background: linear-gradient(135deg, #e6f7f9 0%, #f0fbfd 100%);
+    border: 2px solid var(--primary);
+    border-radius: 16px;
+    padding: 2rem;
+    margin: 2rem 0;
+    box-shadow: 0 4px 16px rgba(2, 128, 144, 0.15);
+  }
+
+  .cart-summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid rgba(2, 128, 144, 0.2);
+  }
+
+  .cart-summary-header h3 {
+    margin: 0;
+    color: var(--secondary);
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .edit-cart-btn {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+  }
+
+  .edit-cart-btn:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+  }
+
+  .cart-summary-items {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .cart-summary-item {
+    background: white;
+    padding: 1rem;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.2s ease;
+  }
+
+  .cart-summary-item:hover {
+    transform: translateX(4px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  }
+
+  .item-icon {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+  }
+
+  .item-details {
+    flex: 1;
+  }
+
+  .item-date {
+    font-weight: 600;
+    color: var(--secondary);
+    margin-bottom: 0.25rem;
+  }
+
+  .item-time {
+    color: var(--text-light);
+    font-size: 0.9rem;
+  }
+
+  .item-price {
+    font-weight: 700;
+    color: var(--primary);
+    font-size: 1.1rem;
+  }
+
+  .cart-summary-pricing {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  .pricing-discount-badge {
+    background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+    color: white;
+    padding: 0.875rem 1rem;
+    border-radius: 10px;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+  }
+
+  .pricing-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem 0;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .pricing-row:last-child {
+    border-bottom: none;
+  }
+
+  .pricing-row.discount {
+    color: #22c55e;
+    font-weight: 600;
+  }
+
+  .pricing-row.total {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--secondary);
+    padding-top: 1rem;
+    margin-top: 0.5rem;
+    border-top: 2px solid var(--border);
+    border-bottom: none;
+  }
+
+  @media (max-width: 768px) {
+    .cart-summary-display {
+      padding: 1.5rem;
+    }
+
+    .cart-summary-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+
+    .edit-cart-btn {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .cart-summary-item {
+      flex-direction: column;
+      align-items: flex-start;
+      text-align: left;
+    }
+
+    .item-price {
+      align-self: flex-end;
     }
   }
 `;
