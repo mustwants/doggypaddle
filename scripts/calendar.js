@@ -18,14 +18,22 @@ document.addEventListener("DOMContentLoaded", () => {
                        "https://script.google.com/macros/s/YOUR_DEPLOYED_WEBAPP_ID/exec";
 
   // Mock available slots from admin (will be replaced by API call)
+  // Slots are now 30 minutes at top and bottom of hour
   let availableSlots = [
-    { id: "slot-1", date: "2024-11-15", time: "10:00", duration: 20 },
-    { id: "slot-2", date: "2024-11-15", time: "14:00", duration: 20 },
-    { id: "slot-3", date: "2024-11-16", time: "11:00", duration: 20 },
-    { id: "slot-4", date: "2024-11-16", time: "15:00", duration: 20 },
-    { id: "slot-5", date: "2024-11-20", time: "09:00", duration: 20 },
-    { id: "slot-6", date: "2024-11-20", time: "12:00", duration: 20 },
-    { id: "slot-7", date: "2024-11-20", time: "16:00", duration: 20 },
+    { id: "slot-1", date: "2024-11-15", time: "10:00", duration: 30 },
+    { id: "slot-2", date: "2024-11-15", time: "10:30", duration: 30 },
+    { id: "slot-3", date: "2024-11-15", time: "14:00", duration: 30 },
+    { id: "slot-4", date: "2024-11-15", time: "14:30", duration: 30 },
+    { id: "slot-5", date: "2024-11-16", time: "11:00", duration: 30 },
+    { id: "slot-6", date: "2024-11-16", time: "11:30", duration: 30 },
+    { id: "slot-7", date: "2024-11-16", time: "15:00", duration: 30 },
+    { id: "slot-8", date: "2024-11-16", time: "15:30", duration: 30 },
+    { id: "slot-9", date: "2024-11-20", time: "09:00", duration: 30 },
+    { id: "slot-10", date: "2024-11-20", time: "09:30", duration: 30 },
+    { id: "slot-11", date: "2024-11-20", time: "12:00", duration: 30 },
+    { id: "slot-12", date: "2024-11-20", time: "12:30", duration: 30 },
+    { id: "slot-13", date: "2024-11-20", time: "16:00", duration: 30 },
+    { id: "slot-14", date: "2024-11-20", time: "16:30", duration: 30 },
   ];
 
   const DAYS_OF_WEEK = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -228,7 +236,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     slotDetails.innerHTML = `
       <strong>${formattedDate}</strong> at <strong>${formatTime(time)}</strong>
-      <br><small>20-minute session</small>
+      <br><small>30-minute session</small>
     `;
 
     slotInfo.style.display = "block";

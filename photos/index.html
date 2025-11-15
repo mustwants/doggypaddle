@@ -11,13 +11,23 @@
     .photos-hero {
       background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
       color: white;
-      padding: 4rem 1.5rem 3rem;
+      padding: 3rem 1.5rem;
       text-align: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
 
     .photos-hero h1 {
       font-size: clamp(2rem, 4vw, 2.5rem);
-      margin-bottom: 1rem;
+      margin-bottom: 0.75rem;
+      color: white;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .photos-hero p {
+      font-size: 1.1rem;
+      opacity: 0.95;
+      max-width: 600px;
+      margin: 0 auto;
     }
 
     .upload-section {
@@ -140,48 +150,61 @@
 
     .gallery-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 2rem;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 2.5rem;
+      padding: 1rem 0;
     }
 
     .gallery-item {
       background: white;
       border-radius: var(--radius);
       overflow: hidden;
-      box-shadow: 0 4px 12px var(--shadow);
-      transition: transform 0.3s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      transition: all 0.3s ease;
+      border: 1px solid var(--border-light);
     }
 
     .gallery-item:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+      transform: translateY(-8px);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+      border-color: var(--primary-light);
     }
 
     .gallery-image {
       width: 100%;
-      height: 300px;
+      height: 320px;
       object-fit: cover;
+      background: var(--bg-light);
     }
 
     .gallery-caption {
-      padding: 1.5rem;
+      padding: 1.75rem;
     }
 
     .gallery-dog-name {
       font-weight: 700;
-      font-size: 1.25rem;
+      font-size: 1.35rem;
       color: var(--secondary);
-      margin-bottom: 0.5rem;
-    }
-
-    .gallery-description {
-      color: var(--text-light);
       margin-bottom: 0.75rem;
     }
 
+    .gallery-description {
+      color: var(--text);
+      margin-bottom: 1rem;
+      line-height: 1.6;
+      font-size: 0.95rem;
+    }
+
     .gallery-date {
-      font-size: 0.85rem;
+      font-size: 0.875rem;
       color: var(--text-light);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .gallery-date::before {
+      content: "📅";
     }
 
     .loading {
@@ -318,7 +341,7 @@
   <footer>
     <p><strong>DoggyPaddle</strong> - A Jointwerx LLC Service</p>
     <p>St. Augustine, St. Johns County, Florida</p>
-    <div style="display: flex; justify-content: center; gap: 2rem; margin: 1rem 0; flex-wrap: wrap;">
+    <div class="footer-links">
       <a href="https://vetmover.com" target="_blank">VetMover.com</a>
       <a href="https://militarygrad.com" target="_blank">MilitaryGrad.com</a>
       <a href="mailto:info@doggypaddle.com">Contact Us</a>
