@@ -15,6 +15,20 @@ const CONFIG = {
   // Replace this with your deployed Web App URL
   API_ENDPOINT: 'https://script.google.com/macros/s/YOUR_DEPLOYED_WEBAPP_ID/exec',
 
+  // Google OAuth Configuration
+  // To get your Client ID:
+  // 1. Go to https://console.cloud.google.com/
+  // 2. Create a new project or select existing
+  // 3. Enable Google Identity Services
+  // 4. Create OAuth 2.0 credentials
+  // 5. Add authorized JavaScript origins (your domain)
+  // 6. Copy the Client ID below
+  GOOGLE_AUTH: {
+    clientId: 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com',
+    // Allowed admin emails (restrict to specific Google Workspace accounts)
+    allowedAdmins: ['Scott@mustwants.com']
+  },
+
   // Stripe Configuration
   STRIPE: {
     // Your live Stripe publishable key (already configured)

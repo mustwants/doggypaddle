@@ -348,9 +348,30 @@ document.addEventListener('DOMContentLoaded', async () => {
   // ADMIN FUNCTIONALITY
   // ============================================
 
-  const ADMIN_PASSWORD = 'doggypaddle2024';
-  let isAdminLoggedIn = localStorage.getItem('doggypaddle_admin_logged_in') === 'true';
+  let isAdminLoggedIn = false;
+  let adminUserEmail = null;
   let currentEditingProduct = null;
+  let googleAuth = null;
+
+  // Check stored admin session
+  const storedAdminSession = localStorage.getItem('doggypaddle_admin_session');
+  if (storedAdminSession) {
+    try {
+      const session = JSON.parse(storedAdminSession);
+      // Validate session is still valid (within 7 days)
+      const sessionAge = Date.now() - session.timestamp;
+      if (sessionAge < 7 * 24 * 60 * 60 * 1000) { // 7 days
+        isAdminLoggedIn = true;
+        adminUserEmail = session.email;
+      } else {
+        // Session expired, clear it
+        localStorage.removeItem('doggypaddle_admin_session');
+      }
+    } catch (error) {
+      console.warn('Invalid admin session:', error);
+      localStorage.removeItem('doggypaddle_admin_session');
+    }
+  }
 
   // Modal elements
   const adminLoginModal = document.getElementById('admin-login-modal');
@@ -359,6 +380,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Buttons
   const adminLoginBtn = document.getElementById('admin-login-btn');
+  const adminLogoutBtn = document.getElementById('admin-logout-btn');
   const closeAdminLoginBtn = document.getElementById('close-admin-login');
   const closeAdminPanelBtn = document.getElementById('close-admin-panel');
   const closeProductFormBtn = document.getElementById('close-product-form');
@@ -396,6 +418,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     adminPanel.style.display = 'none';
   });
 
+  // Admin logout button
+  if (adminLogoutBtn) {
+    adminLogoutBtn.addEventListener('click', () => {
+      if (confirm('Are you sure you want to logout?')) {
+        handleAdminLogout();
+        adminPanel.style.display = 'none';
+        showNotification('Logged out successfully');
+      }
+    });
+  }
+
   closeProductFormBtn.addEventListener('click', () => {
     productFormModal.style.display = 'none';
   });
@@ -404,22 +437,121 @@ document.addEventListener('DOMContentLoaded', async () => {
     productFormModal.style.display = 'none';
   });
 
-  // Admin Login Form Submit
-  adminLoginForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const password = document.getElementById('admin-password').value;
-
-    if (password === ADMIN_PASSWORD) {
-      isAdminLoggedIn = true;
-      localStorage.setItem('doggypaddle_admin_logged_in', 'true');
-      adminLoginModal.style.display = 'none';
-      adminLoginBtn.textContent = 'Admin Panel';
-      showNotification('Login successful!');
-      openAdminPanel();
-    } else {
-      alert('Incorrect password. Please try again.');
+  // Initialize Google Sign-In
+  function initGoogleSignIn() {
+    const clientId = window.DoggyPaddleConfig?.GOOGLE_AUTH?.clientId;
+    if (!clientId || clientId === 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com') {
+      console.warn('Google OAuth not configured. Please update config.js with your Client ID.');
+      return;
     }
-  });
+
+    // Load Google Identity Services
+    if (typeof google !== 'undefined' && google.accounts) {
+      google.accounts.id.initialize({
+        client_id: clientId,
+        callback: handleGoogleSignIn,
+        auto_select: false,
+        cancel_on_tap_outside: true
+      });
+
+      // Render the Google Sign-In button
+      const googleBtnContainer = document.getElementById('google-signin-button');
+      if (googleBtnContainer) {
+        google.accounts.id.renderButton(
+          googleBtnContainer,
+          {
+            theme: 'filled_blue',
+            size: 'large',
+            text: 'signin_with',
+            width: 350
+          }
+        );
+      }
+    }
+  }
+
+  // Handle Google Sign-In callback
+  function handleGoogleSignIn(response) {
+    try {
+      // Decode the JWT token to get user info
+      const payload = parseJwt(response.credential);
+      const userEmail = payload.email.toLowerCase();
+
+      // Check if user is in allowed admins list
+      const allowedAdmins = window.DoggyPaddleConfig?.GOOGLE_AUTH?.allowedAdmins || [];
+      const allowedAdminsLower = allowedAdmins.map(email => email.toLowerCase());
+
+      if (allowedAdminsLower.includes(userEmail)) {
+        // Grant admin access
+        isAdminLoggedIn = true;
+        adminUserEmail = userEmail;
+
+        // Store session
+        const session = {
+          email: userEmail,
+          name: payload.name,
+          picture: payload.picture,
+          timestamp: Date.now()
+        };
+        localStorage.setItem('doggypaddle_admin_session', JSON.stringify(session));
+
+        adminLoginModal.style.display = 'none';
+        updateAdminButton();
+        showNotification(`Welcome, ${payload.name}!`);
+        openAdminPanel();
+      } else {
+        alert(`Access denied. Only authorized Google Workspace accounts can access the admin panel.\n\nYour email: ${userEmail}`);
+        handleAdminLogout();
+      }
+    } catch (error) {
+      console.error('Error handling Google Sign-In:', error);
+      alert('Authentication failed. Please try again.');
+    }
+  }
+
+  // Parse JWT token
+  function parseJwt(token) {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      return JSON.parse(jsonPayload);
+    } catch (error) {
+      console.error('Error parsing JWT:', error);
+      return null;
+    }
+  }
+
+  // Handle admin logout
+  function handleAdminLogout() {
+    isAdminLoggedIn = false;
+    adminUserEmail = null;
+    localStorage.removeItem('doggypaddle_admin_session');
+    // Also clear old localStorage key if exists
+    localStorage.removeItem('doggypaddle_admin_logged_in');
+    updateAdminButton();
+    if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+      google.accounts.id.disableAutoSelect();
+    }
+  }
+
+  // Update admin button text and functionality
+  function updateAdminButton() {
+    if (isAdminLoggedIn) {
+      const session = JSON.parse(localStorage.getItem('doggypaddle_admin_session') || '{}');
+      adminLoginBtn.innerHTML = `
+        <span>${session.name || 'Admin'}</span>
+        <span style="font-size: 0.85em; opacity: 0.8; margin-left: 0.5rem;">(Admin Panel)</span>
+      `;
+    } else {
+      adminLoginBtn.textContent = 'Admin Login';
+    }
+  }
+
+  // Initialize Google Sign-In on page load
+  window.addEventListener('load', initGoogleSignIn);
 
   // Tab Switching
   adminTabs.forEach(tab => {
@@ -497,6 +629,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Open Admin Panel
   function openAdminPanel() {
     adminPanel.style.display = 'flex';
+
+    // Update admin user info
+    const adminUserInfo = document.getElementById('admin-user-info');
+    if (adminUserInfo && adminUserEmail) {
+      const session = JSON.parse(localStorage.getItem('doggypaddle_admin_session') || '{}');
+      adminUserInfo.textContent = `Logged in as: ${session.name || adminUserEmail}`;
+    }
+
     loadAdminProducts();
   }
 
@@ -632,10 +772,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     `).join('');
   }
 
-  // Update Admin Button Text
-  if (isAdminLoggedIn) {
-    adminLoginBtn.textContent = 'Admin Panel';
-  }
+  // Update Admin Button Text on load
+  updateAdminButton();
 
   // Load products from localStorage if available
   const savedProducts = localStorage.getItem('doggypaddle_products');

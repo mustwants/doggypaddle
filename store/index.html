@@ -7,6 +7,8 @@
   <meta name="description" content="Shop dog treats, swimming accessories, and DoggyPaddle merchandise. Quality products for your furry friend!" />
   <link rel="stylesheet" href="/assets/styles.css" />
   <script src="/scripts/config.js"></script>
+  <!-- Google Identity Services -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     .store-hero {
       background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
@@ -723,14 +725,23 @@
       </div>
       <div class="modal-body">
         <form id="admin-login-form">
-          <div class="form-group">
-            <label for="admin-password">Password:</label>
-            <input type="password" id="admin-password" class="form-input" placeholder="Enter admin password" required />
+          <div style="text-align: center; margin-bottom: 1.5rem;">
+            <p style="color: var(--text-light); margin-bottom: 1.5rem;">
+              Sign in with your authorized Google Workspace account to access the admin panel.
+            </p>
+            <!-- Google Sign-In Button will be rendered here -->
+            <div id="google-signin-button" style="display: flex; justify-content: center;"></div>
           </div>
-          <button type="submit" class="btn-primary">Login</button>
-          <p style="margin-top: 1rem; font-size: 0.9rem; color: var(--text-light);">
-            Default password: <code>doggypaddle2024</code>
-          </p>
+          <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border);">
+            <p style="font-size: 0.85rem; color: var(--text-light); text-align: center;">
+              <strong>Authorized Admins:</strong><br>
+              Scott@mustwants.com
+            </p>
+            <p style="font-size: 0.85rem; color: var(--text-light); margin-top: 1rem; text-align: center;">
+              <strong>Note:</strong> Only authorized Google Workspace accounts can access the admin panel.
+              To add more admins, update the <code>allowedAdmins</code> list in <code>config.js</code>.
+            </p>
+          </div>
         </form>
       </div>
     </div>
@@ -740,8 +751,16 @@
   <div id="admin-panel" class="modal" style="display: none;">
     <div class="modal-content admin-panel-content">
       <div class="modal-header">
-        <h2>Store Admin Panel</h2>
-        <button class="modal-close" id="close-admin-panel">&times;</button>
+        <div>
+          <h2>Store Admin Panel</h2>
+          <p id="admin-user-info" style="font-size: 0.9rem; opacity: 0.9; margin-top: 0.25rem;"></p>
+        </div>
+        <div style="display: flex; gap: 1rem; align-items: center;">
+          <button id="admin-logout-btn" class="btn-secondary" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 0.5rem 1rem;">
+            Logout
+          </button>
+          <button class="modal-close" id="close-admin-panel">&times;</button>
+        </div>
       </div>
       <div class="modal-body">
         <div class="admin-tabs">
