@@ -460,12 +460,46 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Initialize Google Sign-In
   function initGoogleSignIn() {
     const clientId = window.DoggyPaddleConfig?.GOOGLE_AUTH?.clientId;
+    const googleBtnContainer = document.getElementById('google-signin-button');
+
     if (!clientId || clientId === 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com') {
-      console.warn('Google OAuth not configured. Please update config.js with your Client ID.');
+      console.warn('Google OAuth not configured. Using development login mode.');
+
+      // Render a simple dev login button when Google OAuth is not configured
+      if (googleBtnContainer) {
+        googleBtnContainer.innerHTML = `
+          <button type="button" class="dev-login-btn" style="
+            background: #4285f4;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            width: 350px;
+            max-width: 100%;
+            transition: background 0.3s;
+          " onmouseover="this.style.background='#357ae8'" onmouseout="this.style.background='#4285f4'">
+            <svg style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px;" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+            </svg>
+            Login as Admin (Dev Mode)
+          </button>
+          <p style="font-size: 12px; color: #666; margin-top: 12px; font-style: italic;">
+            ⚠️ Development Mode: Google OAuth not configured<br>
+            See GOOGLE_AUTH_SETUP.md to enable production login
+          </p>
+        `;
+
+        // Add click handler for dev login
+        const devLoginBtn = googleBtnContainer.querySelector('.dev-login-btn');
+        devLoginBtn.addEventListener('click', handleDevLogin);
+      }
       return;
     }
 
-    // Load Google Identity Services
+    // Load Google Identity Services (production mode)
     if (typeof google !== 'undefined' && google.accounts) {
       google.accounts.id.initialize({
         client_id: clientId,
@@ -475,7 +509,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
 
       // Render the Google Sign-In button
-      const googleBtnContainer = document.getElementById('google-signin-button');
       if (googleBtnContainer) {
         google.accounts.id.renderButton(
           googleBtnContainer,
@@ -488,6 +521,33 @@ document.addEventListener('DOMContentLoaded', async () => {
         );
       }
     }
+  }
+
+  // Handle dev login (for development/testing when Google OAuth is not configured)
+  function handleDevLogin() {
+    const allowedAdmins = window.DoggyPaddleConfig?.GOOGLE_AUTH?.allowedAdmins || ['Scott@mustwants.com'];
+    const devEmail = allowedAdmins[0].toLowerCase(); // Use first allowed admin
+
+    console.log('Dev login activated for:', devEmail);
+
+    // Grant admin access
+    isAdminLoggedIn = true;
+    adminUserEmail = devEmail;
+
+    // Store session
+    const session = {
+      email: devEmail,
+      loginTime: new Date().toISOString(),
+      isDev: true
+    };
+    localStorage.setItem('doggypaddle_admin_session', JSON.stringify(session));
+
+    // Close login modal and open admin panel
+    adminLoginModal.style.display = 'none';
+    openAdminPanel();
+
+    // Show success message
+    console.log('✓ Admin access granted (Dev Mode)');
   }
 
   // Handle Google Sign-In callback
