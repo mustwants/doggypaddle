@@ -19,6 +19,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   const API_ENDPOINT = window.DoggyPaddleConfig?.API_ENDPOINT ||
                        'https://script.google.com/macros/s/YOUR_DEPLOYED_WEBAPP_ID/exec';
 
+  // Check if backend is configured
+  const isBackendConfigured = API_ENDPOINT && !API_ENDPOINT.includes('YOUR_DEPLOYED_WEBAPP_ID');
+
   // Sample products (fallback if API not configured)
   const sampleProducts = [
     {
@@ -97,6 +100,23 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Load products
   async function loadProducts() {
+    // Check if backend is configured
+    if (!isBackendConfigured) {
+      console.warn(
+        "%c⚠️ Backend Not Configured - Using Sample Products",
+        "color: #ff9800; font-size: 14px; font-weight: bold;",
+        "\n\nThe Google Apps Script backend hasn't been set up yet.",
+        "\nDisplaying sample products for demonstration purposes.",
+        "\n\nTo enable live product management:",
+        "\n1. Follow the instructions in /backend/README.md",
+        "\n2. Deploy the Google Apps Script",
+        "\n3. Update the API_ENDPOINT in /scripts/config.js"
+      );
+      products = sampleProducts;
+      renderProducts();
+      return;
+    }
+
     try {
       const response = await fetch(`${API_ENDPOINT}?action=getProducts`);
       if (response.ok) {

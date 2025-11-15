@@ -17,6 +17,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   const API_ENDPOINT = window.DoggyPaddleConfig?.API_ENDPOINT ||
                        'https://script.google.com/macros/s/YOUR_DEPLOYED_WEBAPP_ID/exec';
 
+  // Check if backend is configured
+  const isBackendConfigured = API_ENDPOINT && !API_ENDPOINT.includes('YOUR_DEPLOYED_WEBAPP_ID');
+
   // Upload area click
   uploadArea.addEventListener('click', () => {
     fileInput.click();
@@ -129,6 +132,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       const reader = new FileReader();
       reader.onload = async (e) => {
         photoData.imageUrl = e.target.result;
+
+        // Check if backend is configured
+        if (!isBackendConfigured) {
+          throw new Error(
+            "Backend not configured. Please set up the Google Apps Script backend to enable photo uploads. " +
+            "See /backend/README.md for setup instructions."
+          );
+        }
 
         // Save to backend
         try {

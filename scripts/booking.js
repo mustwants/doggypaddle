@@ -65,6 +65,16 @@ document.addEventListener("DOMContentLoaded", () => {
       const endpoint = window.DoggyPaddleConfig?.API_ENDPOINT ||
                        "https://script.google.com/macros/s/YOUR_DEPLOYED_WEBAPP_ID/exec";
 
+      // Check if backend is configured
+      const isBackendConfigured = endpoint && !endpoint.includes('YOUR_DEPLOYED_WEBAPP_ID');
+
+      if (!isBackendConfigured) {
+        throw new Error(
+          "Backend not configured. Please set up the Google Apps Script backend. " +
+          "See /backend/README.md for setup instructions."
+        );
+      }
+
       const response = await fetch(endpoint, {
         method: "POST",
         headers: {
