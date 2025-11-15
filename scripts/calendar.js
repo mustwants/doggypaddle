@@ -21,7 +21,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const API_ENDPOINT = window.DoggyPaddleConfig?.API_ENDPOINT ||
                        "https://script.google.com/macros/s/YOUR_DEPLOYED_WEBAPP_ID/exec";
 
-  // Mock available slots (will be replaced by API call)
+  // Check if API endpoint is configured
+  const isBackendConfigured = API_ENDPOINT && !API_ENDPOINT.includes('YOUR_DEPLOYED_WEBAPP_ID');
+
+  // Mock available slots from admin (will be replaced by API call)
+  // Slots are now 30 minutes at top and bottom of hour
   let availableSlots = [
     { id: "slot-1", date: "2025-11-15", time: "10:00", duration: 30 },
     { id: "slot-2", date: "2025-11-15", time: "10:30", duration: 30 },
@@ -49,6 +53,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Fetch available slots from server
   async function fetchAvailableSlots() {
+    // Check if backend is configured
+    if (!isBackendConfigured) {
+      console.warn(
+        "%c⚠️ Backend Not Configured",
+        "color: #ff9800; font-size: 14px; font-weight: bold;",
+        "\n\nThe Google Apps Script backend hasn't been set up yet.",
+        "\nUsing mock data for demonstration purposes.",
+        "\n\nTo enable live booking:",
+        "\n1. Follow the instructions in /backend/README.md",
+        "\n2. Deploy the Google Apps Script",
+        "\n3. Update the API_ENDPOINT in /scripts/config.js",
+        "\n\nFor detailed setup instructions, see: /backend/README.md"
+      );
+      return; // Use mock data
+    }
+
     try {
       const response = await fetch(`${API_ENDPOINT}?action=getAvailableSlots&month=${currentMonth + 1}&year=${currentYear}`);
       if (response.ok) {
