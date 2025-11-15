@@ -589,6 +589,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   productForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
+    const isUpdate = !!currentEditingProduct;
+    const quantity = parseInt(document.getElementById('product-quantity').value) || 0;
     const productData = {
       id: currentEditingProduct?.id || `prod-${Date.now()}`,
       name: document.getElementById('product-name').value,
@@ -596,10 +598,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       price: parseFloat(document.getElementById('product-price').value),
       category: document.getElementById('product-category').value,
       imageUrl: document.getElementById('product-image').value,
-      inStock: document.getElementById('product-instock').checked
+      inStock: document.getElementById('product-instock').checked,
+      quantity: quantity,
+      lowStockThreshold: parseInt(document.getElementById('product-low-stock').value) || 5
     };
 
-    if (currentEditingProduct) {
+    if (isUpdate) {
       // Update existing product
       const index = products.findIndex(p => p.id === currentEditingProduct.id);
       if (index !== -1) {
@@ -610,11 +614,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       products.push(productData);
     }
 
-    // Save to backend (if available)
+    // Save to backend
     try {
-      await saveProductsToBackend();
+      await saveProductToBackend(productData, isUpdate);
     } catch (error) {
       console.warn('Could not save to backend:', error);
+      showNotification('Product saved locally (backend sync failed)', 'warning');
     }
 
     // Update local storage as fallback
@@ -623,7 +628,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     productFormModal.style.display = 'none';
     renderProducts();
     loadAdminProducts();
-    showNotification(currentEditingProduct ? 'Product updated!' : 'Product added!');
+    showNotification(isUpdate ? 'Product updated!' : 'Product added!');
   });
 
   // Open Admin Panel
@@ -642,7 +647,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Load Admin Products
   function loadAdminProducts() {
-    adminProductsList.innerHTML = products.map(product => `
+    adminProductsList.innerHTML = products.map(product => {
+      const quantity = product.quantity || 0;
+      const lowStockThreshold = product.lowStockThreshold || 5;
+      const isLowStock = quantity > 0 && quantity <= lowStockThreshold;
+
+      return `
       <div class="admin-product-item">
         <img src="${product.imageUrl}" alt="${product.name}" class="admin-product-image"
              onerror="this.src='/assets/logo.png'" />
@@ -650,22 +660,26 @@ document.addEventListener('DOMContentLoaded', async () => {
           <div class="admin-item-name">
             ${product.name}
             <span class="stock-badge ${product.inStock ? 'in-stock' : 'out-of-stock'}">
-              ${product.inStock ? 'In Stock' : 'Out of Stock'}
+              ${product.inStock ? 'Active' : 'Inactive'}
             </span>
+            ${isLowStock ? '<span class="stock-badge" style="background: #ff9800;">⚠️ Low Stock</span>' : ''}
+            ${quantity === 0 ? '<span class="stock-badge out-of-stock">0 Stock</span>' : ''}
           </div>
           <div class="admin-item-info">${product.category}</div>
           <div class="admin-item-info">${product.description}</div>
+          <div class="admin-item-info"><strong>Quantity:</strong> ${quantity} ${isLowStock ? '⚠️' : ''}</div>
           <div class="admin-item-price">$${product.price.toFixed(2)}</div>
         </div>
         <div class="admin-item-actions">
           <button class="admin-btn admin-btn-edit" data-product-id="${product.id}">Edit</button>
           <button class="admin-btn admin-btn-toggle" data-product-id="${product.id}">
-            ${product.inStock ? 'Mark Out of Stock' : 'Mark In Stock'}
+            ${product.inStock ? 'Mark Inactive' : 'Mark Active'}
           </button>
           <button class="admin-btn admin-btn-delete" data-product-id="${product.id}">Delete</button>
         </div>
       </div>
-    `).join('');
+    `;
+    }).join('');
 
     // Add event listeners
     adminProductsList.querySelectorAll('.admin-btn-edit').forEach(btn => {
@@ -695,6 +709,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('product-category').value = product.category;
     document.getElementById('product-image').value = product.imageUrl;
     document.getElementById('product-instock').checked = product.inStock;
+    document.getElementById('product-quantity').value = product.quantity || 0;
+    document.getElementById('product-low-stock').value = product.lowStockThreshold || 5;
 
     productFormModal.style.display = 'flex';
   }
@@ -706,10 +722,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     product.inStock = !product.inStock;
 
+    // Update backend
     try {
-      await saveProductsToBackend();
+      await saveProductToBackend(product, true);
     } catch (error) {
       console.warn('Could not save to backend:', error);
+      showNotification('Stock status saved locally (backend sync failed)', 'warning');
     }
 
     localStorage.setItem('doggypaddle_products', JSON.stringify(products));
@@ -724,10 +742,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     products = products.filter(p => p.id !== productId);
 
+    // Delete from backend
     try {
-      await saveProductsToBackend();
+      await deleteProductFromBackend(productId);
     } catch (error) {
-      console.warn('Could not save to backend:', error);
+      console.warn('Could not delete from backend:', error);
+      showNotification('Product deleted locally (backend sync failed)', 'warning');
     }
 
     localStorage.setItem('doggypaddle_products', JSON.stringify(products));
@@ -737,10 +757,57 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // Save Products to Backend
+  async function saveProductToBackend(product, isUpdate = false) {
+    try {
+      const response = await fetch(API_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          action: isUpdate ? 'updateProduct' : 'saveProduct',
+          product: product
+        })
+      });
+
+      const result = await response.json();
+      if (result.status !== 'success') {
+        throw new Error(result.message || 'Failed to save product');
+      }
+      return result;
+    } catch (error) {
+      console.error('Error saving product to backend:', error);
+      throw error;
+    }
+  }
+
+  async function deleteProductFromBackend(productId) {
+    try {
+      const response = await fetch(API_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          action: 'deleteProduct',
+          productId: productId
+        })
+      });
+
+      const result = await response.json();
+      if (result.status !== 'success') {
+        throw new Error(result.message || 'Failed to delete product');
+      }
+      return result;
+    } catch (error) {
+      console.error('Error deleting product from backend:', error);
+      throw error;
+    }
+  }
+
+  // Legacy function for backward compatibility
   async function saveProductsToBackend() {
-    // This would save to your Google Apps Script backend
-    // For now, we'll just use localStorage
-    // You can implement backend saving later
+    // Deprecated: Use saveProductToBackend instead
     return Promise.resolve();
   }
 

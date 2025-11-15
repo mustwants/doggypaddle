@@ -101,6 +101,12 @@ function doPost(e) {
         return approvePhoto(data.photoId);
       case 'deletePhoto':
         return deletePhoto(data.photoId);
+      case 'saveProduct':
+        return saveProduct(data.product);
+      case 'updateProduct':
+        return updateProduct(data.product);
+      case 'deleteProduct':
+        return deleteProduct(data.productId);
       default:
         return createResponse({
           status: 'error',
@@ -215,14 +221,36 @@ function saveSlots(slots) {
 function addSlot(slot) {
   const sheet = getSheet(SLOTS_SHEET_NAME);
 
-  // Check for duplicates
+  // Check for duplicates and time conflicts
   const data = sheet.getDataRange().getValues();
+  const newSlotDate = new Date(slot.date + ' ' + slot.time);
+  const newSlotDuration = slot.duration || 20;
+  const newSlotEndTime = new Date(newSlotDate.getTime() + newSlotDuration * 60000);
+
   for (let i = 1; i < data.length; i++) {
+    // Check exact duplicate
     if (data[i][1] === slot.date && data[i][2] === slot.time) {
       return createResponse({
         status: 'error',
         message: 'Slot already exists for this date and time'
       });
+    }
+
+    // Check time overlap on the same date
+    if (data[i][1] === slot.date) {
+      const existingSlotTime = new Date(data[i][1] + ' ' + data[i][2]);
+      const existingSlotDuration = data[i][3] || 20;
+      const existingSlotEndTime = new Date(existingSlotTime.getTime() + existingSlotDuration * 60000);
+
+      // Check if times overlap
+      if ((newSlotDate >= existingSlotTime && newSlotDate < existingSlotEndTime) ||
+          (newSlotEndTime > existingSlotTime && newSlotEndTime <= existingSlotEndTime) ||
+          (newSlotDate <= existingSlotTime && newSlotEndTime >= existingSlotEndTime)) {
+        return createResponse({
+          status: 'error',
+          message: `Time slot conflicts with existing slot at ${data[i][2]}`
+        });
+      }
     }
   }
 
@@ -270,6 +298,22 @@ function markSlotBooked(slotId, bookingId) {
 
   for (let i = 1; i < data.length; i++) {
     if (data[i][0] === slotId) {
+      // Check if slot is already booked
+      if (data[i][4] === 'booked') {
+        return createResponse({
+          status: 'error',
+          message: 'This time slot has already been booked. Please select another time.'
+        });
+      }
+
+      // Check if slot is blocked
+      if (data[i][4] === 'blocked') {
+        return createResponse({
+          status: 'error',
+          message: 'This time slot is not available. Please select another time.'
+        });
+      }
+
       sheet.getRange(i + 1, 5).setValue('booked');
       sheet.getRange(i + 1, 7).setValue(bookingId); // Add booking reference
       return createResponse({
@@ -364,7 +408,9 @@ function getProducts() {
         category: row[4],
         imageUrl: row[5],
         inStock: row[6] !== 'false',
-        createdAt: row[7]
+        quantity: row[7] || 0,
+        lowStockThreshold: row[8] || 5,
+        createdAt: row[9]
       });
     }
   }
@@ -372,6 +418,83 @@ function getProducts() {
   return createResponse({
     status: 'success',
     products: products
+  });
+}
+
+// Save new product
+function saveProduct(product) {
+  const sheet = getSheet(PRODUCTS_SHEET_NAME);
+
+  sheet.appendRow([
+    product.id,
+    product.name,
+    product.description,
+    product.price,
+    product.category,
+    product.imageUrl,
+    product.inStock ? 'true' : 'false',
+    product.quantity || 0,
+    product.lowStockThreshold || 5,
+    new Date().toISOString()
+  ]);
+
+  return createResponse({
+    status: 'success',
+    message: 'Product saved successfully'
+  });
+}
+
+// Update existing product
+function updateProduct(product) {
+  const sheet = getSheet(PRODUCTS_SHEET_NAME);
+  const data = sheet.getDataRange().getValues();
+
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === product.id) {
+      sheet.getRange(i + 1, 1, 1, 10).setValues([[
+        product.id,
+        product.name,
+        product.description,
+        product.price,
+        product.category,
+        product.imageUrl,
+        product.inStock ? 'true' : 'false',
+        product.quantity || 0,
+        product.lowStockThreshold || 5,
+        data[i][9] // Keep original createdAt
+      ]]);
+
+      return createResponse({
+        status: 'success',
+        message: 'Product updated successfully'
+      });
+    }
+  }
+
+  return createResponse({
+    status: 'error',
+    message: 'Product not found'
+  });
+}
+
+// Delete product
+function deleteProduct(productId) {
+  const sheet = getSheet(PRODUCTS_SHEET_NAME);
+  const data = sheet.getDataRange().getValues();
+
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === productId) {
+      sheet.deleteRow(i + 1);
+      return createResponse({
+        status: 'success',
+        message: 'Product deleted successfully'
+      });
+    }
+  }
+
+  return createResponse({
+    status: 'error',
+    message: 'Product not found'
   });
 }
 
@@ -531,9 +654,9 @@ function getSheet(sheetName) {
     } else if (sheetName === PRODUCTS_SHEET_NAME) {
       sheet.appendRow([
         'ID', 'Name', 'Description', 'Price', 'Category',
-        'Image URL', 'In Stock', 'Created At'
+        'Image URL', 'In Stock', 'Quantity', 'Low Stock Threshold', 'Created At'
       ]);
-      sheet.getRange('A1:H1').setFontWeight('bold').setBackground('#028090').setFontColor('#FFFFFF');
+      sheet.getRange('A1:J1').setFontWeight('bold').setBackground('#028090').setFontColor('#FFFFFF');
     } else if (sheetName === ORDERS_SHEET_NAME) {
       sheet.appendRow([
         'Order ID', 'Customer Name', 'Email', 'Phone', 'Items',
