@@ -392,6 +392,27 @@ window.toggleBookingStatus = function(timestamp) {
 
 function initPhotosManagement() {
   // Photos are loaded on demand when tab is clicked
+
+  // Set up bulk action handlers
+  const selectAllCheckbox = document.getElementById('select-all-photos');
+  const bulkApproveBtn = document.getElementById('bulk-approve-photos');
+  const bulkRejectBtn = document.getElementById('bulk-reject-photos');
+
+  if (selectAllCheckbox) {
+    selectAllCheckbox.addEventListener('change', function() {
+      const checkboxes = document.querySelectorAll('.photo-checkbox');
+      checkboxes.forEach(cb => cb.checked = this.checked);
+      updateBulkActionButtons();
+    });
+  }
+
+  if (bulkApproveBtn) {
+    bulkApproveBtn.addEventListener('click', bulkApprovePhotos);
+  }
+
+  if (bulkRejectBtn) {
+    bulkRejectBtn.addEventListener('click', bulkRejectPhotos);
+  }
 }
 
 function loadPhotos() {
@@ -419,6 +440,10 @@ function loadPhotos() {
 
     return `
       <div class="admin-product-item">
+        <div style="display: flex; align-items: center; padding: 0.5rem;">
+          <input type="checkbox" class="photo-checkbox" data-timestamp="${photo.timestamp}"
+                 style="cursor: pointer; width: 20px; height: 20px;" onchange="updateBulkActionButtons()">
+        </div>
         <img src="${photo.imageUrl}" class="admin-product-image" alt="${photo.dogName}"
              onerror="this.src='/assets/logo.png'" />
         <div class="admin-item-details">
@@ -439,6 +464,13 @@ function loadPhotos() {
       </div>
     `;
   }).join('');
+
+  // Reset select all checkbox
+  const selectAllCheckbox = document.getElementById('select-all-photos');
+  if (selectAllCheckbox) selectAllCheckbox.checked = false;
+
+  // Update bulk action buttons
+  updateBulkActionButtons();
 }
 
 window.approvePhoto = function(timestamp) {
@@ -478,6 +510,69 @@ window.resetPhotoStatus = function(timestamp) {
     showNotification('Photo status reset to pending.', 'success');
   }
 };
+
+window.updateBulkActionButtons = function() {
+  const checkboxes = document.querySelectorAll('.photo-checkbox:checked');
+  const bulkApproveBtn = document.getElementById('bulk-approve-photos');
+  const bulkRejectBtn = document.getElementById('bulk-reject-photos');
+  const selectedCount = document.getElementById('selected-photos-count');
+
+  const count = checkboxes.length;
+
+  if (bulkApproveBtn) bulkApproveBtn.disabled = count === 0;
+  if (bulkRejectBtn) bulkRejectBtn.disabled = count === 0;
+  if (selectedCount) selectedCount.textContent = count > 0 ? `${count} photo${count > 1 ? 's' : ''} selected` : '';
+};
+
+function bulkApprovePhotos() {
+  const checkboxes = document.querySelectorAll('.photo-checkbox:checked');
+  const timestamps = Array.from(checkboxes).map(cb => cb.dataset.timestamp);
+
+  if (timestamps.length === 0) return;
+
+  const photos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
+  let approvedCount = 0;
+
+  timestamps.forEach(timestamp => {
+    const photo = photos.find(p => p.timestamp === timestamp);
+    if (photo && photo.status !== 'approved') {
+      photo.status = 'approved';
+      approvedCount++;
+    }
+  });
+
+  if (approvedCount > 0) {
+    localStorage.setItem('doggypaddle_photos', JSON.stringify(photos));
+    loadPhotos();
+    showNotification(`${approvedCount} photo${approvedCount > 1 ? 's' : ''} approved successfully!`, 'success');
+  }
+}
+
+function bulkRejectPhotos() {
+  const checkboxes = document.querySelectorAll('.photo-checkbox:checked');
+  const timestamps = Array.from(checkboxes).map(cb => cb.dataset.timestamp);
+
+  if (timestamps.length === 0) return;
+
+  if (!confirm(`Are you sure you want to reject ${timestamps.length} photo${timestamps.length > 1 ? 's' : ''}?`)) return;
+
+  const photos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
+  let rejectedCount = 0;
+
+  timestamps.forEach(timestamp => {
+    const photo = photos.find(p => p.timestamp === timestamp);
+    if (photo && photo.status !== 'rejected') {
+      photo.status = 'rejected';
+      rejectedCount++;
+    }
+  });
+
+  if (rejectedCount > 0) {
+    localStorage.setItem('doggypaddle_photos', JSON.stringify(photos));
+    loadPhotos();
+    showNotification(`${rejectedCount} photo${rejectedCount > 1 ? 's' : ''} rejected.`, 'success');
+  }
+}
 
 // ============================================
 // UTILITY FUNCTIONS

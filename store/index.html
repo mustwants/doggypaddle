@@ -807,6 +807,15 @@
         <div id="admin-photos-tab" class="admin-tab-content">
           <div class="admin-actions">
             <p style="color: var(--text-light); margin-bottom: 1rem;">Review and approve submitted photos for display in the gallery.</p>
+            <div style="display: flex; gap: 1rem; margin-top: 1rem; align-items: center;">
+              <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                <input type="checkbox" id="select-all-photos" style="cursor: pointer;">
+                <span>Select All</span>
+              </label>
+              <button id="bulk-approve-photos" class="admin-btn admin-btn-edit" disabled>✓ Approve Selected</button>
+              <button id="bulk-reject-photos" class="admin-btn admin-btn-delete" disabled>✗ Reject Selected</button>
+              <span id="selected-photos-count" style="color: var(--text-light); font-size: 0.9rem;"></span>
+            </div>
           </div>
           <div id="admin-photos-list" class="admin-list"></div>
         </div>
@@ -853,6 +862,18 @@
               </select>
             </div>
           </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="product-quantity">Quantity in Stock:</label>
+              <input type="number" id="product-quantity" class="form-input" min="0" value="0" required />
+              <small style="color: var(--text-light); font-size: 0.85rem;">Set to 0 to mark as out of stock</small>
+            </div>
+            <div class="form-group">
+              <label for="product-low-stock">Low Stock Alert:</label>
+              <input type="number" id="product-low-stock" class="form-input" min="0" value="5" />
+              <small style="color: var(--text-light); font-size: 0.85rem;">Alert when stock falls below this number</small>
+            </div>
+          </div>
           <div class="form-group">
             <label for="product-image">Image URL:</label>
             <input type="text" id="product-image" class="form-input" required />
@@ -860,7 +881,7 @@
           <div class="form-group">
             <label class="checkbox-label">
               <input type="checkbox" id="product-instock" checked />
-              In Stock
+              Available for Purchase
             </label>
           </div>
           <div class="form-actions">
@@ -918,9 +939,13 @@
           <div class="form-group">
             <label for="timeslot-duration">Duration (minutes):</label>
             <select id="timeslot-duration" class="form-input" required>
-              <option value="30">30 minutes</option>
+              <option value="20">20 minutes</option>
+              <option value="30" selected>30 minutes</option>
+              <option value="45">45 minutes</option>
               <option value="60">60 minutes</option>
+              <option value="90">90 minutes</option>
             </select>
+            <small style="color: var(--text-light); font-size: 0.85rem;">Common session lengths</small>
           </div>
           <div class="form-group">
             <label for="timeslot-status">Status:</label>
@@ -983,9 +1008,13 @@
           <div class="form-group">
             <label for="bulk-duration">Slot Duration (minutes):</label>
             <select id="bulk-duration" class="form-input" required>
-              <option value="30">30 minutes</option>
+              <option value="20">20 minutes</option>
+              <option value="30" selected>30 minutes</option>
+              <option value="45">45 minutes</option>
               <option value="60">60 minutes</option>
+              <option value="90">90 minutes</option>
             </select>
+            <small style="color: var(--text-light); font-size: 0.85rem;">This will create slots of this length</small>
           </div>
           <div class="info-box" style="background: #e8f4f8; border-left: 4px solid var(--primary); padding: 1rem; margin: 1rem 0;">
             <p style="margin: 0; font-size: 0.9rem;">This will create time slots at 30-minute intervals (top and bottom of each hour) between the start and end times for the selected days.</p>

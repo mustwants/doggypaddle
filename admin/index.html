@@ -3,684 +3,107 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DoggyPaddle Liability Waiver - St. Augustine, FL</title>
+  <title>DoggyPaddle Admin - Redirecting...</title>
   <link rel="stylesheet" href="/assets/styles.css" />
   <style>
-    .waiver-header {
-      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-      color: white;
-      padding: 2rem 0;
-      margin-bottom: 2rem;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-
-    .waiver-header h1 {
-      color: white;
-      margin: 0 0 0.5rem 0;
-    }
-
-    .waiver-header p {
-      color: rgba(255,255,255,0.9);
-      margin: 0;
-    }
-
-    .waiver-container {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 0 1.5rem 3rem;
-    }
-
-    .waiver-content {
-      background: white;
-      border: 2px solid var(--border);
-      border-radius: 12px;
-      padding: 2rem;
-      margin-bottom: 2rem;
-      max-height: 500px;
-      overflow-y: scroll;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-    }
-
-    .waiver-content::-webkit-scrollbar {
-      width: 10px;
-    }
-
-    .waiver-content::-webkit-scrollbar-track {
-      background: #f1f1f1;
-      border-radius: 10px;
-    }
-
-    .waiver-content::-webkit-scrollbar-thumb {
-      background: var(--primary);
-      border-radius: 10px;
-    }
-
-    .waiver-content h2 {
-      color: var(--secondary);
-      font-size: 1.5rem;
-      margin-top: 2rem;
-      margin-bottom: 1rem;
-      border-bottom: 2px solid var(--primary);
-      padding-bottom: 0.5rem;
-    }
-
-    .waiver-content h2:first-child {
-      margin-top: 0;
-    }
-
-    .waiver-content h3 {
-      color: var(--primary);
-      font-size: 1.2rem;
-      margin-top: 1.5rem;
-      margin-bottom: 0.75rem;
-    }
-
-    .waiver-content ul, .waiver-content ol {
-      margin: 1rem 0 1rem 1.5rem;
-      line-height: 1.8;
-    }
-
-    .waiver-content li {
-      margin-bottom: 0.5rem;
-    }
-
-    .waiver-content p {
-      margin-bottom: 1rem;
-      line-height: 1.8;
-    }
-
-    .waiver-content strong {
-      color: var(--secondary);
-    }
-
-    .scroll-notice {
-      background: #fff3cd;
-      border: 2px solid #ffc107;
-      border-radius: 8px;
-      padding: 1rem;
-      margin-bottom: 1.5rem;
-      text-align: center;
-      font-weight: 600;
-      color: #856404;
-    }
-
-    .scroll-notice.complete {
-      background: #d4edda;
-      border-color: #28a745;
-      color: #155724;
-    }
-
-    .initial-section {
-      background: #f8f9fa;
-      border: 2px solid var(--border);
-      border-radius: 8px;
-      padding: 1.5rem;
-      margin-bottom: 1rem;
-    }
-
-    .initial-section h3 {
-      margin-top: 0;
-      color: var(--secondary);
-      font-size: 1.1rem;
-    }
-
-    .initial-section p {
-      margin-bottom: 1rem;
-      font-size: 0.95rem;
-    }
-
-    .initial-input-group {
+    body {
       display: flex;
       align-items: center;
-      gap: 1rem;
-      margin-top: 1rem;
-    }
-
-    .initial-input-group label {
-      font-weight: 600;
-      min-width: 120px;
-    }
-
-    .initial-input {
-      width: 100px;
-      padding: 0.5rem;
-      border: 2px solid var(--border);
-      border-radius: 6px;
-      font-size: 1rem;
-      font-weight: 600;
-      text-align: center;
-      text-transform: uppercase;
-    }
-
-    .initial-input.valid {
-      border-color: var(--success);
-      background: #d4edda;
-    }
-
-    .initial-input:focus {
-      border-color: var(--primary);
-      outline: none;
-    }
-
-    .signature-section {
-      background: white;
-      border: 2px solid var(--primary);
-      border-radius: 12px;
-      padding: 2rem;
-      margin-top: 2rem;
-    }
-
-    .signature-section h3 {
-      margin-top: 0;
-      color: var(--secondary);
-    }
-
-    .signature-canvas {
-      border: 2px dashed var(--border);
-      border-radius: 8px;
-      cursor: crosshair;
-      display: block;
-      margin: 1rem 0;
-      background: white;
-      touch-action: none;
-    }
-
-    .signature-controls {
-      display: flex;
-      gap: 1rem;
-      margin-top: 1rem;
-    }
-
-    .final-agreement {
-      background: #e6f7f9;
-      border: 2px solid var(--primary);
-      border-radius: 8px;
-      padding: 1.5rem;
-      margin-top: 2rem;
-    }
-
-    .final-agreement .checkbox-group {
-      margin: 1rem 0;
-    }
-
-    .submit-waiver-btn {
-      width: 100%;
-      padding: 1.25rem;
-      font-size: 1.1rem;
-      margin-top: 1.5rem;
-    }
-
-    .submit-waiver-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .waiver-footer {
-      background: var(--secondary);
-      color: white;
-      padding: 2rem 0;
-      margin-top: 3rem;
-    }
-
-    .footer-links {
-      display: flex;
       justify-content: center;
-      gap: 2rem;
+      min-height: 100vh;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    .redirect-container {
+      text-align: center;
+      background: white;
+      padding: 3rem 2rem;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+      margin: 1rem;
+    }
+
+    .logo {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+    }
+
+    h1 {
+      color: var(--primary, #028090);
+      margin: 0 0 1rem 0;
+      font-size: 1.75rem;
+    }
+
+    p {
+      color: #666;
+      margin: 0 0 2rem 0;
+      font-size: 1.1rem;
+      line-height: 1.6;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 50px;
+      height: 50px;
+      border: 4px solid rgba(2, 128, 144, 0.2);
+      border-top-color: var(--primary, #028090);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
       margin-top: 1rem;
-      flex-wrap: wrap;
     }
 
-    .footer-links a {
-      color: var(--accent);
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .manual-link {
+      display: inline-block;
+      margin-top: 2rem;
+      padding: 0.75rem 1.5rem;
+      background: var(--primary, #028090);
+      color: white;
       text-decoration: none;
-      font-weight: 500;
+      border-radius: 8px;
+      font-weight: 600;
+      transition: all 0.3s ease;
     }
 
-    .footer-links a:hover {
-      text-decoration: underline;
+    .manual-link:hover {
+      background: var(--secondary, #02C39A);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(2, 128, 144, 0.3);
     }
 
-    @media (max-width: 768px) {
-      .waiver-content {
-        padding: 1.5rem;
-        max-height: 400px;
-      }
-
-      .initial-input-group {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-
-      .signature-canvas {
-        width: 100%;
-      }
-
-      .signature-controls {
-        flex-direction: column;
-      }
+    .info-text {
+      font-size: 0.9rem;
+      color: #999;
+      margin-top: 1.5rem;
     }
   </style>
 </head>
 <body>
-  <!-- Header -->
-  <div class="waiver-header">
-    <div class="container">
-      <h1>🐕 DoggyPaddle Liability Waiver</h1>
-      <p>St. Augustine, St. Johns County, Florida</p>
-    </div>
+  <div class="redirect-container">
+    <div class="logo">🐕</div>
+    <h1>DoggyPaddle Admin Dashboard</h1>
+    <p>Redirecting you to the admin login page...</p>
+    <div class="spinner"></div>
+    <p class="info-text">If you are not redirected automatically, click the button below:</p>
+    <a href="/store/index.html" class="manual-link">Go to Admin Dashboard</a>
   </div>
-
-  <div class="waiver-container">
-    <!-- Scroll Notice -->
-    <div id="scroll-notice" class="scroll-notice">
-      ⚠️ Please scroll through the entire waiver to continue
-    </div>
-
-    <!-- Waiver Content -->
-    <div id="waiver-content" class="waiver-content">
-      <h2>LIABILITY WAIVER AND RELEASE OF CLAIMS</h2>
-      
-      <p><strong>Effective Date:</strong> Upon Signature</p>
-      <p><strong>Facility:</strong> DoggyPaddle - Private Dog Swimming Facility<br>
-      <strong>Operator:</strong> Jointwerx LLC<br>
-      <strong>Location:</strong> St. Augustine, St. Johns County, Florida</p>
-
-      <h2>1. ACKNOWLEDGMENT OF RISK</h2>
-      <p>I acknowledge that allowing my dog(s) to participate in swimming activities involves inherent risks, including but not limited to:</p>
-      <ul>
-        <li>Drowning or near-drowning incidents</li>
-        <li>Physical injury from entering or exiting the pool</li>
-        <li>Injuries from interaction with pool equipment</li>
-        <li>Injuries from slipping on wet surfaces</li>
-        <li>Overexertion or heat exhaustion</li>
-        <li>Aggravation of pre-existing health conditions</li>
-        <li>Injuries from dog-to-dog interactions (if multiple dogs present)</li>
-        <li>Chemical exposure from pool treatment products</li>
-      </ul>
-
-      <h2>2. ASSUMPTION OF RISK</h2>
-      <p>I <strong>voluntarily assume all risks</strong> associated with my dog's participation in swimming activities at DoggyPaddle, whether those risks are known or unknown, foreseen or unforeseen. I understand that these risks cannot be eliminated regardless of the care taken to avoid injuries.</p>
-
-      <h2>3. RELEASE AND WAIVER OF LIABILITY</h2>
-      <p>In consideration for being permitted to use the facilities at DoggyPaddle, I hereby <strong>release, waive, discharge, and covenant not to sue</strong> Jointwerx LLC, DoggyPaddle, and their respective owners, officers, employees, agents, contractors, and representatives (collectively "Released Parties") from any and all liability, claims, demands, actions, and causes of action whatsoever arising out of or related to any loss, damage, or injury, including death, that may be sustained by my dog(s), myself, or any property belonging to me, while participating in swimming activities or while on the premises.</p>
-
-      <h2>4. INDEMNIFICATION</h2>
-      <p>I agree to <strong>indemnify and hold harmless</strong> the Released Parties from any loss, liability, damage, or costs, including court costs and attorney's fees, that they may incur due to my participation in swimming activities at DoggyPaddle, whether caused by negligence of the Released Parties or otherwise.</p>
-
-      <h2>5. RULES AND REGULATIONS</h2>
-      <p>I agree to abide by all rules and regulations established by DoggyPaddle and understand that violation may result in immediate termination of services without refund.</p>
-
-      <h3>Pool Safety Rules:</h3>
-      <ol>
-        <li><strong>Owner Supervision Required:</strong> The dog owner or authorized representative must be present and actively supervising their dog(s) at all times during the swimming session.</li>
-        <li><strong>Maximum Capacity:</strong> No more than two (2) dogs per 20-minute session.</li>
-        <li><strong>Health Requirements:</strong> Dogs must be in good health and current on all vaccinations (including Rabies, Bordetella, Distemper, and Parvovirus).</li>
-        <li><strong>No Humans in Pool:</strong> Owners and handlers must remain outside the pool at all times. Only dogs are permitted in the water.</li>
-        <li><strong>Immediate Removal:</strong> Dogs showing signs of distress, aggression, or illness must be immediately removed from the pool.</li>
-        <li><strong>Waste Management:</strong> Owners must immediately clean up any waste (solid or liquid) produced by their dog(s) on the premises.</li>
-        <li><strong>No Food or Glass:</strong> No food, drinks, or glass containers are permitted in the pool area.</li>
-        <li><strong>Proper Entry/Exit:</strong> Dogs must enter and exit the pool only at designated areas.</li>
-        <li><strong>Time Limits:</strong> Sessions are limited to 20 minutes. Owners must vacate the premises promptly at the end of their scheduled time.</li>
-        <li><strong>Emergency Procedures:</strong> In case of emergency, immediately notify staff and follow all instructions provided.</li>
-      </ol>
-
-      <h3>Dog Eligibility Requirements:</h3>
-      <ul>
-        <li>Dogs must be at least 6 months old</li>
-        <li>Dogs must be free of contagious diseases, parasites, and open wounds</li>
-        <li>Dogs must not be in heat (female dogs)</li>
-        <li>Aggressive dogs or dogs with a history of biting are not permitted</li>
-        <li>Dogs must be capable of swimming or wearing appropriate flotation devices</li>
-      </ul>
-
-      <h3>Owner Responsibilities:</h3>
-      <ul>
-        <li>Provide proof of current vaccinations upon request</li>
-        <li>Disclose any known health conditions, behavioral issues, or physical limitations</li>
-        <li>Supervise dogs at all times during the session</li>
-        <li>Bring necessary items (towels, leash, etc.)</li>
-        <li>Arrive on time for scheduled sessions</li>
-        <li>Provide 24-hour notice for cancellations</li>
-      </ul>
-
-      <h2>6. MEDICAL AUTHORIZATION</h2>
-      <p>In the event of an emergency, I authorize DoggyPaddle staff to seek emergency veterinary care for my dog(s) if I cannot be immediately reached. I agree to be financially responsible for all veterinary expenses incurred.</p>
-
-      <h2>7. PHOTOGRAPH AND VIDEO RELEASE</h2>
-      <p>I grant permission to DoggyPaddle to photograph and/or videotape my dog(s) and to use such images for promotional purposes, including but not limited to websites, social media, and marketing materials.</p>
-
-      <h2>8. PROPERTY DAMAGE</h2>
-      <p>I agree to be financially responsible for any damage to the facility, equipment, or property caused by my dog(s) or my actions during my use of DoggyPaddle facilities.</p>
-
-      <h2>9. GOVERNING LAW AND JURISDICTION</h2>
-      <p>This Agreement shall be governed by and construed in accordance with the laws of the State of Florida. Any legal action arising from this Agreement shall be brought exclusively in the courts of St. Johns County, Florida.</p>
-
-      <h2>10. SEVERABILITY</h2>
-      <p>If any provision of this Agreement is found to be unenforceable or invalid, that provision shall be limited or eliminated to the minimum extent necessary so that this Agreement shall otherwise remain in full force and effect.</p>
-
-      <h2>11. ENTIRE AGREEMENT</h2>
-      <p>This Agreement represents the entire agreement between myself and DoggyPaddle/Jointwerx LLC and supersedes all prior negotiations, representations, or agreements, whether written or oral.</p>
-
-      <h2>12. FLORIDA EQUINE LIABILITY ACT NOTICE</h2>
-      <p>While this waiver pertains to dog swimming activities, Florida law provides certain protections for animal activity operators. <strong>WARNING: Under Florida law, there is no liability for an injury to, or the death of, a participant in an equine activity or an injury to, or the death of, a participant or spectator in an agritourism activity conducted at this location if such injury or death results from the inherent risks of the activity.</strong> This principle extends to dog swimming activities where similar inherent risks exist.</p>
-
-      <h2>13. COVID-19 AND COMMUNICABLE DISEASE ACKNOWLEDGMENT</h2>
-      <p>I acknowledge that there is an inherent risk of exposure to communicable diseases, including COVID-19, in any public place. I voluntarily assume all risks related to exposure and agree that Released Parties shall not be held liable for any illness, injury, or harm resulting from such exposure.</p>
-
-      <h2>14. VOLUNTARY PARTICIPATION</h2>
-      <p>I certify that my participation and my dog's participation is voluntary, and I have not been forced or coerced into signing this Agreement.</p>
-
-      <h2>15. ACKNOWLEDGMENT OF UNDERSTANDING</h2>
-      <p><strong>I HAVE READ THIS AGREEMENT CAREFULLY AND UNDERSTAND ITS CONTENTS. I AM AWARE THAT THIS IS A RELEASE OF LIABILITY AND A CONTRACT BETWEEN MYSELF AND THE RELEASED PARTIES. I SIGN IT OF MY OWN FREE WILL.</strong></p>
-
-      <p style="margin-top: 2rem; padding: 1rem; background: #fff3cd; border-left: 4px solid #ffc107;">
-        <strong>NOTICE:</strong> By initialing each section below and signing this document, you are waiving certain legal rights, including the right to sue for negligence.
-      </p>
-    </div>
-
-    <!-- Initial Sections -->
-    <div class="initial-section">
-      <h3>Section 1: Risk Acknowledgment</h3>
-      <p>I have read and understand the risks associated with dog swimming activities including drowning, injury, and health complications.</p>
-      <div class="initial-input-group">
-        <label for="initial1">Your Initials:</label>
-        <input type="text" id="initial1" class="initial-input" maxlength="3" required placeholder="ABC" />
-      </div>
-    </div>
-
-    <div class="initial-section">
-      <h3>Section 2: Release of Liability</h3>
-      <p>I release and waive all claims against DoggyPaddle and Jointwerx LLC for any injury, damage, or loss that may occur.</p>
-      <div class="initial-input-group">
-        <label for="initial2">Your Initials:</label>
-        <input type="text" id="initial2" class="initial-input" maxlength="3" required placeholder="ABC" />
-      </div>
-    </div>
-
-    <div class="initial-section">
-      <h3>Section 3: Rules and Regulations</h3>
-      <p>I agree to follow all pool safety rules, including owner supervision, maximum 2 dogs per session, and immediate cleanup of waste.</p>
-      <div class="initial-input-group">
-        <label for="initial3">Your Initials:</label>
-        <input type="text" id="initial3" class="initial-input" maxlength="3" required placeholder="ABC" />
-      </div>
-    </div>
-
-    <div class="initial-section">
-      <h3>Section 4: Dog Health & Eligibility</h3>
-      <p>I certify that my dog(s) meet all health requirements, are current on vaccinations, and are free from contagious diseases.</p>
-      <div class="initial-input-group">
-        <label for="initial4">Your Initials:</label>
-        <input type="text" id="initial4" class="initial-input" maxlength="3" required placeholder="ABC" />
-      </div>
-    </div>
-
-    <div class="initial-section">
-      <h3>Section 5: Financial Responsibility</h3>
-      <p>I agree to be financially responsible for emergency veterinary care and any damage caused by my dog(s).</p>
-      <div class="initial-input-group">
-        <label for="initial5">Your Initials:</label>
-        <input type="text" id="initial5" class="initial-input" maxlength="3" required placeholder="ABC" />
-      </div>
-    </div>
-
-    <!-- Signature Section -->
-    <div class="signature-section">
-      <h3>Electronic Signature</h3>
-      <p>Please sign below using your mouse, trackpad, or finger (on touch devices):</p>
-      <canvas id="signature-canvas" class="signature-canvas" width="600" height="200"></canvas>
-      <div class="signature-controls">
-        <button type="button" id="clear-signature" class="button button-secondary">Clear Signature</button>
-        <span style="color: var(--text-light); font-size: 0.9rem; flex: 1; text-align: right;">Signature Required</span>
-      </div>
-    </div>
-
-    <!-- Final Agreement -->
-    <div class="final-agreement">
-      <h3>Final Acknowledgment</h3>
-      
-      <div class="checkbox-group">
-        <input type="checkbox" id="acknowledge-read" required />
-        <label for="acknowledge-read">I have read and scrolled through the entire waiver document above</label>
-      </div>
-
-      <div class="checkbox-group">
-        <input type="checkbox" id="acknowledge-understand" required />
-        <label for="acknowledge-understand">I understand that I am waiving legal rights by signing this document</label>
-      </div>
-
-      <div class="checkbox-group">
-        <input type="checkbox" id="acknowledge-voluntary" required />
-        <label for="acknowledge-voluntary">I am signing this waiver voluntarily and of my own free will</label>
-      </div>
-
-      <div style="margin-top: 1.5rem;">
-        <label for="full-name" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Full Legal Name:</label>
-        <input type="text" id="full-name" style="width: 100%; padding: 0.75rem;" placeholder="Enter your full legal name" required />
-      </div>
-
-      <div style="margin-top: 1rem;">
-        <label for="signature-date" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Date:</label>
-        <input type="date" id="signature-date" style="width: 100%; padding: 0.75rem;" required />
-      </div>
-
-      <button type="button" id="submit-waiver" class="button submit-waiver-btn" disabled>
-        Accept Waiver & Continue to Booking
-      </button>
-    </div>
-  </div>
-
-  <!-- Footer -->
-  <footer class="waiver-footer">
-    <div class="container" style="text-align: center;">
-      <p><strong>DoggyPaddle</strong> - A Jointwerx LLC Service</p>
-      <p>St. Augustine, St. Johns County, Florida</p>
-      <div class="footer-links">
-        <a href="https://vetmover.com" target="_blank">VetMover.com</a>
-        <a href="https://militarygrad.com" target="_blank">MilitaryGrad.com</a>
-        <a href="mailto:info@doggypaddle.com">Contact Us</a>
-      </div>
-      <p style="margin-top: 1rem; font-size: 0.9rem; opacity: 0.8;">&copy; 2024 Jointwerx LLC. All rights reserved.</p>
-    </div>
-  </footer>
 
   <script>
-    // Waiver management script
-    const waiverContent = document.getElementById('waiver-content');
-    const scrollNotice = document.getElementById('scroll-notice');
-    const submitButton = document.getElementById('submit-waiver');
-    const initialInputs = document.querySelectorAll('.initial-input');
-    const checkboxes = document.querySelectorAll('.final-agreement input[type="checkbox"]');
-    const fullNameInput = document.getElementById('full-name');
-    const signatureDateInput = document.getElementById('signature-date');
-    
-    let hasScrolledToBottom = false;
-    let signatureData = null;
+    // Redirect to store page after 2 seconds
+    setTimeout(function() {
+      window.location.href = '/store/index.html';
+    }, 2000);
 
-    // Set today's date
-    signatureDateInput.value = new Date().toISOString().split('T')[0];
-    signatureDateInput.min = new Date().toISOString().split('T')[0];
-
-    // Track scrolling
-    waiverContent.addEventListener('scroll', () => {
-      const scrolledToBottom = waiverContent.scrollHeight - waiverContent.scrollTop <= waiverContent.clientHeight + 10;
-      
-      if (scrolledToBottom && !hasScrolledToBottom) {
-        hasScrolledToBottom = true;
-        scrollNotice.textContent = '✓ You have reviewed the entire waiver';
-        scrollNotice.classList.add('complete');
-        checkFormValidity();
-      }
+    // Also redirect if user presses any key
+    document.addEventListener('keypress', function() {
+      window.location.href = '/store/index.html';
     });
-
-    // Initial inputs validation
-    initialInputs.forEach(input => {
-      input.addEventListener('input', (e) => {
-        e.target.value = e.target.value.toUpperCase();
-        if (e.target.value.length >= 2) {
-          e.target.classList.add('valid');
-        } else {
-          e.target.classList.remove('valid');
-        }
-        checkFormValidity();
-      });
-    });
-
-    // Signature canvas
-    const canvas = document.getElementById('signature-canvas');
-    const ctx = canvas.getContext('2d');
-    let isDrawing = false;
-    let lastX = 0;
-    let lastY = 0;
-
-    // Set canvas size for retina displays
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width * window.devicePixelRatio;
-    canvas.height = rect.height * window.devicePixelRatio;
-    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-
-    function startDrawing(e) {
-      isDrawing = true;
-      const pos = getMousePos(e);
-      [lastX, lastY] = [pos.x, pos.y];
-    }
-
-    function draw(e) {
-      if (!isDrawing) return;
-      
-      e.preventDefault();
-      const pos = getMousePos(e);
-      
-      ctx.strokeStyle = '#000';
-      ctx.lineWidth = 2;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      
-      ctx.beginPath();
-      ctx.moveTo(lastX, lastY);
-      ctx.lineTo(pos.x, pos.y);
-      ctx.stroke();
-      
-      [lastX, lastY] = [pos.x, pos.y];
-      
-      signatureData = canvas.toDataURL();
-      checkFormValidity();
-    }
-
-    function stopDrawing() {
-      isDrawing = false;
-    }
-
-    function getMousePos(e) {
-      const rect = canvas.getBoundingClientRect();
-      const scaleX = canvas.width / window.devicePixelRatio / rect.width;
-      const scaleY = canvas.height / window.devicePixelRatio / rect.height;
-      
-      let clientX, clientY;
-      
-      if (e.touches && e.touches.length > 0) {
-        clientX = e.touches[0].clientX;
-        clientY = e.touches[0].clientY;
-      } else {
-        clientX = e.clientX;
-        clientY = e.clientY;
-      }
-      
-      return {
-        x: (clientX - rect.left) * scaleX,
-        y: (clientY - rect.top) * scaleY
-      };
-    }
-
-    // Mouse events
-    canvas.addEventListener('mousedown', startDrawing);
-    canvas.addEventListener('mousemove', draw);
-    canvas.addEventListener('mouseup', stopDrawing);
-    canvas.addEventListener('mouseout', stopDrawing);
-
-    // Touch events
-    canvas.addEventListener('touchstart', startDrawing);
-    canvas.addEventListener('touchmove', draw);
-    canvas.addEventListener('touchend', stopDrawing);
-
-    // Clear signature
-    document.getElementById('clear-signature').addEventListener('click', () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      signatureData = null;
-      checkFormValidity();
-    });
-
-    // Checkboxes
-    checkboxes.forEach(checkbox => {
-      checkbox.addEventListener('change', checkFormValidity);
-    });
-
-    // Full name input
-    fullNameInput.addEventListener('input', checkFormValidity);
-    signatureDateInput.addEventListener('change', checkFormValidity);
-
-    // Check if form is valid
-    function checkFormValidity() {
-      const allInitialsFilled = Array.from(initialInputs).every(input => input.value.length >= 2);
-      const allCheckboxesChecked = Array.from(checkboxes).every(cb => cb.checked);
-      const hasSignature = signatureData !== null;
-      const hasFullName = fullNameInput.value.trim().length >= 3;
-      const hasDate = signatureDateInput.value !== '';
-      
-      const isValid = hasScrolledToBottom && allInitialsFilled && allCheckboxesChecked && hasSignature && hasFullName && hasDate;
-      
-      submitButton.disabled = !isValid;
-      
-      if (isValid) {
-        submitButton.style.opacity = '1';
-        submitButton.style.cursor = 'pointer';
-      }
-    }
-
-    // Submit waiver
-    submitButton.addEventListener('click', async () => {
-      const waiverData = {
-        fullName: fullNameInput.value.trim(),
-        date: signatureDateInput.value,
-        initials: {
-          section1: document.getElementById('initial1').value,
-          section2: document.getElementById('initial2').value,
-          section3: document.getElementById('initial3').value,
-          section4: document.getElementById('initial4').value,
-          section5: document.getElementById('initial5').value,
-        },
-        signature: signatureData,
-        timestamp: new Date().toISOString(),
-        ipAddress: 'client-side' // You'd get this from your server
-      };
-
-      // Save to localStorage
-      localStorage.setItem('doggypaddle_waiver', JSON.stringify(waiverData));
-      localStorage.setItem('doggypaddle_waiver_accepted', 'true');
-
-      // Send to server (replace with your endpoint)
-      try {
-        const response = await fetch('YOUR_GOOGLE_APPS_SCRIPT_ENDPOINT', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'saveWaiver', data: waiverData })
-        });
-      } catch (error) {
-        console.warn('Could not save to server:', error);
-      }
-
-      // Show confirmation and redirect
-      alert('✓ Waiver accepted! Redirecting to booking...');
-      window.location.href = '/index.html#booking';
-    });
-
-    // Check if waiver already accepted
-    if (localStorage.getItem('doggypaddle_waiver_accepted') === 'true') {
-      const goToBooking = confirm('You have already accepted the waiver. Would you like to go directly to booking?');
-      if (goToBooking) {
-        window.location.href = '/index.html#booking';
-      }
-    }
   </script>
 </body>
 </html>
