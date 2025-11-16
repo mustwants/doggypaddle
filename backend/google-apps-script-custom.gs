@@ -5,6 +5,7 @@
 const SHEET_ID = '1q7yUDjuVSwXfL9PJUTny0oy5Nr5jlVKsdyik2-vTL8I';
 const SLOTS_SHEET_NAME = 'available_slots';
 const BOOKINGS_SHEET_NAME = 'bookings';
+const PRODUCTS_SHEET_NAME = 'Products';
 
 // Handle CORS preflight (OPTIONS) requests
 function doOptions(e) {
@@ -26,6 +27,8 @@ function doGet(e) {
         return getAvailableSlots(e.parameter);
       case 'getAllSlots':
         return getAllSlots();
+      case 'getProducts':
+        return getProducts();
       default:
         return createResponse({
           status: 'error',
@@ -135,6 +138,36 @@ function getAllSlots() {
   return createResponse({
     status: 'success',
     slots: slots
+  });
+}
+
+// Get products
+function getProducts() {
+  const sheet = getSheet(PRODUCTS_SHEET_NAME);
+  const data = sheet.getDataRange().getValues();
+
+  const products = [];
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    if (row[0]) {
+      products.push({
+        id: row[0],
+        name: row[1],
+        description: row[2],
+        price: row[3],
+        category: row[4],
+        imageUrl: row[5],
+        inStock: row[6] !== 'false',
+        quantity: row[7] || 0,
+        lowStockThreshold: row[8] || 5,
+        createdAt: row[9]
+      });
+    }
+  }
+
+  return createResponse({
+    status: 'success',
+    products: products
   });
 }
 
@@ -262,6 +295,12 @@ function getSheet(sheetName) {
         'Slot', 'Signature'
       ]);
       sheet.getRange('A1:L1').setFontWeight('bold').setBackground('#028090').setFontColor('#FFFFFF');
+    } else if (sheetName === PRODUCTS_SHEET_NAME) {
+      sheet.appendRow([
+        'ID', 'Name', 'Description', 'Price', 'Category',
+        'Image URL', 'In Stock', 'Quantity', 'Low Stock Threshold', 'Created At'
+      ]);
+      sheet.getRange('A1:J1').setFontWeight('bold').setBackground('#028090').setFontColor('#FFFFFF');
     }
 
     // Auto-resize columns
