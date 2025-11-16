@@ -8,13 +8,10 @@ const BOOKINGS_SHEET_NAME = 'bookings';
 const PRODUCTS_SHEET_NAME = 'Products';
 
 // Handle CORS preflight (OPTIONS) requests
+// Note: When deployed with "Anyone" access, Google Apps Script automatically handles CORS
 function doOptions(e) {
   return ContentService.createTextOutput('')
-    .setMimeType(ContentService.MimeType.TEXT)
-    .setHeader('Access-Control-Allow-Origin', 'https://dogpaddle.club')
-    .setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-    .setHeader('Access-Control-Allow-Headers', 'Content-Type')
-    .setHeader('Access-Control-Max-Age', '86400');
+    .setMimeType(ContentService.MimeType.TEXT);
 }
 
 // Main entry point for GET requests
@@ -319,16 +316,14 @@ function formatDate(date) {
   return String(date);
 }
 
-// Helper: Create JSON response with CORS headers
+// Helper: Create JSON response
+// Note: When deployed with "Anyone" access, Google Apps Script automatically handles CORS
 function createResponse(data) {
   const jsonOutput = JSON.stringify(data);
 
   return ContentService
     .createTextOutput(jsonOutput)
-    .setMimeType(ContentService.MimeType.JSON)
-    .setHeader('Access-Control-Allow-Origin', 'https://dogpaddle.club')
-    .setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-    .setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
 // ADMIN HELPER FUNCTIONS - Run these manually from Script Editor
