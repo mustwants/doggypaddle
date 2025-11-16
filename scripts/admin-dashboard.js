@@ -335,6 +335,12 @@ function saveProduct() {
   if (productFormModal) productFormModal.style.display = 'none';
 
   loadAdminProductsList();
+
+  // Reload store display
+  if (typeof window.reloadStoreProducts === 'function') {
+    window.reloadStoreProducts();
+  }
+
   showNotification(currentEditingProduct ? 'Product updated!' : 'Product added!', 'success');
 }
 
@@ -384,6 +390,12 @@ window.toggleProductStock = function(productId) {
   localStorage.setItem('doggypaddle_products', JSON.stringify(products));
 
   loadAdminProductsList();
+
+  // Reload store display
+  if (typeof window.reloadStoreProducts === 'function') {
+    window.reloadStoreProducts();
+  }
+
   showNotification(`Product ${product.inStock ? 'activated' : 'deactivated'}!`, 'success');
 };
 
@@ -395,6 +407,12 @@ window.deleteAdminProduct = function(productId) {
   localStorage.setItem('doggypaddle_products', JSON.stringify(products));
 
   loadAdminProductsList();
+
+  // Reload store display
+  if (typeof window.reloadStoreProducts === 'function') {
+    window.reloadStoreProducts();
+  }
+
   showNotification('Product deleted!', 'success');
 };
 
