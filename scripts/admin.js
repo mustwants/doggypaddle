@@ -53,6 +53,21 @@
     window.showNotification = showNotification;
 
     console.log('Admin features ready!');
+
+    // Load the initial active tab (Products by default)
+    // Small delay to ensure DOM is ready
+    setTimeout(() => {
+      const activeTab = document.querySelector('.admin-tab.active');
+      if (activeTab) {
+        const tabName = activeTab.dataset.tab;
+        console.log('Loading initial tab:', tabName);
+        if (tabName === 'products') loadAdminProducts();
+        else if (tabName === 'timeslots') loadTimeSlots();
+        else if (tabName === 'bookings') loadBookings();
+        else if (tabName === 'photos') loadPhotos();
+        else if (tabName === 'orders') loadOrders();
+      }
+    }, 100);
   }
 
   function loadLocalData() {
@@ -556,7 +571,155 @@
       return;
     }
 
-    let html = '<div style="color: #666;">Orders list coming soon...</div>';
+    let html = `
+      <style>
+        .order-card {
+          border: 1px solid #e0e0e0;
+          border-radius: 8px;
+          padding: 1.5rem;
+          margin-bottom: 1rem;
+        }
+        .order-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 1rem;
+          padding-bottom: 1rem;
+          border-bottom: 1px solid #e0e0e0;
+        }
+        .order-id {
+          font-size: 1.1rem;
+          font-weight: 600;
+          color: #333;
+        }
+        .order-date {
+          color: #666;
+          font-size: 0.9rem;
+        }
+        .order-status {
+          padding: 0.25rem 0.75rem;
+          border-radius: 4px;
+          font-size: 0.85rem;
+          font-weight: 600;
+        }
+        .status-pending {
+          background: #fff3cd;
+          color: #856404;
+        }
+        .status-processing {
+          background: #cfe2ff;
+          color: #084298;
+        }
+        .status-completed {
+          background: #d4edda;
+          color: #155724;
+        }
+        .status-cancelled {
+          background: #f8d7da;
+          color: #721c24;
+        }
+        .order-customer {
+          margin-bottom: 1rem;
+          color: #666;
+          font-size: 0.9rem;
+        }
+        .customer-name {
+          font-weight: 600;
+          color: #333;
+        }
+        .order-items {
+          margin-bottom: 1rem;
+        }
+        .order-item {
+          display: flex;
+          justify-content: space-between;
+          padding: 0.5rem 0;
+          border-bottom: 1px solid #f0f0f0;
+        }
+        .item-name {
+          color: #333;
+          font-weight: 500;
+        }
+        .item-quantity {
+          color: #666;
+          font-size: 0.9rem;
+        }
+        .item-price {
+          color: var(--primary, #028090);
+          font-weight: 600;
+        }
+        .order-total {
+          display: flex;
+          justify-content: space-between;
+          padding-top: 1rem;
+          border-top: 2px solid #e0e0e0;
+          font-size: 1.2rem;
+          font-weight: 700;
+        }
+        .total-label {
+          color: #333;
+        }
+        .total-amount {
+          color: var(--primary, #028090);
+        }
+      </style>
+    `;
+
+    // Sort by date (most recent first)
+    const sortedOrders = [...orders].sort((a, b) => {
+      return new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date);
+    });
+
+    sortedOrders.forEach(order => {
+      const statusClass = `status-${(order.status || 'pending').toLowerCase()}`;
+      const orderDate = order.createdAt || order.date;
+      const formattedDate = orderDate ? new Date(orderDate).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }) : 'N/A';
+
+      let itemsHtml = '';
+      if (order.items && Array.isArray(order.items)) {
+        itemsHtml = order.items.map(item => `
+          <div class="order-item">
+            <div>
+              <div class="item-name">${item.name || 'Unknown Item'}</div>
+              <div class="item-quantity">Quantity: ${item.quantity || 1}</div>
+            </div>
+            <div class="item-price">$${((item.price || 0) * (item.quantity || 1)).toFixed(2)}</div>
+          </div>
+        `).join('');
+      }
+
+      const total = order.total || (order.items && order.items.reduce((sum, item) =>
+        sum + (item.price || 0) * (item.quantity || 1), 0)) || 0;
+
+      html += `
+        <div class="order-card">
+          <div class="order-header">
+            <div>
+              <div class="order-id">Order #${order.id || order.orderId || 'N/A'}</div>
+              <div class="order-date">${formattedDate}</div>
+            </div>
+            <span class="order-status ${statusClass}">${order.status || 'Pending'}</span>
+          </div>
+          <div class="order-customer">
+            <span class="customer-name">${order.customerName || 'Guest'}</span>
+            ${order.email ? `<br>Email: ${order.email}` : ''}
+            ${order.phone ? `<br>Phone: ${order.phone}` : ''}
+          </div>
+          ${itemsHtml ? `<div class="order-items">${itemsHtml}</div>` : '<div style="color: #666; font-style: italic;">No items listed</div>'}
+          <div class="order-total">
+            <span class="total-label">Total:</span>
+            <span class="total-amount">$${total.toFixed(2)}</span>
+          </div>
+        </div>
+      `;
+    });
+
     listContainer.innerHTML = html;
   }
 
