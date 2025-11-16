@@ -278,6 +278,7 @@ function loadAdminProductsList() {
           <div class="admin-item-info" style="color: #666; font-size: 0.85rem;">${product.category}</div>
           <div class="admin-item-info" style="color: #666; font-size: 0.85rem;">${product.description}</div>
           <div class="admin-item-info" style="color: #666; font-size: 0.85rem;"><strong>Quantity:</strong> ${quantity} ${isLowStock ? '⚠️' : ''}</div>
+          ${product.purchaseLink ? `<div class="admin-item-info" style="color: #666; font-size: 0.85rem;"><strong>Purchase Link:</strong> <a href="${product.purchaseLink}" target="_blank" rel="noopener" style="color: #02C39A;">🔗 ${product.purchaseLink.length > 40 ? product.purchaseLink.substring(0, 40) + '...' : product.purchaseLink}</a></div>` : ''}
           <div class="admin-item-price" style="font-size: 1.1rem; font-weight: 700; color: var(--primary, #028090); margin-top: 0.25rem;">$${product.price.toFixed(2)}</div>
         </div>
         <div class="admin-item-actions" style="display: flex; flex-direction: column; gap: 0.5rem;">
@@ -302,6 +303,7 @@ function loadAdminProductsList() {
 function saveProduct() {
   const products = JSON.parse(localStorage.getItem('doggypaddle_products') || '[]');
   const quantity = parseInt(document.getElementById('product-quantity').value) || 0;
+  const purchaseLink = document.getElementById('product-purchase-link')?.value || '';
 
   const productData = {
     id: currentEditingProduct?.id || `prod-${Date.now()}`,
@@ -310,6 +312,7 @@ function saveProduct() {
     price: parseFloat(document.getElementById('product-price').value),
     category: document.getElementById('product-category').value,
     imageUrl: document.getElementById('product-image').value,
+    purchaseLink: purchaseLink,
     inStock: document.getElementById('product-instock').checked,
     quantity: quantity,
     lowStockThreshold: parseInt(document.getElementById('product-low-stock').value) || 5
@@ -356,6 +359,13 @@ window.editAdminProduct = function(productId) {
     document.getElementById('product-price').value = product.price;
     document.getElementById('product-category').value = product.category;
     document.getElementById('product-image').value = product.imageUrl;
+
+    // Set purchase link if field exists
+    const purchaseLinkField = document.getElementById('product-purchase-link');
+    if (purchaseLinkField) {
+      purchaseLinkField.value = product.purchaseLink || '';
+    }
+
     document.getElementById('product-instock').checked = product.inStock;
     document.getElementById('product-quantity').value = product.quantity || 0;
     document.getElementById('product-low-stock').value = product.lowStockThreshold || 5;

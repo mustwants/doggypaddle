@@ -154,11 +154,15 @@ document.addEventListener('DOMContentLoaded', async () => {
           <div class="product-description">${product.description}</div>
           <div class="product-footer">
             <div class="product-price">$${product.price.toFixed(2)}</div>
-            ${product.inStock
-              ? `<button class="add-to-cart-btn" data-product-id="${product.id}">
+            ${!product.inStock
+              ? `<span class="out-of-stock-badge">Out of Stock</span>`
+              : product.purchaseLink
+              ? `<a href="${product.purchaseLink}" target="_blank" rel="noopener noreferrer" class="add-to-cart-btn" style="text-decoration: none; display: inline-block;">
+                   Buy Now →
+                 </a>`
+              : `<button class="add-to-cart-btn" data-product-id="${product.id}">
                    Add to Cart
                  </button>`
-              : `<span class="out-of-stock-badge">Out of Stock</span>`
             }
           </div>
         </div>
@@ -761,6 +765,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const isUpdate = !!currentEditingProduct;
     const quantity = parseInt(document.getElementById('product-quantity').value) || 0;
+    const purchaseLink = document.getElementById('product-purchase-link')?.value || '';
+
     const productData = {
       id: currentEditingProduct?.id || `prod-${Date.now()}`,
       name: document.getElementById('product-name').value,
@@ -768,6 +774,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       price: parseFloat(document.getElementById('product-price').value),
       category: document.getElementById('product-category').value,
       imageUrl: document.getElementById('product-image').value,
+      purchaseLink: purchaseLink,
       inStock: document.getElementById('product-instock').checked,
       quantity: quantity,
       lowStockThreshold: parseInt(document.getElementById('product-low-stock').value) || 5
@@ -896,6 +903,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('product-price').value = product.price;
     document.getElementById('product-category').value = product.category;
     document.getElementById('product-image').value = product.imageUrl;
+
+    // Set purchase link if field exists
+    const purchaseLinkField = document.getElementById('product-purchase-link');
+    if (purchaseLinkField) {
+      purchaseLinkField.value = product.purchaseLink || '';
+    }
+
     document.getElementById('product-instock').checked = product.inStock;
     document.getElementById('product-quantity').value = product.quantity || 0;
     document.getElementById('product-low-stock').value = product.lowStockThreshold || 5;
