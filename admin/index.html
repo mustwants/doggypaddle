@@ -703,9 +703,9 @@
 
       // Load store.js for product management
       const storeScript = document.createElement('script');
-      storeScript.src = '/scripts/store-admin-module.js';
+      storeScript.src = '/scripts/store.js';
       storeScript.onerror = () => {
-        console.warn('store-admin-module.js not found, trying store.js');
+        console.warn('store.js not found');
         // Fallback: use store.js functionality
       };
       document.body.appendChild(storeScript);
