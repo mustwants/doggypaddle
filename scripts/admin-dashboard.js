@@ -814,7 +814,28 @@ function formatDate(dateString) {
 }
 
 function formatTime(timeString) {
-  if (!timeString || typeof timeString !== 'string') {
+  if (!timeString) {
+    return 'Invalid Time';
+  }
+
+  // Handle ISO datetime strings (e.g., "1899-12-30T14:00:00.000Z")
+  if (typeof timeString === 'string' && timeString.includes('T')) {
+    try {
+      const date = new Date(timeString);
+      const hour = date.getUTCHours();
+      const min = date.getUTCMinutes();
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+      const displayMinutes = String(min).padStart(2, '0');
+      return `${displayHour}:${displayMinutes} ${ampm}`;
+    } catch (e) {
+      console.error('Error parsing datetime:', timeString, e);
+      return 'Invalid Time';
+    }
+  }
+
+  // Handle simple time strings (e.g., "14:00")
+  if (typeof timeString !== 'string') {
     return 'Invalid Time';
   }
 
