@@ -20,7 +20,7 @@ const CONFIG = {
   //
   // The URL should look like: https://script.google.com/macros/s/AKfycbw...LONG_ID.../exec
   //
-  // ⚠️ IMPORTANT: This placeholder URL will cause CORS errors. You MUST replace it!
+  // ✓ CONFIGURED: Web App URL from Google Apps Script deployment
   API_ENDPOINT: 'https://script.google.com/macros/s/AKfycbz8spCI4G3t_gicwPhS_uc2AJ1-059ODLCKNOl1j2r9a_cz16QGmAVaiR-AJlqxWiY5ug/exec',
 
   // Google OAuth Configuration

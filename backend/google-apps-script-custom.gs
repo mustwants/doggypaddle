@@ -37,7 +37,9 @@ function doGet(e) {
       default:
         return createResponse({
           status: 'error',
-          message: 'Invalid action'
+          message: 'Invalid action. Valid actions: getAvailableSlots, getAllSlots, getProducts',
+          receivedAction: action || 'none',
+          usage: 'Add ?action=getProducts to the URL'
         });
     }
   } catch (error) {
