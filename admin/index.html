@@ -875,10 +875,8 @@
       // Logout button
       document.getElementById('logout-btn').addEventListener('click', handleLogout);
 
-      // Load initial data
-      loadTabData('products');
-
       // Load modals and full functionality from store scripts
+      // Load initial data AFTER modules are loaded
       loadAdminModules();
     }
 
@@ -921,6 +919,10 @@
         if (typeof window.initAdminDashboard === 'function') {
           window.initAdminDashboard();
         }
+        // Load initial tab data after modules are ready
+        setTimeout(() => {
+          loadTabData('products');
+        }, 100);
       };
       document.body.appendChild(dashboardScript);
 
