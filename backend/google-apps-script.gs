@@ -678,33 +678,22 @@ function getSheet(sheetName) {
   return sheet;
 }
 
-// Helper: Create JSON response with CORS headers
+// Helper: Create JSON response
+// Note: Google Apps Script no longer supports .setHeader() on ContentService.TextOutput
+// CORS is automatically handled when the Web App is deployed with "Anyone" access
 function createResponse(data) {
-  const output = ContentService
+  return ContentService
     .createTextOutput(JSON.stringify(data))
     .setMimeType(ContentService.MimeType.JSON);
-
-  // Add CORS headers to allow requests from any origin
-  return addCORSHeaders(output);
-}
-
-// Helper: Add CORS headers to response
-function addCORSHeaders(output) {
-  // Allow requests from any origin (you can restrict this to specific domains)
-  output.setHeader('Access-Control-Allow-Origin', '*');
-  output.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  output.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  output.setHeader('Access-Control-Max-Age', '3600');
-  return output;
 }
 
 // Helper: Create CORS preflight response
+// Note: CORS preflight (OPTIONS) requests are automatically handled by Google Apps Script
+// when the Web App is deployed with "Anyone" access
 function createCORSResponse(data) {
-  const output = ContentService
+  return ContentService
     .createTextOutput(JSON.stringify(data))
     .setMimeType(ContentService.MimeType.JSON);
-
-  return addCORSHeaders(output);
 }
 
 // ADMIN FUNCTIONS - Call these manually from Script Editor

@@ -270,19 +270,13 @@ function formatDate(date) {
   return String(date);
 }
 
-// Helper: Create JSON response with CORS headers
+// Helper: Create JSON response
+// Note: Google Apps Script no longer supports .setHeader() on ContentService.TextOutput
+// CORS is automatically handled when the Web App is deployed with "Anyone" access
 function createResponse(data) {
-  const output = ContentService
+  return ContentService
     .createTextOutput(JSON.stringify(data))
     .setMimeType(ContentService.MimeType.JSON);
-
-  // Add CORS headers to allow requests from any origin
-  output.setHeader('Access-Control-Allow-Origin', '*');
-  output.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  output.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  output.setHeader('Access-Control-Max-Age', '3600');
-
-  return output;
 }
 
 // ADMIN HELPER FUNCTIONS - Run these manually from Script Editor
