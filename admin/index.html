@@ -3,106 +3,747 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DoggyPaddle Admin - Redirecting...</title>
+  <title>DoggyPaddle Admin Dashboard</title>
   <link rel="stylesheet" href="/assets/styles.css" />
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="/scripts/config.js"></script>
   <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #028090 0%, #02C39A 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Login Screen */
+    .login-screen {
       display: flex;
       align-items: center;
       justify-content: center;
       min-height: 100vh;
-      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      padding: 2rem;
     }
 
-    .redirect-container {
-      text-align: center;
+    .login-card {
       background: white;
-      padding: 3rem 2rem;
+      padding: 3rem 2.5rem;
       border-radius: 16px;
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-      max-width: 500px;
-      margin: 1rem;
+      max-width: 450px;
+      width: 100%;
+      text-align: center;
     }
 
-    .logo {
+    .login-card .logo {
       font-size: 4rem;
       margin-bottom: 1rem;
     }
 
-    h1 {
+    .login-card h1 {
       color: var(--primary, #028090);
-      margin: 0 0 1rem 0;
+      margin: 0 0 0.5rem 0;
       font-size: 1.75rem;
     }
 
-    p {
+    .login-card .subtitle {
       color: #666;
-      margin: 0 0 2rem 0;
-      font-size: 1.1rem;
+      margin-bottom: 2rem;
+      font-size: 0.95rem;
+    }
+
+    .google-signin-wrapper {
+      margin: 2rem 0;
+      display: flex;
+      justify-content: center;
+    }
+
+    .admin-info {
+      background: #f5f5f5;
+      padding: 1.5rem;
+      border-radius: 8px;
+      margin-top: 2rem;
+      text-align: left;
+    }
+
+    .admin-info h3 {
+      color: var(--primary, #028090);
+      font-size: 0.95rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .admin-info p {
+      color: #666;
+      font-size: 0.85rem;
       line-height: 1.6;
+      margin-bottom: 0.5rem;
+    }
+
+    .admin-info .admin-email {
+      color: var(--primary, #028090);
+      font-weight: 600;
+    }
+
+    /* Dashboard Screen */
+    .dashboard-screen {
+      display: none;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    .dashboard-screen.active {
+      display: flex;
+    }
+
+    .dashboard-header {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      padding: 1.5rem 2rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .dashboard-header h1 {
+      color: white;
+      font-size: 1.5rem;
+      margin: 0;
+    }
+
+    .dashboard-header .user-info {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 0.9rem;
+    }
+
+    .dashboard-header .header-actions {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .btn {
+      padding: 0.6rem 1.25rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .btn-primary {
+      background: var(--secondary, #02C39A);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary, #028090);
+    }
+
+    .dashboard-content {
+      flex: 1;
+      padding: 2rem;
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .admin-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 0.5rem;
+      border-radius: 12px;
+      backdrop-filter: blur(10px);
+    }
+
+    .admin-tab {
+      padding: 0.75rem 1.5rem;
+      background: transparent;
+      border: none;
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+    }
+
+    .admin-tab:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+
+    .admin-tab.active {
+      background: white;
+      color: var(--primary, #028090);
+    }
+
+    .admin-tab-content {
+      display: none;
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .admin-tab-content.active {
+      display: block;
+    }
+
+    .admin-actions {
+      margin-bottom: 1.5rem;
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .admin-list {
+      margin-top: 1.5rem;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 3rem;
+      color: #666;
     }
 
     .spinner {
       display: inline-block;
-      width: 50px;
-      height: 50px;
+      width: 40px;
+      height: 40px;
       border: 4px solid rgba(2, 128, 144, 0.2);
       border-top-color: var(--primary, #028090);
       border-radius: 50%;
       animation: spin 1s linear infinite;
-      margin-top: 1rem;
+      margin-bottom: 1rem;
     }
 
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
 
-    .manual-link {
-      display: inline-block;
-      margin-top: 2rem;
-      padding: 0.75rem 1.5rem;
-      background: var(--primary, #028090);
-      color: white;
-      text-decoration: none;
+    /* Responsive */
+    @media (max-width: 768px) {
+      .dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .dashboard-content {
+        padding: 1rem;
+      }
+
+      .admin-tabs {
+        flex-direction: column;
+      }
+
+      .admin-tab {
+        width: 100%;
+      }
+    }
+
+    /* Notification */
+    .notification {
+      position: fixed;
+      top: 2rem;
+      right: 2rem;
+      background: white;
+      padding: 1rem 1.5rem;
       border-radius: 8px;
-      font-weight: 600;
-      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      z-index: 1000;
+      display: none;
+      animation: slideIn 0.3s ease;
     }
 
-    .manual-link:hover {
-      background: var(--secondary, #02C39A);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(2, 128, 144, 0.3);
+    .notification.show {
+      display: block;
     }
 
-    .info-text {
-      font-size: 0.9rem;
-      color: #999;
-      margin-top: 1.5rem;
+    @keyframes slideIn {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="redirect-container">
-    <div class="logo">🐕</div>
-    <h1>DoggyPaddle Admin Dashboard</h1>
-    <p>Redirecting you to the admin login page...</p>
-    <div class="spinner"></div>
-    <p class="info-text">If you are not redirected automatically, click the button below:</p>
-    <a href="/store/index.html" class="manual-link">Go to Admin Dashboard</a>
+  <!-- Login Screen -->
+  <div id="login-screen" class="login-screen">
+    <div class="login-card">
+      <div class="logo">🐕</div>
+      <h1>Admin Dashboard</h1>
+      <p class="subtitle">Sign in with your authorized Google Workspace account to access the admin panel.</p>
+
+      <div class="google-signin-wrapper">
+        <div id="google-signin-button"></div>
+      </div>
+
+      <div class="admin-info">
+        <h3>Authorized Admins:</h3>
+        <p class="admin-email" id="admin-allowed-list">Loading...</p>
+        <p style="margin-top: 1rem; font-style: italic;">
+          Note: Only authorized Google Workspace accounts can access the admin panel.
+          To add more admins, update the allowedAdmins list in config.js.
+        </p>
+      </div>
+    </div>
   </div>
 
-  <script>
-    // Redirect to store page after 2 seconds
-    setTimeout(function() {
-      window.location.href = '/store/index.html';
-    }, 2000);
+  <!-- Dashboard Screen -->
+  <div id="dashboard-screen" class="dashboard-screen">
+    <header class="dashboard-header">
+      <div>
+        <h1>🐕 DoggyPaddle Admin Dashboard</h1>
+        <div class="user-info" id="user-info"></div>
+      </div>
+      <div class="header-actions">
+        <a href="/store/" class="btn btn-secondary">📦 View Store</a>
+        <a href="/" class="btn btn-secondary">🏠 Main Site</a>
+        <button id="logout-btn" class="btn btn-secondary">🚪 Logout</button>
+      </div>
+    </header>
 
-    // Also redirect if user presses any key
-    document.addEventListener('keypress', function() {
-      window.location.href = '/store/index.html';
+    <div class="dashboard-content">
+      <div class="admin-tabs">
+        <button class="admin-tab active" data-tab="products">Products & Treats</button>
+        <button class="admin-tab" data-tab="timeslots">Time Slots</button>
+        <button class="admin-tab" data-tab="bookings">Bookings</button>
+        <button class="admin-tab" data-tab="photos">Photos</button>
+        <button class="admin-tab" data-tab="orders">Orders</button>
+      </div>
+
+      <!-- Products Tab -->
+      <div id="admin-products-tab" class="admin-tab-content active">
+        <div class="admin-actions">
+          <button id="add-product-btn" class="btn btn-primary">+ Add New Product/Treat</button>
+        </div>
+        <div id="admin-products-list" class="admin-list">
+          <div class="loading">
+            <div class="spinner"></div>
+            <p>Loading products...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Time Slots Tab -->
+      <div id="admin-timeslots-tab" class="admin-tab-content">
+        <div class="admin-actions">
+          <button id="add-timeslot-btn" class="btn btn-primary">+ Add Time Slot</button>
+          <button id="bulk-add-slots-btn" class="btn btn-secondary">📅 Bulk Add Slots</button>
+        </div>
+        <div id="admin-timeslots-list" class="admin-list">
+          <div class="loading">
+            <div class="spinner"></div>
+            <p>Loading time slots...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bookings Tab -->
+      <div id="admin-bookings-tab" class="admin-tab-content">
+        <div class="admin-actions">
+          <button id="export-bookings-btn" class="btn btn-primary">📥 Export Client List (CSV)</button>
+        </div>
+        <div id="admin-bookings-list" class="admin-list">
+          <div class="loading">
+            <div class="spinner"></div>
+            <p>Loading bookings...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Photos Tab -->
+      <div id="admin-photos-tab" class="admin-tab-content">
+        <div class="admin-actions">
+          <p style="color: #666; margin-bottom: 1rem;">Review and approve submitted photos for display in the gallery.</p>
+          <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+              <input type="checkbox" id="select-all-photos" style="cursor: pointer;">
+              <span>Select All</span>
+            </label>
+            <button id="bulk-approve-photos" class="btn btn-primary" disabled>✓ Approve Selected</button>
+            <button id="bulk-reject-photos" class="btn btn-secondary" disabled>✗ Reject Selected</button>
+            <span id="selected-photos-count" style="color: #666; font-size: 0.9rem;"></span>
+          </div>
+        </div>
+        <div id="admin-photos-list" class="admin-list">
+          <div class="loading">
+            <div class="spinner"></div>
+            <p>Loading photos...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Orders Tab -->
+      <div id="admin-orders-tab" class="admin-tab-content">
+        <div id="admin-orders-list" class="admin-list">
+          <div class="loading">
+            <div class="spinner"></div>
+            <p>Loading orders...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification -->
+  <div id="notification" class="notification"></div>
+
+  <!-- Modals (will be loaded from store.js/admin-dashboard.js) -->
+  <div id="modal-container"></div>
+
+  <script src="/scripts/admin.js"></script>
+  <script>
+    // Admin Dashboard Main Script
+    let isAdminLoggedIn = false;
+    let adminUserEmail = null;
+
+    // Check for existing session on page load
+    function checkAdminSession() {
+      const session = localStorage.getItem('doggypaddle_admin_session');
+
+      if (session) {
+        try {
+          const sessionData = JSON.parse(session);
+          const loginTime = new Date(sessionData.timestamp || sessionData.loginTime);
+          const now = new Date();
+          const daysSinceLogin = (now - loginTime) / (1000 * 60 * 60 * 24);
+
+          // Session valid for 7 days
+          if (daysSinceLogin < 7) {
+            console.log('Valid admin session found');
+            isAdminLoggedIn = true;
+            adminUserEmail = sessionData.email;
+            showDashboard();
+            return true;
+          } else {
+            console.log('Admin session expired');
+            localStorage.removeItem('doggypaddle_admin_session');
+          }
+        } catch (e) {
+          console.error('Error parsing session:', e);
+          localStorage.removeItem('doggypaddle_admin_session');
+        }
+      }
+
+      console.log('No valid admin session found');
+      return false;
+    }
+
+    // Initialize Google Sign-In
+    function initGoogleSignIn() {
+      const clientId = window.DoggyPaddleConfig?.GOOGLE_AUTH?.clientId;
+      const googleBtnContainer = document.getElementById('google-signin-button');
+      const allowedAdmins = window.DoggyPaddleConfig?.GOOGLE_AUTH?.allowedAdmins || [];
+
+      // Update allowed admins list
+      const adminListElement = document.getElementById('admin-allowed-list');
+      if (adminListElement) {
+        adminListElement.textContent = allowedAdmins.join(', ');
+      }
+
+      if (!clientId || clientId === 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com') {
+        console.warn('Google OAuth not configured. Using development login mode.');
+
+        // Render dev login button
+        if (googleBtnContainer) {
+          googleBtnContainer.innerHTML = `
+            <button type="button" class="btn btn-primary" onclick="handleDevLogin()" style="width: 100%;">
+              🔐 Login as Admin (Dev Mode)
+            </button>
+            <p style="font-size: 12px; color: #666; margin-top: 12px; font-style: italic;">
+              ⚠️ Development Mode: Google OAuth not configured<br>
+              See GOOGLE_AUTH_SETUP.md to enable production login
+            </p>
+          `;
+        }
+        return;
+      }
+
+      // Load Google Identity Services
+      if (typeof google !== 'undefined' && google.accounts) {
+        google.accounts.id.initialize({
+          client_id: clientId,
+          callback: handleGoogleSignIn,
+          auto_select: false,
+          cancel_on_tap_outside: true
+        });
+
+        // Render Google Sign-In button
+        if (googleBtnContainer) {
+          google.accounts.id.renderButton(
+            googleBtnContainer,
+            {
+              theme: 'filled_blue',
+              size: 'large',
+              text: 'signin_with',
+              width: 350
+            }
+          );
+        }
+      }
+    }
+
+    // Handle dev login
+    function handleDevLogin() {
+      const allowedAdmins = window.DoggyPaddleConfig?.GOOGLE_AUTH?.allowedAdmins || ['Scott@mustwants.com'];
+      const devEmail = allowedAdmins[0].toLowerCase();
+
+      console.log('Dev login activated for:', devEmail);
+
+      isAdminLoggedIn = true;
+      adminUserEmail = devEmail;
+
+      // Store session
+      const session = {
+        email: devEmail,
+        name: 'Dev Admin',
+        loginTime: new Date().toISOString(),
+        timestamp: Date.now(),
+        isDev: true
+      };
+      localStorage.setItem('doggypaddle_admin_session', JSON.stringify(session));
+
+      showNotification('Logged in successfully (Dev Mode)');
+      showDashboard();
+    }
+
+    // Handle Google Sign-In
+    function handleGoogleSignIn(response) {
+      try {
+        console.log('Google Sign-In callback triggered');
+
+        // Decode JWT token
+        const payload = parseJwt(response.credential);
+        if (!payload) {
+          throw new Error('Failed to parse JWT token');
+        }
+
+        const userEmail = payload.email.toLowerCase();
+        console.log('User email:', userEmail);
+
+        // Check authorization
+        const allowedAdmins = window.DoggyPaddleConfig?.GOOGLE_AUTH?.allowedAdmins || [];
+        const allowedAdminsLower = allowedAdmins.map(email => email.toLowerCase());
+        console.log('Allowed admins:', allowedAdminsLower);
+
+        if (allowedAdminsLower.includes(userEmail)) {
+          console.log('✓ User authorized! Granting admin access...');
+
+          isAdminLoggedIn = true;
+          adminUserEmail = userEmail;
+
+          // Store session
+          const session = {
+            email: userEmail,
+            name: payload.name,
+            picture: payload.picture,
+            timestamp: Date.now()
+          };
+          localStorage.setItem('doggypaddle_admin_session', JSON.stringify(session));
+
+          showNotification(`Welcome, ${payload.name}!`);
+          showDashboard();
+        } else {
+          console.warn('✗ Access denied for email:', userEmail);
+          alert(`Access denied. Only authorized Google Workspace accounts can access the admin panel.\n\nYour email: ${userEmail}\n\nAllowed admins: ${allowedAdmins.join(', ')}`);
+        }
+      } catch (error) {
+        console.error('Error handling Google Sign-In:', error);
+        alert('Authentication failed. Please try again.\n\nError: ' + error.message);
+      }
+    }
+
+    // Parse JWT token
+    function parseJwt(token) {
+      try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        return JSON.parse(jsonPayload);
+      } catch (error) {
+        console.error('Error parsing JWT:', error);
+        return null;
+      }
+    }
+
+    // Show dashboard
+    function showDashboard() {
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('dashboard-screen').classList.add('active');
+
+      // Update user info
+      const session = JSON.parse(localStorage.getItem('doggypaddle_admin_session') || '{}');
+      document.getElementById('user-info').textContent = `Logged in as: ${session.name || adminUserEmail}`;
+
+      // Initialize dashboard features
+      initDashboard();
+    }
+
+    // Logout
+    function handleLogout() {
+      if (confirm('Are you sure you want to logout?')) {
+        localStorage.removeItem('doggypaddle_admin_session');
+        isAdminLoggedIn = false;
+        adminUserEmail = null;
+
+        if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+          google.accounts.id.disableAutoSelect();
+        }
+
+        showNotification('Logged out successfully');
+
+        // Redirect to login screen
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      }
+    }
+
+    // Show notification
+    function showNotification(message, duration = 3000) {
+      const notification = document.getElementById('notification');
+      notification.textContent = message;
+      notification.classList.add('show');
+
+      setTimeout(() => {
+        notification.classList.remove('show');
+      }, duration);
+    }
+
+    // Initialize dashboard features
+    function initDashboard() {
+      // Tab switching
+      const tabs = document.querySelectorAll('.admin-tab');
+      const tabContents = document.querySelectorAll('.admin-tab-content');
+
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          const tabName = tab.dataset.tab;
+
+          // Update active tab
+          tabs.forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+
+          // Update active content
+          tabContents.forEach(content => content.classList.remove('active'));
+          const targetContent = document.getElementById(`admin-${tabName}-tab`);
+          if (targetContent) {
+            targetContent.classList.add('active');
+          }
+
+          // Load data for selected tab
+          loadTabData(tabName);
+        });
+      });
+
+      // Logout button
+      document.getElementById('logout-btn').addEventListener('click', handleLogout);
+
+      // Load initial data
+      loadTabData('products');
+
+      // Load modals and full functionality from store scripts
+      loadAdminModules();
+    }
+
+    // Load tab data
+    function loadTabData(tabName) {
+      console.log('Loading tab data for:', tabName);
+      // This will be handled by the loaded admin modules
+      if (window.loadAdminProducts && tabName === 'products') {
+        window.loadAdminProducts();
+      } else if (window.loadTimeSlots && tabName === 'timeslots') {
+        window.loadTimeSlots();
+      } else if (window.loadBookings && tabName === 'bookings') {
+        window.loadBookings();
+      } else if (window.loadPhotos && tabName === 'photos') {
+        window.loadPhotos();
+      } else if (window.loadOrders && tabName === 'orders') {
+        window.loadOrders();
+      }
+    }
+
+    // Load admin modules
+    function loadAdminModules() {
+      console.log('Loading admin modules...');
+
+      // Load store.js for product management
+      const storeScript = document.createElement('script');
+      storeScript.src = '/scripts/store-admin-module.js';
+      storeScript.onerror = () => {
+        console.warn('store-admin-module.js not found, trying store.js');
+        // Fallback: use store.js functionality
+      };
+      document.body.appendChild(storeScript);
+
+      // Load admin-dashboard.js for advanced features
+      const dashboardScript = document.createElement('script');
+      dashboardScript.src = '/scripts/admin-dashboard.js';
+      dashboardScript.onload = () => {
+        console.log('Admin dashboard module loaded');
+      };
+      document.body.appendChild(dashboardScript);
+
+      // Load modal HTML from store page
+      fetch('/store/index.html')
+        .then(response => response.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+
+          // Extract modals
+          const modals = doc.querySelectorAll('.modal');
+          const modalContainer = document.getElementById('modal-container');
+
+          modals.forEach(modal => {
+            // Skip login and panel modals, only get form modals
+            if (!modal.id.includes('login') && !modal.id.includes('panel')) {
+              modalContainer.appendChild(modal.cloneNode(true));
+            }
+          });
+        })
+        .catch(err => console.error('Error loading modals:', err));
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!checkAdminSession()) {
+        initGoogleSignIn();
+      }
     });
   </script>
 </body>
