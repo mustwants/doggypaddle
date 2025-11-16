@@ -621,10 +621,12 @@
     </div>
   </div>
 
-  <!-- Image Gallery -->
+  <!-- Featured Photos Gallery -->
   <div class="gallery-section">
     <div class="container">
-      <div class="gallery-grid">
+      <h2 style="text-align: center; color: white; margin-bottom: 2rem;">Featured Photos</h2>
+      <div class="gallery-grid" id="featured-gallery">
+        <!-- Featured photos will be loaded dynamically from admin-approved photos -->
         <img src="/assets/Remi1.jpg" alt="Dog enjoying swim session at DoggyPaddle" loading="lazy" />
         <img src="/assets/Remi2.jpg" alt="Happy dog swimming in our pool" loading="lazy" />
         <img src="/assets/Remi3.jpg" alt="Dog having fun in the water" loading="lazy" />
@@ -632,6 +634,27 @@
       </div>
     </div>
   </div>
+
+  <script>
+    // Load featured photos from localStorage
+    function loadFeaturedPhotos() {
+      const photos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
+      const featuredPhotos = photos.filter(photo => photo.featured && photo.status === 'approved');
+
+      if (featuredPhotos.length > 0) {
+        const galleryGrid = document.getElementById('featured-gallery');
+        galleryGrid.innerHTML = featuredPhotos.slice(0, 4).map(photo => `
+          <img src="${photo.imageUrl}"
+               alt="${photo.dogName} - ${photo.caption || 'Featured photo'}"
+               loading="lazy"
+               onerror="this.src='/assets/logo.png'" />
+        `).join('');
+      }
+    }
+
+    // Load featured photos when page loads
+    document.addEventListener('DOMContentLoaded', loadFeaturedPhotos);
+  </script>
 
   <!-- Main Content -->
   <main class="container">
