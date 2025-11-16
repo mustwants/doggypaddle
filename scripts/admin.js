@@ -69,27 +69,9 @@
   }
 
   function setupEventListeners() {
-    // Products
-    const addProductBtn = document.getElementById('add-product-btn');
-    if (addProductBtn) {
-      addProductBtn.addEventListener('click', () => {
-        showNotification('Product management coming soon! This integrates with store.js');
-      });
-    }
-
-    // Time Slots
-    const addTimeslotBtn = document.getElementById('add-timeslot-btn');
-    const bulkAddSlotsBtn = document.getElementById('bulk-add-slots-btn');
-    if (addTimeslotBtn) {
-      addTimeslotBtn.addEventListener('click', () => {
-        showNotification('Time slot management coming soon! This integrates with admin-dashboard.js');
-      });
-    }
-    if (bulkAddSlotsBtn) {
-      bulkAddSlotsBtn.addEventListener('click', () => {
-        showNotification('Bulk time slot management coming soon! This integrates with admin-dashboard.js');
-      });
-    }
+    // Products - handled by store.js modal
+    // Time Slots - handled by admin-dashboard.js
+    // Photos - handled by admin-dashboard.js
 
     // Bookings
     const exportBookingsBtn = document.getElementById('export-bookings-btn');
