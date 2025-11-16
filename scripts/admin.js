@@ -785,11 +785,23 @@
   }
 
   function showNotification(message, duration = 3000) {
-    if (typeof window.showNotification === 'function') {
-      window.showNotification(message, duration);
-    } else {
-      console.log('Notification:', message);
-    }
+    // Create notification element directly
+    const notification = document.createElement('div');
+    notification.textContent = message;
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--primary, #028090);
+      color: white;
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      z-index: 10001;
+      animation: slideIn 0.3s ease;
+    `;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), duration);
   }
 
   // Expose edit/delete functions globally
