@@ -32,7 +32,7 @@ const CONFIG = {
   // 5. Add authorized JavaScript origins (your domain)
   // 6. Copy the Client ID below
   GOOGLE_AUTH: {
-    clientId: '20135650074-aae05fujqi58h2kk58idd638p2djmhvt.apps.googleusercontent.com,
+    clientId: '20135650074-aae05fujqi58h2kk58idd638p2djmhvt.apps.googleusercontent.com', // <-- Missing quote added here
     // Allowed admin emails (restrict to specific Google Workspace accounts)
     allowedAdmins: ['Scott@mustwants.com']
   },
@@ -61,3 +61,5 @@ const CONFIG = {
 
 // Make config available globally
 window.DoggyPaddleConfig = CONFIG;
+
+
