@@ -76,6 +76,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
         availableSlots = adminSlots
           .filter(slot => {
+            // Validate time format
+            if (!validateTimeFormat(slot.time)) {
+              console.warn('Skipping invalid time slot:', slot);
+              return false;
+            }
+
             const slotDate = new Date(slot.date);
             return slotDate >= today && slot.status === 'available';
           })
@@ -106,6 +112,27 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  function validateTimeFormat(timeString) {
+    if (!timeString || typeof timeString !== 'string') {
+      return false;
+    }
+
+    const parts = timeString.split(':');
+    if (parts.length < 2) {
+      return false;
+    }
+
+    const hour = parseInt(parts[0], 10);
+    const minute = parseInt(parts[1], 10);
+
+    // Validate hour and minute ranges
+    if (isNaN(hour) || isNaN(minute) || hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+      return false;
+    }
+
+    return true;
+  }
+
   function getSlotsForDate(dateString) {
     // Filter out slots already in cart
     const cartSlotIds = cart.map(item => item.id);
@@ -115,11 +142,29 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function formatTime(timeString) {
-    const [hours, minutes] = timeString.split(":");
-    const hour = parseInt(hours);
+    if (!timeString || typeof timeString !== 'string') {
+      return 'Invalid Time';
+    }
+
+    const parts = timeString.split(":");
+    if (parts.length < 2) {
+      return 'Invalid Time';
+    }
+
+    const [hours, minutes] = parts;
+    const hour = parseInt(hours, 10);
+    const min = parseInt(minutes, 10);
+
+    // Validate hour and minute ranges
+    if (isNaN(hour) || isNaN(min) || hour < 0 || hour > 23 || min < 0 || min > 59) {
+      console.error('Invalid time format:', timeString);
+      return 'Invalid Time';
+    }
+
     const ampm = hour >= 12 ? "pm" : "am";
     const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-    return `${displayHour}:${minutes}${ampm}`;
+    const displayMinutes = String(min).padStart(2, '0');
+    return `${displayHour}:${displayMinutes}${ampm}`;
   }
 
   function formatDateLong(dateString) {
