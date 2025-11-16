@@ -41,13 +41,18 @@ const PRODUCTS_SHEET_NAME = 'Products';
 const ORDERS_SHEET_NAME = 'Orders';
 const PHOTOS_SHEET_NAME = 'Photos';
 
+// Handle CORS preflight (OPTIONS) requests
+function doOptions(e) {
+  return ContentService.createTextOutput('')
+    .setMimeType(ContentService.MimeType.TEXT)
+    .setHeader('Access-Control-Allow-Origin', 'https://dogpaddle.club')
+    .setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+    .setHeader('Access-Control-Allow-Headers', 'Content-Type')
+    .setHeader('Access-Control-Max-Age', '86400');
+}
+
 // Main entry point for GET requests
 function doGet(e) {
-  // Handle CORS preflight
-  if (e.parameter.method === 'OPTIONS') {
-    return createCORSResponse({});
-  }
-
   const action = e.parameter.action;
 
   try {
@@ -678,22 +683,29 @@ function getSheet(sheetName) {
   return sheet;
 }
 
-// Helper: Create JSON response
-// Note: Google Apps Script no longer supports .setHeader() on ContentService.TextOutput
-// CORS is automatically handled when the Web App is deployed with "Anyone" access
+// Helper: Create JSON response with CORS headers
 function createResponse(data) {
+  const jsonOutput = JSON.stringify(data);
+
   return ContentService
-    .createTextOutput(JSON.stringify(data))
-    .setMimeType(ContentService.MimeType.JSON);
+    .createTextOutput(jsonOutput)
+    .setMimeType(ContentService.MimeType.JSON)
+    .setHeader('Access-Control-Allow-Origin', 'https://dogpaddle.club')
+    .setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+    .setHeader('Access-Control-Allow-Headers', 'Content-Type');
 }
 
 // Helper: Create CORS preflight response
-// Note: CORS preflight (OPTIONS) requests are automatically handled by Google Apps Script
-// when the Web App is deployed with "Anyone" access
 function createCORSResponse(data) {
+  const jsonOutput = JSON.stringify(data);
+
   return ContentService
-    .createTextOutput(JSON.stringify(data))
-    .setMimeType(ContentService.MimeType.JSON);
+    .createTextOutput(jsonOutput)
+    .setMimeType(ContentService.MimeType.JSON)
+    .setHeader('Access-Control-Allow-Origin', 'https://dogpaddle.club')
+    .setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+    .setHeader('Access-Control-Allow-Headers', 'Content-Type')
+    .setHeader('Access-Control-Max-Age', '86400');
 }
 
 // ADMIN FUNCTIONS - Call these manually from Script Editor

@@ -6,6 +6,16 @@ const SHEET_ID = '1q7yUDjuVSwXfL9PJUTny0oy5Nr5jlVKsdyik2-vTL8I';
 const SLOTS_SHEET_NAME = 'available_slots';
 const BOOKINGS_SHEET_NAME = 'bookings';
 
+// Handle CORS preflight (OPTIONS) requests
+function doOptions(e) {
+  return ContentService.createTextOutput('')
+    .setMimeType(ContentService.MimeType.TEXT)
+    .setHeader('Access-Control-Allow-Origin', 'https://dogpaddle.club')
+    .setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+    .setHeader('Access-Control-Allow-Headers', 'Content-Type')
+    .setHeader('Access-Control-Max-Age', '86400');
+}
+
 // Main entry point for GET requests
 function doGet(e) {
   const action = e.parameter.action;
@@ -270,13 +280,16 @@ function formatDate(date) {
   return String(date);
 }
 
-// Helper: Create JSON response
-// Note: Google Apps Script no longer supports .setHeader() on ContentService.TextOutput
-// CORS is automatically handled when the Web App is deployed with "Anyone" access
+// Helper: Create JSON response with CORS headers
 function createResponse(data) {
+  const jsonOutput = JSON.stringify(data);
+
   return ContentService
-    .createTextOutput(JSON.stringify(data))
-    .setMimeType(ContentService.MimeType.JSON);
+    .createTextOutput(jsonOutput)
+    .setMimeType(ContentService.MimeType.JSON)
+    .setHeader('Access-Control-Allow-Origin', 'https://dogpaddle.club')
+    .setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+    .setHeader('Access-Control-Allow-Headers', 'Content-Type');
 }
 
 // ADMIN HELPER FUNCTIONS - Run these manually from Script Editor
