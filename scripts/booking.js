@@ -263,10 +263,21 @@ document.addEventListener("DOMContentLoaded", () => {
   function showErrorMessage(errorMsg) {
     const message = document.createElement("div");
     message.className = "alert alert-error";
-    message.innerHTML = `
-      <strong>✗ Booking Failed</strong><br>
-      ${errorMsg || "Please try again or contact us for assistance."}
-    `;
+
+    // Prevent XSS by using textContent instead of innerHTML for user/server-provided messages
+    const title = document.createElement("strong");
+    title.textContent = "✗ Booking Failed";
+
+    const br = document.createElement("br");
+
+    const errorText = document.createTextNode(
+      errorMsg || "Please try again or contact us for assistance."
+    );
+
+    message.appendChild(title);
+    message.appendChild(br);
+    message.appendChild(errorText);
+
     message.style.cssText = `
       position: fixed;
       top: 20px;
