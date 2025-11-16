@@ -2,11 +2,125 @@
 // This file extends the base admin functionality with time slots, bookings, and photos management
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Initialize sample data if needed
+  initializeSampleData();
+
   // Wait for base store.js to initialize
   setTimeout(initAdminEnhancements, 500);
 });
 
+// Initialize sample data (products and photos) if database is empty
+function initializeSampleData() {
+  // Initialize sample products if none exist
+  const products = JSON.parse(localStorage.getItem('doggypaddle_products') || '[]');
+  if (products.length === 0) {
+    const sampleProducts = [
+      {
+        id: 'prod-1',
+        name: 'Dog Treats - Peanut Butter',
+        description: 'Delicious all-natural peanut butter treats. Made with real peanut butter and no artificial ingredients.',
+        price: 12.99,
+        category: 'Treats',
+        imageUrl: '/assets/products/treats1.jpg',
+        inStock: true,
+        quantity: 50,
+        lowStockThreshold: 10
+      },
+      {
+        id: 'prod-2',
+        name: 'Dog Treats - Bacon Flavor',
+        description: 'Crispy bacon-flavored treats your dog will love. Perfect for training or as a special reward.',
+        price: 14.99,
+        category: 'Treats',
+        imageUrl: '/assets/products/treats2.jpg',
+        inStock: true,
+        quantity: 45,
+        lowStockThreshold: 10
+      },
+      {
+        id: 'prod-3',
+        name: 'Swimming Vest - Small',
+        description: 'Safety vest for small dogs (up to 25 lbs). Bright orange color for visibility.',
+        price: 29.99,
+        category: 'Accessories',
+        imageUrl: '/assets/products/vest-small.jpg',
+        inStock: true,
+        quantity: 15,
+        lowStockThreshold: 5
+      },
+      {
+        id: 'prod-4',
+        name: 'Swimming Vest - Large',
+        description: 'Safety vest for large dogs (25+ lbs). Adjustable straps and durable construction.',
+        price: 34.99,
+        category: 'Accessories',
+        imageUrl: '/assets/products/vest-large.jpg',
+        inStock: true,
+        quantity: 20,
+        lowStockThreshold: 5
+      }
+    ];
+    localStorage.setItem('doggypaddle_products', JSON.stringify(sampleProducts));
+    console.log('✓ Initialized sample products');
+  }
+
+  // Initialize sample photos if none exist
+  const photos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
+  if (photos.length === 0) {
+    const samplePhotos = [
+      {
+        timestamp: new Date('2024-11-09').getTime(),
+        customerName: 'Sarah',
+        email: 'sarah@example.com',
+        dogName: 'Remi',
+        caption: 'First time in the pool! Had so much fun!',
+        sessionDate: '11/9/2024',
+        imageUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iIzAyODA5MCIvPjx0ZXh0IHg9IjUwJSIgeT0iNDAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iNDgiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn5CVPC90ZXh0Pjx0ZXh0IHg9IjUwJSIgeT0iNjAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5SZW1pPC90ZXh0Pjx0ZXh0IHg9IjUwJSIgeT0iNzUlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5GaXJzdCB0aW1lIGluIHRoZSBwb29sITwvdGV4dD48L3N2Zz4=',
+        status: 'approved'
+      },
+      {
+        timestamp: new Date('2024-11-11').getTime(),
+        customerName: 'John',
+        email: 'john@example.com',
+        dogName: 'Max',
+        caption: 'Max loves his swimming sessions!',
+        sessionDate: '11/11/2024',
+        imageUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iIzAyQzM5QSIvPjx0ZXh0IHg9IjUwJSIgeT0iNDAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iNDgiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn5CVPC90ZXh0Pjx0ZXh0IHg9IjUwJSIgeT0iNjAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5NYXg8L3RleHQ+PHRleHQgeD0iNTAlIiB5PSI3NSUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNiIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkxvdmVzIHN3aW1taW5nITwvdGV4dD48L3N2Zz4=',
+        status: 'approved'
+      },
+      {
+        timestamp: new Date('2024-11-12').getTime(),
+        customerName: 'Emily',
+        email: 'emily@example.com',
+        dogName: 'Bella',
+        caption: 'Great exercise for Bella!',
+        sessionDate: '11/12/2024',
+        imageUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI0Y3OTI1NiIvPjx0ZXh0IHg9IjUwJSIgeT0iNDAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iNDgiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn5CVwqA8L3RleHQ+PHRleHQgeD0iNTAlIiB5PSI2MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyNCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkJlbGxhPC90ZXh0Pjx0ZXh0IHg9IjUwJSIgeT0iNzUlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5HcmVhdCBleGVyY2lzZSE8L3RleHQ+PC9zdmc+',
+        status: 'approved'
+      },
+      {
+        timestamp: new Date('2024-11-13').getTime(),
+        customerName: 'Mike',
+        email: 'mike@example.com',
+        dogName: 'Charlie',
+        caption: 'Charlie is a natural swimmer!',
+        sessionDate: '11/13/2024',
+        imageUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iIzY2NjZGRiIvPjx0ZXh0IHg9IjUwJSIgeT0iNDAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iNDgiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn5CVPC90ZXh0Pjx0ZXh0IHg9IjUwJSIgeT0iNjAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5DaGFybGllPC90ZXh0Pjx0ZXh0IHg9IjUwJSIgeT0iNzUlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5OYXR1cmFsIHN3aW1tZXIhPC90ZXh0Pjwvc3ZnPg==',
+        status: 'approved'
+      }
+    ];
+    localStorage.setItem('doggypaddle_photos', JSON.stringify(samplePhotos));
+    console.log('✓ Initialized sample photos');
+  }
+}
+
 function initAdminEnhancements() {
+  // Expose functions globally
+  window.loadTimeSlots = loadTimeSlots;
+  window.loadBookings = loadBookings;
+  window.loadPhotos = loadPhotos;
+  window.loadAdminProducts = loadAdminProductsList;
+
   // Tab switching
   const adminTabs = document.querySelectorAll('.admin-tab');
   const adminTabContents = document.querySelectorAll('.admin-tab-content');
@@ -28,6 +142,9 @@ function initAdminEnhancements() {
 
       // Load data for the selected tab
       switch(tabName) {
+        case 'products':
+          loadAdminProductsList();
+          break;
         case 'timeslots':
           loadTimeSlots();
           break;
@@ -42,10 +159,227 @@ function initAdminEnhancements() {
   });
 
   // Initialize all the features
+  initProductManagement();
   initTimeSlotManagement();
   initBookingsManagement();
   initPhotosManagement();
 }
+
+// ============================================
+// PRODUCT MANAGEMENT
+// ============================================
+
+let currentEditingProduct = null;
+
+function initProductManagement() {
+  const addProductBtn = document.getElementById('add-product-btn');
+  if (!addProductBtn) return;
+
+  // Add product button
+  addProductBtn.addEventListener('click', () => {
+    // Wait for modal to be loaded from store page
+    setTimeout(() => {
+      const productFormModal = document.getElementById('product-form-modal');
+      const productForm = document.getElementById('product-form');
+
+      if (!productFormModal || !productForm) {
+        showNotification('Product form not loaded yet. Please try again.', 'warning');
+        return;
+      }
+
+      currentEditingProduct = null;
+      document.getElementById('product-form-title').textContent = 'Add Product/Treat';
+      productForm.reset();
+      productFormModal.style.display = 'flex';
+    }, 100);
+  });
+
+  // Set up form submission handler after modals are loaded
+  setTimeout(() => {
+    const productForm = document.getElementById('product-form');
+    const productFormModal = document.getElementById('product-form-modal');
+    const closeProductFormBtn = document.getElementById('close-product-form');
+    const cancelProductFormBtn = document.getElementById('cancel-product-form');
+
+    if (productForm) {
+      productForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        saveProduct();
+      });
+    }
+
+    if (closeProductFormBtn) {
+      closeProductFormBtn.addEventListener('click', () => {
+        if (productFormModal) productFormModal.style.display = 'none';
+      });
+    }
+
+    if (cancelProductFormBtn) {
+      cancelProductFormBtn.addEventListener('click', () => {
+        if (productFormModal) productFormModal.style.display = 'none';
+      });
+    }
+  }, 1000);
+}
+
+function loadAdminProductsList() {
+  const productsList = document.getElementById('admin-products-list');
+  if (!productsList) return;
+
+  const products = JSON.parse(localStorage.getItem('doggypaddle_products') || '[]');
+
+  if (products.length === 0) {
+    productsList.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-light);">No products found. Click "Add New Product/Treat" to create one.</p>';
+    return;
+  }
+
+  productsList.innerHTML = products.map(product => {
+    const quantity = product.quantity || 0;
+    const lowStockThreshold = product.lowStockThreshold || 5;
+    const isLowStock = quantity > 0 && quantity <= lowStockThreshold;
+
+    return `
+      <div class="admin-product-item" style="
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+      ">
+        <img src="${product.imageUrl}" alt="${product.name}" class="admin-product-image"
+             style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px;"
+             onerror="this.src='/assets/logo.png'" />
+        <div class="admin-item-details" style="flex: 1;">
+          <div class="admin-item-name" style="font-weight: 600; font-size: 1.1rem; margin-bottom: 0.25rem;">
+            ${product.name}
+            <span style="
+              display: inline-block;
+              padding: 0.25rem 0.5rem;
+              border-radius: 4px;
+              font-size: 0.75rem;
+              margin-left: 0.5rem;
+              background: ${product.inStock ? '#d4edda' : '#f8d7da'};
+              color: ${product.inStock ? '#155724' : '#721c24'};
+            ">
+              ${product.inStock ? 'Active' : 'Inactive'}
+            </span>
+            ${isLowStock ? '<span style="display: inline-block; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; margin-left: 0.5rem; background: #fff3cd; color: #856404;">⚠️ Low Stock</span>' : ''}
+            ${quantity === 0 ? '<span style="display: inline-block; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; margin-left: 0.5rem; background: #f8d7da; color: #721c24;">0 Stock</span>' : ''}
+          </div>
+          <div class="admin-item-info" style="color: #666; font-size: 0.85rem;">${product.category}</div>
+          <div class="admin-item-info" style="color: #666; font-size: 0.85rem;">${product.description}</div>
+          <div class="admin-item-info" style="color: #666; font-size: 0.85rem;"><strong>Quantity:</strong> ${quantity} ${isLowStock ? '⚠️' : ''}</div>
+          <div class="admin-item-price" style="font-size: 1.1rem; font-weight: 700; color: var(--primary, #028090); margin-top: 0.25rem;">$${product.price.toFixed(2)}</div>
+        </div>
+        <div class="admin-item-actions" style="display: flex; flex-direction: column; gap: 0.5rem;">
+          <button class="admin-btn admin-btn-edit" onclick="window.editAdminProduct('${product.id}')"
+                  style="padding: 0.5rem 1rem; border: none; border-radius: 4px; cursor: pointer; background: #02C39A; color: white; font-weight: 600;">
+            Edit
+          </button>
+          <button class="admin-btn admin-btn-toggle" onclick="window.toggleProductStock('${product.id}')"
+                  style="padding: 0.5rem 1rem; border: none; border-radius: 4px; cursor: pointer; background: #ffc107; color: white; font-weight: 600;">
+            ${product.inStock ? 'Deactivate' : 'Activate'}
+          </button>
+          <button class="admin-btn admin-btn-delete" onclick="window.deleteAdminProduct('${product.id}')"
+                  style="padding: 0.5rem 1rem; border: none; border-radius: 4px; cursor: pointer; background: #dc3545; color: white; font-weight: 600;">
+            Delete
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function saveProduct() {
+  const products = JSON.parse(localStorage.getItem('doggypaddle_products') || '[]');
+  const quantity = parseInt(document.getElementById('product-quantity').value) || 0;
+
+  const productData = {
+    id: currentEditingProduct?.id || `prod-${Date.now()}`,
+    name: document.getElementById('product-name').value,
+    description: document.getElementById('product-description').value,
+    price: parseFloat(document.getElementById('product-price').value),
+    category: document.getElementById('product-category').value,
+    imageUrl: document.getElementById('product-image').value,
+    inStock: document.getElementById('product-instock').checked,
+    quantity: quantity,
+    lowStockThreshold: parseInt(document.getElementById('product-low-stock').value) || 5
+  };
+
+  if (currentEditingProduct) {
+    // Update existing product
+    const index = products.findIndex(p => p.id === currentEditingProduct.id);
+    if (index !== -1) {
+      products[index] = productData;
+    }
+  } else {
+    // Add new product
+    products.push(productData);
+  }
+
+  localStorage.setItem('doggypaddle_products', JSON.stringify(products));
+
+  const productFormModal = document.getElementById('product-form-modal');
+  if (productFormModal) productFormModal.style.display = 'none';
+
+  loadAdminProductsList();
+  showNotification(currentEditingProduct ? 'Product updated!' : 'Product added!', 'success');
+}
+
+window.editAdminProduct = function(productId) {
+  const products = JSON.parse(localStorage.getItem('doggypaddle_products') || '[]');
+  const product = products.find(p => p.id === productId);
+
+  if (!product) return;
+
+  setTimeout(() => {
+    const productFormModal = document.getElementById('product-form-modal');
+    if (!productFormModal) {
+      showNotification('Product form not loaded yet. Please try again.', 'warning');
+      return;
+    }
+
+    currentEditingProduct = product;
+    document.getElementById('product-form-title').textContent = 'Edit Product/Treat';
+    document.getElementById('product-id').value = product.id;
+    document.getElementById('product-name').value = product.name;
+    document.getElementById('product-description').value = product.description;
+    document.getElementById('product-price').value = product.price;
+    document.getElementById('product-category').value = product.category;
+    document.getElementById('product-image').value = product.imageUrl;
+    document.getElementById('product-instock').checked = product.inStock;
+    document.getElementById('product-quantity').value = product.quantity || 0;
+    document.getElementById('product-low-stock').value = product.lowStockThreshold || 5;
+
+    productFormModal.style.display = 'flex';
+  }, 100);
+};
+
+window.toggleProductStock = function(productId) {
+  const products = JSON.parse(localStorage.getItem('doggypaddle_products') || '[]');
+  const product = products.find(p => p.id === productId);
+
+  if (!product) return;
+
+  product.inStock = !product.inStock;
+  localStorage.setItem('doggypaddle_products', JSON.stringify(products));
+
+  loadAdminProductsList();
+  showNotification(`Product ${product.inStock ? 'activated' : 'deactivated'}!`, 'success');
+};
+
+window.deleteAdminProduct = function(productId) {
+  if (!confirm('Are you sure you want to delete this product?')) return;
+
+  let products = JSON.parse(localStorage.getItem('doggypaddle_products') || '[]');
+  products = products.filter(p => p.id !== productId);
+  localStorage.setItem('doggypaddle_products', JSON.stringify(products));
+
+  loadAdminProductsList();
+  showNotification('Product deleted!', 'success');
+};
 
 // ============================================
 // TIME SLOTS MANAGEMENT
