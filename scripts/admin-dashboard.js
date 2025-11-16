@@ -420,6 +420,11 @@ window.deleteAdminProduct = function(productId) {
 // TIME SLOTS MANAGEMENT
 // ============================================
 
+// Global state for calendar view
+let currentWeekStart = null;
+let selectedSlots = new Set();
+let calendarViewMode = 'calendar'; // 'calendar' or 'list'
+
 function initTimeSlotManagement() {
   const addTimeslotBtn = document.getElementById('add-timeslot-btn');
   const bulkAddSlotsBtn = document.getElementById('bulk-add-slots-btn');
@@ -429,6 +434,10 @@ function initTimeSlotManagement() {
   const bulkTimeslotForm = document.getElementById('bulk-timeslot-form');
 
   if (!addTimeslotBtn) return;
+
+  // Initialize current week to this week
+  const today = new Date();
+  currentWeekStart = getStartOfWeek(today);
 
   // Add time slot button
   addTimeslotBtn.addEventListener('click', () => {
@@ -481,84 +490,314 @@ function initTimeSlotManagement() {
   });
 }
 
+// Helper function to get the start of week (Sunday)
+function getStartOfWeek(date) {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day; // Sunday is 0
+  return new Date(d.setDate(diff));
+}
+
+// Helper function to format date as YYYY-MM-DD
+function formatDateYMD(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+// Helper function to format date in long format
+function formatDateLong(dateInput) {
+  let date;
+  if (typeof dateInput === 'string') {
+    date = new Date(dateInput + 'T12:00:00');
+  } else {
+    date = dateInput;
+  }
+  return date.toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric"
+  });
+}
+
 function loadTimeSlots() {
   const timeslotsList = document.getElementById('admin-timeslots-list');
   if (!timeslotsList) return;
 
-  let slots = JSON.parse(localStorage.getItem('doggypaddle_timeslots') || '[]');
+  // Render calendar view
+  renderCalendarView();
+}
 
-  // Check for invalid time slots and offer to clean them up
-  const invalidSlots = slots.filter(slot => !validateTimeFormat(slot.time));
-  if (invalidSlots.length > 0) {
-    console.warn('Found invalid time slots:', invalidSlots);
-    const message = `Found ${invalidSlots.length} time slot${invalidSlots.length > 1 ? 's' : ''} with invalid time format. These will be highlighted in red below.`;
+function renderCalendarView() {
+  const timeslotsList = document.getElementById('admin-timeslots-list');
+  if (!timeslotsList) return;
 
-    const warningDiv = document.createElement('div');
-    warningDiv.style.cssText = `
-      background: #fff3cd;
-      border: 2px solid #ffc107;
-      padding: 1rem;
-      border-radius: 8px;
-      margin-bottom: 1rem;
-      color: #856404;
-    `;
-    warningDiv.innerHTML = `
-      <strong>⚠️ Warning:</strong> ${message}
-      <button onclick="cleanupInvalidTimeSlots()" style="
-        margin-left: 1rem;
-        background: #dc3545;
-        color: white;
-        border: none;
-        padding: 0.5rem 1rem;
-        border-radius: 4px;
-        cursor: pointer;
-        font-weight: 600;
-      ">Delete Invalid Slots</button>
-    `;
-    timeslotsList.parentElement.insertBefore(warningDiv, timeslotsList);
+  const slots = JSON.parse(localStorage.getItem('doggypaddle_timeslots') || '[]');
+
+  // Define time slots: 8:00 AM to 9:00 PM EST, 20-minute intervals at :00 and :40
+  const timeSlots = [];
+  for (let hour = 8; hour <= 21; hour++) {
+    timeSlots.push(`${String(hour).padStart(2, '0')}:00`);
+    if (hour < 21) { // Don't add :40 for 9 PM
+      timeSlots.push(`${String(hour).padStart(2, '0')}:40`);
+    }
   }
 
-  if (slots.length === 0) {
-    timeslotsList.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-light);">No time slots available. Click "Add Time Slot" to create one.</p>';
-    return;
+  // Get 7 days starting from currentWeekStart
+  const weekDays = [];
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(currentWeekStart);
+    date.setDate(currentWeekStart.getDate() + i);
+    weekDays.push(date);
   }
 
-  // Sort slots by date and time
-  slots.sort((a, b) => {
-    const dateCompare = a.date.localeCompare(b.date);
-    if (dateCompare !== 0) return dateCompare;
-    return a.time.localeCompare(b.time);
-  });
+  // Create calendar HTML
+  let html = `
+    <div style="margin-bottom: 1.5rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <button onclick="navigateWeek(-1)" class="btn btn-secondary" style="padding: 0.5rem 1rem;">
+          ← Previous Week
+        </button>
+        <h3 style="margin: 0; color: var(--primary, #028090);">
+          ${formatDateLong(weekDays[0])} - ${formatDateLong(weekDays[6])}
+        </h3>
+        <button onclick="navigateWeek(1)" class="btn btn-secondary" style="padding: 0.5rem 1rem;">
+          Next Week →
+        </button>
+      </div>
 
-  timeslotsList.innerHTML = slots.map(slot => {
-    const statusColors = {
-      available: '#28a745',
-      booked: '#ffc107',
-      blocked: '#dc3545'
-    };
-    const statusColor = statusColors[slot.status] || '#666';
-    const isInvalid = !validateTimeFormat(slot.time);
+      <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; align-items: center;">
+        <button onclick="clearSelection()" class="btn btn-secondary" style="padding: 0.5rem 1rem;" ${selectedSlots.size === 0 ? 'disabled' : ''}>
+          Clear Selection (${selectedSlots.size})
+        </button>
+        <button onclick="bulkDeleteSelected()" class="btn" style="padding: 0.5rem 1rem; background: #dc3545; color: white;" ${selectedSlots.size === 0 ? 'disabled' : ''}>
+          Delete Selected (${selectedSlots.size})
+        </button>
+        <button onclick="bulkToggleStatus('available')" class="btn" style="padding: 0.5rem 1rem; background: #28a745; color: white;" ${selectedSlots.size === 0 ? 'disabled' : ''}>
+          Mark Available
+        </button>
+        <button onclick="bulkToggleStatus('blocked')" class="btn" style="padding: 0.5rem 1rem; background: #ffc107; color: #000;" ${selectedSlots.size === 0 ? 'disabled' : ''}>
+          Mark Blocked
+        </button>
+      </div>
+    </div>
 
-    return `
-      <div class="admin-product-item" style="${isInvalid ? 'border: 2px solid #dc3545; background: #fff5f5;' : ''}">
-        <div class="admin-item-details">
-          <div class="admin-item-name">
-            ${formatDate(slot.date)} at ${formatTime(slot.time)}
-            ${isInvalid ? '<span style="color: #dc3545; font-weight: 700; margin-left: 0.5rem;">⚠️ INVALID TIME</span>' : ''}
-          </div>
-          ${isInvalid ? `<div class="admin-item-info" style="color: #dc3545;">Raw time value: ${slot.time}</div>` : ''}
-          <div class="admin-item-info">Duration: ${slot.duration} minutes</div>
-          <div class="admin-item-info">
-            Status: <span style="color: ${statusColor}; font-weight: 600; text-transform: capitalize;">${slot.status}</span>
-          </div>
+    <div class="calendar-grid" style="
+      display: grid;
+      grid-template-columns: 80px repeat(7, 1fr);
+      gap: 1px;
+      background: #ddd;
+      border: 1px solid #ddd;
+      overflow-x: auto;
+    ">
+      <!-- Header Row -->
+      <div style="background: #f8f9fa; padding: 0.75rem; text-align: center; font-weight: 700; border-bottom: 2px solid #028090;">
+        Time
+      </div>
+      ${weekDays.map(date => `
+        <div style="background: #f8f9fa; padding: 0.75rem; text-align: center; font-weight: 700; border-bottom: 2px solid #028090;">
+          <div style="font-size: 0.85rem;">${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][date.getDay()]}</div>
+          <div style="font-size: 0.95rem;">${date.getMonth() + 1}/${date.getDate()}</div>
         </div>
-        <div class="admin-item-actions">
-          <button class="admin-btn admin-btn-edit" onclick="editTimeSlot('${slot.id}')">Edit</button>
-          <button class="admin-btn admin-btn-delete" onclick="deleteTimeSlot('${slot.id}')">Delete</button>
+      `).join('')}
+
+      <!-- Time Slots -->
+      ${timeSlots.map(time => `
+        <div style="background: #f8f9fa; padding: 0.5rem; text-align: center; font-weight: 600; font-size: 0.85rem;">
+          ${formatTime(time)}
+        </div>
+        ${weekDays.map(date => {
+          const dateStr = formatDateYMD(date);
+          const slot = slots.find(s => s.date === dateStr && s.time === time);
+          const slotKey = `${dateStr}|${time}`;
+          const isSelected = selectedSlots.has(slotKey);
+
+          let bgColor = '#fff';
+          let borderColor = '#e0e0e0';
+          let text = '';
+          let textColor = '#666';
+
+          if (slot) {
+            if (slot.status === 'available') {
+              bgColor = '#d4edda';
+              borderColor = '#28a745';
+              text = '✓';
+              textColor = '#28a745';
+            } else if (slot.status === 'booked') {
+              bgColor = '#fff3cd';
+              borderColor = '#ffc107';
+              text = 'Booked';
+              textColor = '#856404';
+            } else if (slot.status === 'blocked') {
+              bgColor = '#f8d7da';
+              borderColor = '#dc3545';
+              text = '✗';
+              textColor = '#dc3545';
+            }
+          }
+
+          if (isSelected) {
+            borderColor = '#028090';
+            bgColor = slot ? bgColor : '#e3f2fd';
+          }
+
+          return `
+            <div
+              class="calendar-slot"
+              data-date="${dateStr}"
+              data-time="${time}"
+              data-has-slot="${!!slot}"
+              data-slot-id="${slot ? slot.id : ''}"
+              onclick="toggleSlot('${dateStr}', '${time}')"
+              style="
+                background: ${bgColor};
+                padding: 0.5rem;
+                text-align: center;
+                cursor: pointer;
+                border: 2px solid ${borderColor};
+                transition: all 0.2s ease;
+                min-height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 0.85rem;
+                font-weight: 600;
+                color: ${textColor};
+              "
+              onmouseover="this.style.opacity='0.8'"
+              onmouseout="this.style.opacity='1'"
+            >
+              ${text}
+            </div>
+          `;
+        }).join('')}
+      `).join('')}
+    </div>
+
+    <div style="margin-top: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+      <h4 style="margin: 0 0 0.5rem 0;">Legend:</h4>
+      <div style="display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: 0.9rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <div style="width: 20px; height: 20px; background: #d4edda; border: 2px solid #28a745;"></div>
+          <span>Available</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <div style="width: 20px; height: 20px; background: #fff3cd; border: 2px solid #ffc107;"></div>
+          <span>Booked</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <div style="width: 20px; height: 20px; background: #f8d7da; border: 2px solid #dc3545;"></div>
+          <span>Blocked</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <div style="width: 20px; height: 20px; background: #fff; border: 2px solid #e0e0e0;"></div>
+          <span>Empty (click to add)</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <div style="width: 20px; height: 20px; background: #e3f2fd; border: 2px solid #028090;"></div>
+          <span>Selected</span>
         </div>
       </div>
-    `;
-  }).join('');
+    </div>
+  `;
+
+  timeslotsList.innerHTML = html;
+}
+
+// Toggle slot selection
+window.toggleSlot = function(date, time) {
+  const slotKey = `${date}|${time}`;
+
+  if (selectedSlots.has(slotKey)) {
+    selectedSlots.delete(slotKey);
+  } else {
+    selectedSlots.add(slotKey);
+  }
+
+  renderCalendarView();
+}
+
+// Clear selection
+window.clearSelection = function() {
+  selectedSlots.clear();
+  renderCalendarView();
+}
+
+// Navigate week
+window.navigateWeek = function(direction) {
+  const newDate = new Date(currentWeekStart);
+  newDate.setDate(newDate.getDate() + (direction * 7));
+  currentWeekStart = newDate;
+  selectedSlots.clear(); // Clear selection when changing weeks
+  renderCalendarView();
+}
+
+// Bulk delete selected slots
+window.bulkDeleteSelected = function() {
+  if (selectedSlots.size === 0) return;
+
+  if (!confirm(`Are you sure you want to delete ${selectedSlots.size} time slot(s)?`)) return;
+
+  const slots = JSON.parse(localStorage.getItem('doggypaddle_timeslots') || '[]');
+  const selectedArray = Array.from(selectedSlots).map(key => {
+    const [date, time] = key.split('|');
+    return { date, time };
+  });
+
+  // Filter out slots that match selected date/time combinations
+  const filtered = slots.filter(slot => {
+    return !selectedArray.some(sel => sel.date === slot.date && sel.time === slot.time);
+  });
+
+  localStorage.setItem('doggypaddle_timeslots', JSON.stringify(filtered));
+  selectedSlots.clear();
+  renderCalendarView();
+  showNotification(`Deleted ${slots.length - filtered.length} time slot(s)`, 'success');
+}
+
+// Bulk toggle status for selected slots
+window.bulkToggleStatus = function(newStatus) {
+  if (selectedSlots.size === 0) return;
+
+  const slots = JSON.parse(localStorage.getItem('doggypaddle_timeslots') || '[]');
+  const selectedArray = Array.from(selectedSlots).map(key => {
+    const [date, time] = key.split('|');
+    return { date, time };
+  });
+
+  let modified = 0;
+  let created = 0;
+
+  selectedArray.forEach(sel => {
+    const existingSlot = slots.find(s => s.date === sel.date && s.time === sel.time);
+
+    if (existingSlot) {
+      // Update existing slot
+      existingSlot.status = newStatus;
+      modified++;
+    } else {
+      // Create new slot
+      slots.push({
+        id: `slot-${Date.now()}-${created}`,
+        date: sel.date,
+        time: sel.time,
+        duration: 20, // 20-minute slots
+        status: newStatus
+      });
+      created++;
+    }
+  });
+
+  localStorage.setItem('doggypaddle_timeslots', JSON.stringify(slots));
+  selectedSlots.clear();
+  renderCalendarView();
+
+  const message = created > 0
+    ? `Created ${created} new slot(s) and updated ${modified} existing slot(s)`
+    : `Updated ${modified} slot(s)`;
+  showNotification(message, 'success');
 }
 
 window.cleanupInvalidTimeSlots = function() {
