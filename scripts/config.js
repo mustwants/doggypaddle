@@ -51,6 +51,14 @@ const CONFIG = {
     buyButtonId: 'buy_btn_1SRg5JAWz02AuqyyQNxXtKgW'
   },
 
+  // Social Media
+  SOCIAL: {
+    facebook: 'https://www.facebook.com/dogpad',
+    // Add other social media links as needed
+    // instagram: 'https://instagram.com/yourpage',
+    // twitter: 'https://twitter.com/yourpage'
+  },
+
   // Image upload service (using imgur as free option)
   // You can also use cloudinary, firebase, or your own server
   IMAGE_UPLOAD: {

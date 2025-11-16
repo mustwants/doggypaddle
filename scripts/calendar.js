@@ -59,14 +59,40 @@ document.addEventListener("DOMContentLoaded", () => {
         "%c⚠️ Backend Not Configured",
         "color: #ff9800; font-size: 14px; font-weight: bold;",
         "\n\nThe Google Apps Script backend hasn't been set up yet.",
-        "\nUsing mock data for demonstration purposes.",
+        "\nChecking for admin-created time slots in local storage...",
         "\n\nTo enable live booking:",
         "\n1. Follow the instructions in /backend/README.md",
         "\n2. Deploy the Google Apps Script",
         "\n3. Update the API_ENDPOINT in /scripts/config.js",
         "\n\nFor detailed setup instructions, see: /backend/README.md"
       );
-      return; // Use mock data
+
+      // Check for admin-created time slots in localStorage
+      const adminSlots = JSON.parse(localStorage.getItem('doggypaddle_timeslots') || '[]');
+      if (adminSlots.length > 0) {
+        // Filter only available slots for the current/future dates
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        availableSlots = adminSlots
+          .filter(slot => {
+            const slotDate = new Date(slot.date);
+            return slotDate >= today && slot.status === 'available';
+          })
+          .map(slot => ({
+            id: slot.id,
+            date: slot.date,
+            time: slot.time,
+            duration: slot.duration || 30,
+            status: slot.status
+          }));
+
+        console.log(`✓ Loaded ${availableSlots.length} admin-created time slots from local storage`);
+      } else {
+        console.log('No admin time slots found. Using mock data for demonstration.');
+      }
+
+      return; // Use admin slots or mock data
     }
 
     try {

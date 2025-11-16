@@ -246,30 +246,49 @@ document.addEventListener('DOMContentLoaded', async () => {
         caption: 'First time in the pool! Had so much fun!',
         imageUrl: '/assets/Remi1.jpg',
         customerName: 'Sarah',
-        sessionDate: '2024-11-10'
+        sessionDate: '2024-11-10',
+        email: 'sarah@example.com',
+        timestamp: '2024-11-10T10:00:00.000Z',
+        status: 'approved'
       },
       {
         dogName: 'Max',
         caption: 'Max loves his swimming sessions!',
         imageUrl: '/assets/Remi2.jpg',
         customerName: 'John',
-        sessionDate: '2024-11-12'
+        sessionDate: '2024-11-12',
+        email: 'john@example.com',
+        timestamp: '2024-11-12T11:00:00.000Z',
+        status: 'approved'
       },
       {
         dogName: 'Bella',
         caption: 'Great exercise for Bella!',
         imageUrl: '/assets/Remi3.jpg',
         customerName: 'Emily',
-        sessionDate: '2024-11-13'
+        sessionDate: '2024-11-13',
+        email: 'emily@example.com',
+        timestamp: '2024-11-13T12:00:00.000Z',
+        status: 'approved'
       },
       {
         dogName: 'Charlie',
         caption: 'Charlie is a natural swimmer!',
         imageUrl: '/assets/Remi4.jpg',
         customerName: 'Mike',
-        sessionDate: '2024-11-14'
+        sessionDate: '2024-11-14',
+        email: 'mike@example.com',
+        timestamp: '2024-11-14T13:00:00.000Z',
+        status: 'approved'
       }
     ];
+
+    // Save sample photos to localStorage so admin can see them
+    const existingPhotos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
+    if (existingPhotos.length === 0) {
+      localStorage.setItem('doggypaddle_photos', JSON.stringify(samplePhotos));
+      console.log('✓ Initialized localStorage with sample photos for admin access');
+    }
 
     renderGallery(samplePhotos);
   }
