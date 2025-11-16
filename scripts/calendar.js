@@ -402,6 +402,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function saveCart() {
     localStorage.setItem('doggypaddle_booking_cart', JSON.stringify(cart));
+    // Dispatch event to notify other components (like booking page) of cart changes
+    window.dispatchEvent(new Event('cartUpdated'));
   }
 
   function calculatePricing() {
