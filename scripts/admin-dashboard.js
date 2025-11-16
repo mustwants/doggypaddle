@@ -1,12 +1,19 @@
 // Admin Dashboard Enhancements for DoggyPaddle
 // This file extends the base admin functionality with time slots, bookings, and photos management
 
-document.addEventListener('DOMContentLoaded', () => {
+// Expose initialization function globally so it can be called when loaded dynamically
+window.initAdminDashboard = function() {
+  console.log('Initializing admin dashboard enhancements...');
   // Initialize sample data if needed
   initializeSampleData();
 
-  // Wait for base store.js to initialize
+  // Wait for base store.js and modals to initialize
   setTimeout(initAdminEnhancements, 500);
+};
+
+// Also initialize on DOMContentLoaded if script is loaded normally
+document.addEventListener('DOMContentLoaded', () => {
+  window.initAdminDashboard();
 });
 
 // Initialize sample data (products and photos) if database is empty
