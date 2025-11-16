@@ -754,6 +754,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       currentEditingProduct = null;
       document.getElementById('product-form-title').textContent = 'Add Product';
       productForm.reset();
+
+      // Reset image input to URL mode
+      const urlRadio = document.querySelector('input[name="image-type"][value="url"]');
+      if (urlRadio) urlRadio.checked = true;
+      const urlContainer = document.getElementById('url-input-container');
+      const uploadContainer = document.getElementById('upload-input-container');
+      const previewContainer = document.getElementById('product-image-preview');
+      if (urlContainer) urlContainer.style.display = 'block';
+      if (uploadContainer) uploadContainer.style.display = 'none';
+      if (previewContainer) previewContainer.style.display = 'none';
+
       productFormModal.style.display = 'flex';
     });
   }
@@ -767,13 +778,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     const quantity = parseInt(document.getElementById('product-quantity').value) || 0;
     const purchaseLink = document.getElementById('product-purchase-link')?.value || '';
 
+    // Get image from either URL input or uploaded file
+    let imageUrl = '';
+    const imageType = document.querySelector('input[name="image-type"]:checked')?.value;
+    if (imageType === 'upload') {
+      // Use base64 from file upload (stored in preview)
+      const previewImg = document.getElementById('product-image-preview-img');
+      imageUrl = previewImg.src || '';
+    } else {
+      // Use URL input
+      imageUrl = document.getElementById('product-image').value;
+    }
+
+    // Validate that we have an image
+    if (!imageUrl) {
+      showNotification('Please provide a product image (URL or upload)', 'error');
+      return;
+    }
+
     const productData = {
       id: currentEditingProduct?.id || `prod-${Date.now()}`,
       name: document.getElementById('product-name').value,
       description: document.getElementById('product-description').value,
       price: parseFloat(document.getElementById('product-price').value),
       category: document.getElementById('product-category').value,
-      imageUrl: document.getElementById('product-image').value,
+      imageUrl: imageUrl,
       purchaseLink: purchaseLink,
       inStock: document.getElementById('product-instock').checked,
       quantity: quantity,
@@ -806,6 +835,81 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderProducts();
     loadAdminProducts();
     showNotification(isUpdate ? 'Product updated!' : 'Product added!');
+    });
+  }
+
+  // Product Image Type Toggle
+  const imageTypeRadios = document.querySelectorAll('input[name="image-type"]');
+  const urlInputContainer = document.getElementById('url-input-container');
+  const uploadInputContainer = document.getElementById('upload-input-container');
+  const productImageInput = document.getElementById('product-image');
+  const productImageFileInput = document.getElementById('product-image-file');
+  const productImagePreview = document.getElementById('product-image-preview');
+  const productImagePreviewImg = document.getElementById('product-image-preview-img');
+
+  if (imageTypeRadios.length > 0) {
+    imageTypeRadios.forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        if (e.target.value === 'url') {
+          urlInputContainer.style.display = 'block';
+          uploadInputContainer.style.display = 'none';
+          productImageFileInput.value = ''; // Clear file input
+        } else {
+          urlInputContainer.style.display = 'none';
+          uploadInputContainer.style.display = 'block';
+          productImageInput.value = ''; // Clear URL input
+        }
+      });
+    });
+  }
+
+  // Handle file upload and preview
+  if (productImageFileInput) {
+    productImageFileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+          showNotification('Please select a valid image file', 'error');
+          productImageFileInput.value = '';
+          return;
+        }
+
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          showNotification('Image file size must be less than 5MB', 'error');
+          productImageFileInput.value = '';
+          return;
+        }
+
+        // Convert to base64 and show preview
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const base64Image = event.target.result;
+          productImagePreviewImg.src = base64Image;
+          productImagePreview.style.display = 'block';
+        };
+        reader.onerror = () => {
+          showNotification('Error reading image file', 'error');
+          productImageFileInput.value = '';
+        };
+        reader.readAsDataURL(file);
+      } else {
+        productImagePreview.style.display = 'none';
+      }
+    });
+  }
+
+  // Handle URL input preview
+  if (productImageInput) {
+    productImageInput.addEventListener('blur', (e) => {
+      const url = e.target.value.trim();
+      if (url) {
+        productImagePreviewImg.src = url;
+        productImagePreview.style.display = 'block';
+      } else {
+        productImagePreview.style.display = 'none';
+      }
     });
   }
 
@@ -902,7 +1006,36 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('product-description').value = product.description;
     document.getElementById('product-price').value = product.price;
     document.getElementById('product-category').value = product.category;
-    document.getElementById('product-image').value = product.imageUrl;
+
+    // Handle image based on type (URL or base64)
+    const isBase64 = product.imageUrl && product.imageUrl.startsWith('data:image/');
+    const urlRadio = document.querySelector('input[name="image-type"][value="url"]');
+    const uploadRadio = document.querySelector('input[name="image-type"][value="upload"]');
+    const urlContainer = document.getElementById('url-input-container');
+    const uploadContainer = document.getElementById('upload-input-container');
+    const previewContainer = document.getElementById('product-image-preview');
+    const previewImg = document.getElementById('product-image-preview-img');
+
+    if (isBase64) {
+      // This is an uploaded image (base64)
+      if (uploadRadio) uploadRadio.checked = true;
+      if (urlContainer) urlContainer.style.display = 'none';
+      if (uploadContainer) uploadContainer.style.display = 'block';
+      document.getElementById('product-image').value = '';
+      // Show preview with the base64 image
+      if (previewImg) previewImg.src = product.imageUrl;
+      if (previewContainer) previewContainer.style.display = 'block';
+    } else {
+      // This is a URL
+      if (urlRadio) urlRadio.checked = true;
+      if (urlContainer) urlContainer.style.display = 'block';
+      if (uploadContainer) uploadContainer.style.display = 'none';
+      document.getElementById('product-image').value = product.imageUrl;
+      document.getElementById('product-image-file').value = '';
+      // Show preview with the URL
+      if (previewImg) previewImg.src = product.imageUrl;
+      if (previewContainer) previewContainer.style.display = 'block';
+    }
 
     // Set purchase link if field exists
     const purchaseLinkField = document.getElementById('product-purchase-link');
