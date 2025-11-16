@@ -226,6 +226,74 @@ function initProductManagement() {
         if (productFormModal) productFormModal.style.display = 'none';
       });
     }
+
+    // Set up product image upload toggle
+    const imageTypeRadios = document.querySelectorAll('input[name="image-type"]');
+    const urlInputContainer = document.getElementById('url-input-container');
+    const uploadInputContainer = document.getElementById('upload-input-container');
+    const productImagePreview = document.getElementById('product-image-preview');
+    const productImagePreviewImg = document.getElementById('product-image-preview-img');
+    const productImageUrl = document.getElementById('product-image');
+    const productImageFile = document.getElementById('product-image-file');
+
+    if (imageTypeRadios && urlInputContainer && uploadInputContainer) {
+      imageTypeRadios.forEach(radio => {
+        radio.addEventListener('change', () => {
+          if (radio.value === 'url') {
+            urlInputContainer.style.display = 'block';
+            uploadInputContainer.style.display = 'none';
+            productImagePreview.style.display = 'none';
+          } else {
+            urlInputContainer.style.display = 'none';
+            uploadInputContainer.style.display = 'block';
+          }
+        });
+      });
+    }
+
+    // Handle product file selection and preview
+    if (productImageFile && productImagePreview && productImagePreviewImg) {
+      productImageFile.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          // Validate file type
+          if (!file.type.startsWith('image/')) {
+            alert('Please select an image file');
+            productImageFile.value = '';
+            return;
+          }
+
+          // Validate file size (5MB max)
+          if (file.size > 5 * 1024 * 1024) {
+            alert('File size must be less than 5MB');
+            productImageFile.value = '';
+            return;
+          }
+
+          // Show preview
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            productImagePreviewImg.src = e.target.result;
+            productImagePreview.style.display = 'block';
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    }
+
+    // Handle product URL input preview
+    if (productImageUrl && productImagePreview && productImagePreviewImg) {
+      productImageUrl.addEventListener('blur', () => {
+        const url = productImageUrl.value.trim();
+        if (url) {
+          productImagePreviewImg.src = url;
+          productImagePreview.style.display = 'block';
+          productImagePreviewImg.onerror = () => {
+            productImagePreview.style.display = 'none';
+          };
+        }
+      });
+    }
   }, 1000);
 }
 
@@ -300,48 +368,80 @@ function loadAdminProductsList() {
   }).join('');
 }
 
-function saveProduct() {
+async function saveProduct() {
   const products = JSON.parse(localStorage.getItem('doggypaddle_products') || '[]');
   const quantity = parseInt(document.getElementById('product-quantity').value) || 0;
   const purchaseLink = document.getElementById('product-purchase-link')?.value || '';
 
-  const productData = {
-    id: currentEditingProduct?.id || `prod-${Date.now()}`,
-    name: document.getElementById('product-name').value,
-    description: document.getElementById('product-description').value,
-    price: parseFloat(document.getElementById('product-price').value),
-    category: document.getElementById('product-category').value,
-    imageUrl: document.getElementById('product-image').value,
-    purchaseLink: purchaseLink,
-    inStock: document.getElementById('product-instock').checked,
-    quantity: quantity,
-    lowStockThreshold: parseInt(document.getElementById('product-low-stock').value) || 5
-  };
+  // Determine if URL or file upload was used
+  const selectedImageType = document.querySelector('input[name="image-type"]:checked')?.value || 'url';
+  let imageUrl = '';
 
-  if (currentEditingProduct) {
-    // Update existing product
-    const index = products.findIndex(p => p.id === currentEditingProduct.id);
-    if (index !== -1) {
-      products[index] = productData;
+  try {
+    if (selectedImageType === 'url') {
+      imageUrl = document.getElementById('product-image').value;
+    } else {
+      // Handle file upload - convert to base64
+      const fileInput = document.getElementById('product-image-file');
+      const file = fileInput?.files[0];
+
+      if (file) {
+        // Convert file to base64
+        imageUrl = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      } else {
+        // If editing and no new file selected, keep existing image
+        if (currentEditingProduct && currentEditingProduct.imageUrl) {
+          imageUrl = currentEditingProduct.imageUrl;
+        }
+      }
     }
-  } else {
-    // Add new product
-    products.push(productData);
+
+    const productData = {
+      id: currentEditingProduct?.id || `prod-${Date.now()}`,
+      name: document.getElementById('product-name').value,
+      description: document.getElementById('product-description').value,
+      price: parseFloat(document.getElementById('product-price').value),
+      category: document.getElementById('product-category').value,
+      imageUrl: imageUrl,
+      purchaseLink: purchaseLink,
+      inStock: document.getElementById('product-instock').checked,
+      quantity: quantity,
+      lowStockThreshold: parseInt(document.getElementById('product-low-stock').value) || 5
+    };
+
+    if (currentEditingProduct) {
+      // Update existing product
+      const index = products.findIndex(p => p.id === currentEditingProduct.id);
+      if (index !== -1) {
+        products[index] = productData;
+      }
+    } else {
+      // Add new product
+      products.push(productData);
+    }
+
+    localStorage.setItem('doggypaddle_products', JSON.stringify(products));
+
+    const productFormModal = document.getElementById('product-form-modal');
+    if (productFormModal) productFormModal.style.display = 'none';
+
+    loadAdminProductsList();
+
+    // Reload store display
+    if (typeof window.reloadStoreProducts === 'function') {
+      window.reloadStoreProducts();
+    }
+
+    showNotification(currentEditingProduct ? 'Product updated!' : 'Product added!', 'success');
+  } catch (error) {
+    console.error('Error saving product:', error);
+    alert('Failed to save product. Please try again.');
   }
-
-  localStorage.setItem('doggypaddle_products', JSON.stringify(products));
-
-  const productFormModal = document.getElementById('product-form-modal');
-  if (productFormModal) productFormModal.style.display = 'none';
-
-  loadAdminProductsList();
-
-  // Reload store display
-  if (typeof window.reloadStoreProducts === 'function') {
-    window.reloadStoreProducts();
-  }
-
-  showNotification(currentEditingProduct ? 'Product updated!' : 'Product added!', 'success');
 }
 
 window.editAdminProduct = function(productId) {
@@ -375,6 +475,22 @@ window.editAdminProduct = function(productId) {
     document.getElementById('product-instock').checked = product.inStock;
     document.getElementById('product-quantity').value = product.quantity || 0;
     document.getElementById('product-low-stock').value = product.lowStockThreshold || 5;
+
+    // Set image type to URL when editing (since we're displaying the existing URL)
+    const urlRadio = document.querySelector('input[name="image-type"][value="url"]');
+    if (urlRadio) {
+      urlRadio.checked = true;
+      // Trigger the change event to show/hide appropriate containers
+      urlRadio.dispatchEvent(new Event('change'));
+    }
+
+    // Show image preview
+    const productImagePreview = document.getElementById('product-image-preview');
+    const productImagePreviewImg = document.getElementById('product-image-preview-img');
+    if (productImagePreview && productImagePreviewImg && product.imageUrl) {
+      productImagePreviewImg.src = product.imageUrl;
+      productImagePreview.style.display = 'block';
+    }
 
     productFormModal.style.display = 'flex';
   }, 100);
@@ -1287,14 +1403,36 @@ function openAddPhotoModal() {
         </div>
         <div style="margin-bottom: 1rem;">
           <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">
-            Image URL <span style="color: red;">*</span>
+            Image <span style="color: red;">*</span>
           </label>
-          <input type="url" id="add-image-url" required
-                 placeholder="https://example.com/image.jpg or data:image/..."
-                 style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
-          <small style="color: #666; display: block; margin-top: 0.25rem;">
-            Enter an image URL or paste a base64 data URI
-          </small>
+          <div style="margin-bottom: 10px;">
+            <label style="margin-right: 20px; cursor: pointer;">
+              <input type="radio" name="photo-image-type" value="url" checked style="margin-right: 5px;" />
+              Image URL
+            </label>
+            <label style="cursor: pointer;">
+              <input type="radio" name="photo-image-type" value="upload" style="margin-right: 5px;" />
+              Upload Image
+            </label>
+          </div>
+          <div id="photo-url-input-container">
+            <input type="url" id="add-image-url"
+                   placeholder="https://example.com/image.jpg"
+                   style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+            <small style="color: #666; display: block; margin-top: 0.25rem;">
+              Enter an image URL
+            </small>
+          </div>
+          <div id="photo-upload-input-container" style="display: none;">
+            <input type="file" id="add-image-file" accept="image/*"
+                   style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+            <small style="color: #666; display: block; margin-top: 0.25rem;">
+              Upload a photo (JPG, PNG, etc. - max 5MB)
+            </small>
+          </div>
+          <div id="photo-image-preview" style="margin-top: 10px; display: none;">
+            <img id="photo-image-preview-img" src="" alt="Preview" style="max-width: 200px; max-height: 200px; border-radius: 4px; border: 1px solid #ddd;" />
+          </div>
         </div>
         <div style="margin-bottom: 1rem;">
           <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">
@@ -1317,7 +1455,7 @@ function openAddPhotoModal() {
             cursor: pointer;
             font-weight: 600;
           ">Cancel</button>
-          <button type="submit" style="
+          <button type="submit" id="submit-add-photo" style="
             background: var(--primary, #028090);
             color: white;
             border: none;
@@ -1333,28 +1471,136 @@ function openAddPhotoModal() {
 
   document.body.appendChild(modal);
 
+  // Toggle between URL and file upload
+  const photoImageTypeRadios = document.querySelectorAll('input[name="photo-image-type"]');
+  const photoUrlContainer = document.getElementById('photo-url-input-container');
+  const photoUploadContainer = document.getElementById('photo-upload-input-container');
+  const photoImagePreview = document.getElementById('photo-image-preview');
+  const photoImagePreviewImg = document.getElementById('photo-image-preview-img');
+  const photoUrlInput = document.getElementById('add-image-url');
+  const photoFileInput = document.getElementById('add-image-file');
+
+  photoImageTypeRadios.forEach(radio => {
+    radio.addEventListener('change', () => {
+      if (radio.value === 'url') {
+        photoUrlContainer.style.display = 'block';
+        photoUploadContainer.style.display = 'none';
+        photoImagePreview.style.display = 'none';
+        photoUrlInput.required = true;
+        photoFileInput.required = false;
+      } else {
+        photoUrlContainer.style.display = 'none';
+        photoUploadContainer.style.display = 'block';
+        photoUrlInput.required = false;
+        photoFileInput.required = true;
+      }
+    });
+  });
+
+  // Handle file selection and preview
+  photoFileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file');
+        photoFileInput.value = '';
+        return;
+      }
+
+      // Validate file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File size must be less than 5MB');
+        photoFileInput.value = '';
+        return;
+      }
+
+      // Show preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        photoImagePreviewImg.src = e.target.result;
+        photoImagePreview.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+
+  // Handle URL input preview
+  photoUrlInput.addEventListener('blur', () => {
+    const url = photoUrlInput.value.trim();
+    if (url) {
+      photoImagePreviewImg.src = url;
+      photoImagePreview.style.display = 'block';
+      photoImagePreviewImg.onerror = () => {
+        photoImagePreview.style.display = 'none';
+      };
+    }
+  });
+
   // Handle form submission
-  document.getElementById('add-photo-form').addEventListener('submit', (e) => {
+  document.getElementById('add-photo-form').addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const photos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
+    const submitBtn = document.getElementById('submit-add-photo');
+    const selectedImageType = document.querySelector('input[name="photo-image-type"]:checked').value;
 
-    const newPhoto = {
-      timestamp: Date.now(),
-      dogName: document.getElementById('add-dog-name').value,
-      customerName: document.getElementById('add-customer-name').value,
-      email: document.getElementById('add-email').value,
-      caption: document.getElementById('add-caption').value,
-      sessionDate: document.getElementById('add-session-date').value,
-      imageUrl: document.getElementById('add-image-url').value,
-      status: document.getElementById('add-status').value
-    };
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Adding...';
 
-    photos.push(newPhoto);
-    localStorage.setItem('doggypaddle_photos', JSON.stringify(photos));
-    loadPhotos();
-    modal.remove();
-    showNotification('Photo added to gallery!', 'success');
+    try {
+      let imageUrl = '';
+
+      if (selectedImageType === 'url') {
+        imageUrl = photoUrlInput.value.trim();
+        if (!imageUrl) {
+          alert('Please enter an image URL');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Add Photo';
+          return;
+        }
+      } else {
+        // Handle file upload - convert to base64
+        const file = photoFileInput.files[0];
+        if (!file) {
+          alert('Please select an image file');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Add Photo';
+          return;
+        }
+
+        // Convert file to base64
+        imageUrl = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }
+
+      const photos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
+
+      const newPhoto = {
+        timestamp: Date.now(),
+        dogName: document.getElementById('add-dog-name').value,
+        customerName: document.getElementById('add-customer-name').value,
+        email: document.getElementById('add-email').value,
+        caption: document.getElementById('add-caption').value,
+        sessionDate: document.getElementById('add-session-date').value,
+        imageUrl: imageUrl,
+        status: document.getElementById('add-status').value
+      };
+
+      photos.push(newPhoto);
+      localStorage.setItem('doggypaddle_photos', JSON.stringify(photos));
+      loadPhotos();
+      modal.remove();
+      showNotification('Photo added to gallery!', 'success');
+    } catch (error) {
+      console.error('Error adding photo:', error);
+      alert('Failed to add photo. Please try again.');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Add Photo';
+    }
   });
 
   // Handle cancel
