@@ -10,8 +10,9 @@ No 'Access-Control-Allow-Origin' header is present on the requested resource.
 ```
 
 This happens because:
-1. The updated code (without `.setHeader()`) hasn't been deployed to the live script yet
-2. OR the deployment settings are incorrect
+1. The Apps Script code needs to explicitly set CORS headers using `.setHeader()`
+2. The updated code with proper CORS headers hasn't been deployed yet
+3. OR a `doOptions()` function is missing to handle CORS preflight requests
 
 ---
 
@@ -28,16 +29,33 @@ Copy the updated code from one of these files:
 - For custom sheet: `/backend/google-apps-script-custom.gs`
 - For full backend: `/backend/google-apps-script.gs`
 
-**IMPORTANT:** Make sure the code includes the updated `createResponse()` function WITHOUT `.setHeader()` calls:
+**IMPORTANT:** Make sure the code includes the updated `createResponse()` function WITH proper CORS headers:
 
 ```javascript
-// Helper: Create JSON response
-// Note: Google Apps Script no longer supports .setHeader() on ContentService.TextOutput
-// CORS is automatically handled when the Web App is deployed with "Anyone" access
+// Helper: Create JSON response with CORS headers
 function createResponse(data) {
+  const jsonOutput = JSON.stringify(data);
+
   return ContentService
-    .createTextOutput(JSON.stringify(data))
-    .setMimeType(ContentService.MimeType.JSON);
+    .createTextOutput(jsonOutput)
+    .setMimeType(ContentService.MimeType.JSON)
+    .setHeader('Access-Control-Allow-Origin', 'https://dogpaddle.club')
+    .setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+    .setHeader('Access-Control-Allow-Headers', 'Content-Type');
+}
+```
+
+**AND** make sure you have the `doOptions()` function for CORS preflight:
+
+```javascript
+// Handle CORS preflight (OPTIONS) requests
+function doOptions(e) {
+  return ContentService.createTextOutput('')
+    .setMimeType(ContentService.MimeType.TEXT)
+    .setHeader('Access-Control-Allow-Origin', 'https://dogpaddle.club')
+    .setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+    .setHeader('Access-Control-Allow-Headers', 'Content-Type')
+    .setHeader('Access-Control-Max-Age', '86400');
 }
 ```
 
@@ -160,7 +178,9 @@ The deployment is set to "Only myself" or "Anyone with a Google account". Change
 This exact error in the response
 
 **Solution:**
-The old code is still deployed. Go back to Step 2 and verify the code is updated.
+This error occurred in an older version of the code that tried to use `.setHeader()` incorrectly. The current version properly uses `.setHeader()` on the ContentService.TextOutput object. Update to the latest code from Step 2.
+
+**Note:** ContentService.TextOutput DOES support `.setHeader()` - it's the correct way to add CORS headers!
 
 ---
 
@@ -168,7 +188,8 @@ The old code is still deployed. Go back to Step 2 and verify the code is updated
 
 Before reaching out for help, verify:
 
-- [ ] Apps Script code is updated (no `.setHeader()` calls)
+- [ ] Apps Script code is updated with proper CORS headers (includes `.setHeader()` calls)
+- [ ] `doOptions()` function is added to handle CORS preflight requests
 - [ ] Script is saved in Apps Script Editor
 - [ ] New deployment created (or existing one updated)
 - [ ] Deployment settings: "Who has access" = **"Anyone"**
@@ -177,6 +198,7 @@ Before reaching out for help, verify:
 - [ ] Updated `/scripts/config.js` with new URL
 - [ ] Hard refreshed browser cache
 - [ ] Tested endpoint directly in browser
+- [ ] Checked Network tab in DevTools for proper CORS headers in response
 
 ---
 
@@ -245,9 +267,12 @@ You'll know it's working when:
 
 1. ✅ Browser endpoint test returns JSON (not HTML)
 2. ✅ No CORS errors in browser console
-3. ✅ Store page loads products successfully
-4. ✅ Booking system can fetch available slots
-5. ✅ Admin dashboard works correctly
+3. ✅ Response headers in DevTools include:
+   - `Access-Control-Allow-Origin: https://dogpaddle.club`
+   - `Access-Control-Allow-Methods: GET, POST, OPTIONS`
+4. ✅ Store page loads products successfully
+5. ✅ Booking system can fetch available slots
+6. ✅ Admin dashboard works correctly
 
 ---
 
@@ -255,8 +280,26 @@ You'll know it's working when:
 
 - **Sheet ID:** `1q7yUDjuVSwXfL9PJUTny0oy5Nr5jlVKsdyik2-vTL8I`
 - **Current API Endpoint:** `https://script.google.com/macros/s/AKfycbxAocAQFFOWNr1CtW_njxjZsl69lcaitNpv_ZBfYKnlekOK0ir49sfUxV9-J9MRxUdTmA/exec`
-- **Issue:** Code changes not deployed yet OR deployment settings incorrect
+- **Fix Applied:** Added explicit CORS headers using `.setHeader()` and `doOptions()` function
+- **Status:** Code updated, needs redeployment
 
 ---
 
-**Next Step:** Follow the deployment steps above, starting with Step 1. The most reliable method is to create a completely new deployment (Option A in Step 4).
+## 🔑 Key Changes Made
+
+The following changes were made to fix CORS:
+
+1. **Updated `createResponse()` function** to explicitly set CORS headers:
+   - `Access-Control-Allow-Origin: https://dogpaddle.club`
+   - `Access-Control-Allow-Methods: GET, POST, OPTIONS`
+   - `Access-Control-Allow-Headers: Content-Type`
+
+2. **Added `doOptions()` function** to handle CORS preflight (OPTIONS) requests
+
+3. **Both files updated:**
+   - `/backend/google-apps-script.gs` (comprehensive version)
+   - `/backend/google-apps-script-custom.gs` (custom sheet version)
+
+---
+
+**Next Step:** Follow the deployment steps above, starting with Step 1. You MUST redeploy the Web App with the updated code. The most reliable method is to create a completely new deployment (Option A in Step 4).
