@@ -100,7 +100,23 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Load products
   async function loadProducts() {
-    // Check if backend is configured
+    // FIRST: Check localStorage for saved products (admin updates)
+    const savedProducts = localStorage.getItem('doggypaddle_products');
+    if (savedProducts) {
+      try {
+        const parsedProducts = JSON.parse(savedProducts);
+        if (parsedProducts.length > 0) {
+          console.log('✓ Loading products from localStorage (admin-managed)');
+          products = parsedProducts;
+          renderProducts();
+          return;
+        }
+      } catch (error) {
+        console.warn('Could not parse saved products:', error);
+      }
+    }
+
+    // SECOND: Check if backend is configured
     if (!isBackendConfigured) {
       console.warn(
         "%c⚠️ Backend Not Configured - Using Sample Products",
@@ -117,6 +133,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
+    // THIRD: Try to load from backend API
     try {
       const response = await fetch(`${API_ENDPOINT}?action=getProducts`);
       if (response.ok) {
@@ -379,6 +396,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.location.href = stripeUrl;
     });
   }
+
+  // Expose reload function for admin dashboard
+  window.reloadStoreProducts = function() {
+    const savedProducts = localStorage.getItem('doggypaddle_products');
+    if (savedProducts) {
+      try {
+        const parsedProducts = JSON.parse(savedProducts);
+        if (parsedProducts.length > 0) {
+          products = parsedProducts;
+          renderProducts();
+          console.log('✓ Store products reloaded from localStorage');
+        }
+      } catch (error) {
+        console.warn('Could not reload products:', error);
+      }
+    }
+  };
 
   // Initialize
   await loadProducts();
@@ -710,6 +744,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Update admin button text and functionality
   function updateAdminButton() {
+    // Check if button exists (may not exist on all pages)
+    if (!adminLoginBtn) return;
+
     if (isAdminLoggedIn) {
       const session = JSON.parse(localStorage.getItem('doggypaddle_admin_session') || '{}');
       adminLoginBtn.innerHTML = `
@@ -1045,18 +1082,4 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Update Admin Button Text on load
   updateAdminButton();
-
-  // Load products from localStorage if available
-  const savedProducts = localStorage.getItem('doggypaddle_products');
-  if (savedProducts && products.length === sampleProducts.length) {
-    try {
-      const parsedProducts = JSON.parse(savedProducts);
-      if (parsedProducts.length > 0) {
-        products = parsedProducts;
-        renderProducts();
-      }
-    } catch (error) {
-      console.warn('Could not load saved products:', error);
-    }
-  }
 });
