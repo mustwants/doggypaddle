@@ -214,15 +214,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Render gallery
   function renderGallery(photos) {
-    if (photos.length === 0) {
+    // Filter to only show approved photos (reject rejected and pending ones)
+    const approvedPhotos = photos.filter(photo => photo.status === 'approved');
+
+    if (approvedPhotos.length === 0) {
       galleryGrid.innerHTML = '<div class="loading">No photos yet. Be the first to share!</div>';
       return;
     }
 
-    // Sort by date
-    photos.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    // Sort by date (most recent first)
+    approvedPhotos.sort((a, b) => {
+      const dateA = new Date(b.timestamp || b.createdAt || 0);
+      const dateB = new Date(a.timestamp || a.createdAt || 0);
+      return dateB - dateA;
+    });
 
-    galleryGrid.innerHTML = photos.map(photo => `
+    galleryGrid.innerHTML = approvedPhotos.map(photo => `
       <div class="gallery-item">
         <img src="${photo.imageUrl}" alt="${photo.dogName}" class="gallery-image"
              onerror="this.src='/assets/logo.png'" />
@@ -230,67 +237,26 @@ document.addEventListener('DOMContentLoaded', async () => {
           <div class="gallery-dog-name">${photo.dogName}</div>
           ${photo.caption ? `<div class="gallery-description">${photo.caption}</div>` : ''}
           <div class="gallery-date">
-            ${photo.sessionDate ? `Session: ${new Date(photo.sessionDate).toLocaleDateString()}` : ''}
-            ${photo.customerName ? `- by ${photo.customerName}` : ''}
+            ${photo.sessionDate ? `Session: ${photo.sessionDate}` : ''}
+            ${photo.customerName ? ` - by ${photo.customerName}` : ''}
           </div>
         </div>
       </div>
     `).join('');
   }
 
-  // Show sample gallery
+  // Show sample gallery - loads from localStorage
   function showSampleGallery() {
-    const samplePhotos = [
-      {
-        dogName: 'Remi',
-        caption: 'First time in the pool! Had so much fun!',
-        imageUrl: '/assets/Remi1.jpg',
-        customerName: 'Sarah',
-        sessionDate: '2024-11-10',
-        email: 'sarah@example.com',
-        timestamp: '2024-11-10T10:00:00.000Z',
-        status: 'approved'
-      },
-      {
-        dogName: 'Max',
-        caption: 'Max loves his swimming sessions!',
-        imageUrl: '/assets/Remi2.jpg',
-        customerName: 'John',
-        sessionDate: '2024-11-12',
-        email: 'john@example.com',
-        timestamp: '2024-11-12T11:00:00.000Z',
-        status: 'approved'
-      },
-      {
-        dogName: 'Bella',
-        caption: 'Great exercise for Bella!',
-        imageUrl: '/assets/Remi3.jpg',
-        customerName: 'Emily',
-        sessionDate: '2024-11-13',
-        email: 'emily@example.com',
-        timestamp: '2024-11-13T12:00:00.000Z',
-        status: 'approved'
-      },
-      {
-        dogName: 'Charlie',
-        caption: 'Charlie is a natural swimmer!',
-        imageUrl: '/assets/Remi4.jpg',
-        customerName: 'Mike',
-        sessionDate: '2024-11-14',
-        email: 'mike@example.com',
-        timestamp: '2024-11-14T13:00:00.000Z',
-        status: 'approved'
-      }
-    ];
+    // Load photos from localStorage
+    const storedPhotos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
 
-    // Save sample photos to localStorage so admin can see them
-    const existingPhotos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
-    if (existingPhotos.length === 0) {
-      localStorage.setItem('doggypaddle_photos', JSON.stringify(samplePhotos));
-      console.log('✓ Initialized localStorage with sample photos for admin access');
+    if (storedPhotos.length > 0) {
+      // Use photos from localStorage
+      renderGallery(storedPhotos);
+    } else {
+      // No photos yet - show empty state
+      galleryGrid.innerHTML = '<div class="loading">No photos yet. Be the first to share!</div>';
     }
-
-    renderGallery(samplePhotos);
   }
 
   // Gallery tabs

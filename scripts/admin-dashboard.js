@@ -799,6 +799,7 @@ function initPhotosManagement() {
   const selectAllCheckbox = document.getElementById('select-all-photos');
   const bulkApproveBtn = document.getElementById('bulk-approve-photos');
   const bulkRejectBtn = document.getElementById('bulk-reject-photos');
+  const addPhotoBtn = document.getElementById('add-photo-btn');
 
   if (selectAllCheckbox) {
     selectAllCheckbox.addEventListener('change', function() {
@@ -814,6 +815,10 @@ function initPhotosManagement() {
 
   if (bulkRejectBtn) {
     bulkRejectBtn.addEventListener('click', bulkRejectPhotos);
+  }
+
+  if (addPhotoBtn) {
+    addPhotoBtn.addEventListener('click', openAddPhotoModal);
   }
 }
 
@@ -862,9 +867,11 @@ function loadPhotos() {
           ${status !== 'approved' ? `<button class="admin-btn admin-btn-edit" onclick="approvePhoto('${photo.timestamp}')">✓ Approve</button>` : ''}
           ${status !== 'rejected' ? `<button class="admin-btn admin-btn-delete" onclick="rejectPhoto('${photo.timestamp}')">✗ Reject</button>` : ''}
           ${status !== 'pending' ? `<button class="admin-btn admin-btn-toggle" onclick="resetPhotoStatus('${photo.timestamp}')">Reset</button>` : ''}
+          ${photo.featured ? `<button class="admin-btn admin-btn-toggle" onclick="toggleFeatured('${photo.timestamp}')" title="Remove from featured" style="background: #ff9800;">⭐ Featured</button>` : `<button class="admin-btn admin-btn-secondary" onclick="toggleFeatured('${photo.timestamp}')" title="Add to featured">☆ Feature</button>`}
           <button class="admin-btn admin-btn-edit" onclick="downloadPhoto('${photo.timestamp}')" title="Download photo">⬇ Download</button>
           <button class="admin-btn admin-btn-edit" onclick="shareToFacebook('${photo.timestamp}')" title="Share to Facebook" style="background: #1877f2;">📘 Share FB</button>
-          <button class="admin-btn admin-btn-secondary" onclick="editPhotoCaption('${photo.timestamp}')" title="Edit caption">✏️ Edit</button>
+          <button class="admin-btn admin-btn-secondary" onclick="editPhotoCaption('${photo.timestamp}')" title="Edit details">✏️ Edit</button>
+          <button class="admin-btn admin-btn-delete" onclick="deletePhoto('${photo.timestamp}')" title="Delete permanently">🗑 Delete</button>
         </div>
       </div>
     `;
@@ -913,6 +920,30 @@ window.resetPhotoStatus = function(timestamp) {
     localStorage.setItem('doggypaddle_photos', JSON.stringify(photos));
     loadPhotos();
     showNotification('Photo status reset to pending.', 'success');
+  }
+};
+
+// Delete photo permanently
+window.deletePhoto = function(timestamp) {
+  if (!confirm('Are you sure you want to permanently delete this photo? This action cannot be undone.')) return;
+
+  let photos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
+  photos = photos.filter(p => p.timestamp !== timestamp);
+  localStorage.setItem('doggypaddle_photos', JSON.stringify(photos));
+  loadPhotos();
+  showNotification('Photo deleted permanently.', 'success');
+};
+
+// Toggle featured status
+window.toggleFeatured = function(timestamp) {
+  const photos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
+  const photo = photos.find(p => p.timestamp === timestamp);
+
+  if (photo) {
+    photo.featured = !photo.featured;
+    localStorage.setItem('doggypaddle_photos', JSON.stringify(photos));
+    loadPhotos();
+    showNotification(photo.featured ? 'Photo marked as featured! It will appear on the home page.' : 'Photo removed from featured.', 'success');
   }
 };
 
@@ -1032,22 +1063,275 @@ window.shareToFacebook = function(timestamp) {
   }
 };
 
-// Edit photo caption
+// Edit photo details (customer name and caption)
 window.editPhotoCaption = function(timestamp) {
   const photos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
   const photo = photos.find(p => p.timestamp === timestamp);
 
-  if (photo) {
-    const newCaption = prompt('Edit caption for ' + photo.dogName + ':', photo.caption || '');
+  if (!photo) return;
 
-    if (newCaption !== null) { // User didn't cancel
-      photo.caption = newCaption;
-      localStorage.setItem('doggypaddle_photos', JSON.stringify(photos));
-      loadPhotos();
-      showNotification('Caption updated!', 'success');
-    }
-  }
+  // Create modal for editing
+  const modal = document.createElement('div');
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+  `;
+
+  modal.innerHTML = `
+    <div style="
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+    ">
+      <h3 style="margin-top: 0; color: var(--primary, #028090);">Edit Photo Details</h3>
+      <form id="edit-photo-form">
+        <div style="margin-bottom: 1rem;">
+          <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">
+            Dog Name
+          </label>
+          <input type="text" id="edit-dog-name" value="${photo.dogName || ''}" required
+                 style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+        </div>
+        <div style="margin-bottom: 1rem;">
+          <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">
+            Submitted By
+          </label>
+          <input type="text" id="edit-customer-name" value="${photo.customerName || ''}" required
+                 style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+        </div>
+        <div style="margin-bottom: 1rem;">
+          <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">
+            Email
+          </label>
+          <input type="email" id="edit-email" value="${photo.email || ''}"
+                 style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+        </div>
+        <div style="margin-bottom: 1rem;">
+          <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">
+            Caption
+          </label>
+          <textarea id="edit-caption" rows="3"
+                    style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; resize: vertical;">${photo.caption || ''}</textarea>
+        </div>
+        <div style="margin-bottom: 1rem;">
+          <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">
+            Session Date
+          </label>
+          <input type="text" id="edit-session-date" value="${photo.sessionDate || ''}"
+                 placeholder="MM/DD/YYYY"
+                 style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+        </div>
+        <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
+          <button type="button" id="cancel-edit-photo" style="
+            background: #ddd;
+            color: #333;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+          ">Cancel</button>
+          <button type="submit" style="
+            background: var(--primary, #028090);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+          ">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  // Handle form submission
+  document.getElementById('edit-photo-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    photo.dogName = document.getElementById('edit-dog-name').value;
+    photo.customerName = document.getElementById('edit-customer-name').value;
+    photo.email = document.getElementById('edit-email').value;
+    photo.caption = document.getElementById('edit-caption').value;
+    photo.sessionDate = document.getElementById('edit-session-date').value;
+
+    localStorage.setItem('doggypaddle_photos', JSON.stringify(photos));
+    loadPhotos();
+    modal.remove();
+    showNotification('Photo details updated!', 'success');
+  });
+
+  // Handle cancel
+  document.getElementById('cancel-edit-photo').addEventListener('click', () => {
+    modal.remove();
+  });
+
+  // Close on background click
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.remove();
+  });
 };
+
+// Open Add Photo Modal
+function openAddPhotoModal() {
+  const modal = document.createElement('div');
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+  `;
+
+  modal.innerHTML = `
+    <div style="
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+    ">
+      <h3 style="margin-top: 0; color: var(--primary, #028090);">Add Photo to Gallery</h3>
+      <form id="add-photo-form">
+        <div style="margin-bottom: 1rem;">
+          <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">
+            Dog Name <span style="color: red;">*</span>
+          </label>
+          <input type="text" id="add-dog-name" required
+                 style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+        </div>
+        <div style="margin-bottom: 1rem;">
+          <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">
+            Submitted By <span style="color: red;">*</span>
+          </label>
+          <input type="text" id="add-customer-name" required
+                 style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+        </div>
+        <div style="margin-bottom: 1rem;">
+          <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">
+            Email
+          </label>
+          <input type="email" id="add-email"
+                 style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+        </div>
+        <div style="margin-bottom: 1rem;">
+          <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">
+            Caption
+          </label>
+          <textarea id="add-caption" rows="3"
+                    style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; resize: vertical;"></textarea>
+        </div>
+        <div style="margin-bottom: 1rem;">
+          <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">
+            Session Date
+          </label>
+          <input type="text" id="add-session-date"
+                 placeholder="MM/DD/YYYY"
+                 style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+        </div>
+        <div style="margin-bottom: 1rem;">
+          <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">
+            Image URL <span style="color: red;">*</span>
+          </label>
+          <input type="url" id="add-image-url" required
+                 placeholder="https://example.com/image.jpg or data:image/..."
+                 style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+          <small style="color: #666; display: block; margin-top: 0.25rem;">
+            Enter an image URL or paste a base64 data URI
+          </small>
+        </div>
+        <div style="margin-bottom: 1rem;">
+          <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">
+            Status
+          </label>
+          <select id="add-status"
+                  style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+            <option value="pending">Pending</option>
+            <option value="approved" selected>Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+        <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
+          <button type="button" id="cancel-add-photo" style="
+            background: #ddd;
+            color: #333;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+          ">Cancel</button>
+          <button type="submit" style="
+            background: var(--primary, #028090);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+          ">Add Photo</button>
+        </div>
+      </form>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  // Handle form submission
+  document.getElementById('add-photo-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    const photos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
+
+    const newPhoto = {
+      timestamp: Date.now(),
+      dogName: document.getElementById('add-dog-name').value,
+      customerName: document.getElementById('add-customer-name').value,
+      email: document.getElementById('add-email').value,
+      caption: document.getElementById('add-caption').value,
+      sessionDate: document.getElementById('add-session-date').value,
+      imageUrl: document.getElementById('add-image-url').value,
+      status: document.getElementById('add-status').value
+    };
+
+    photos.push(newPhoto);
+    localStorage.setItem('doggypaddle_photos', JSON.stringify(photos));
+    loadPhotos();
+    modal.remove();
+    showNotification('Photo added to gallery!', 'success');
+  });
+
+  // Handle cancel
+  document.getElementById('cancel-add-photo').addEventListener('click', () => {
+    modal.remove();
+  });
+
+  // Close on background click
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.remove();
+  });
+}
 
 window.updateBulkActionButtons = function() {
   const checkboxes = document.querySelectorAll('.photo-checkbox:checked');
