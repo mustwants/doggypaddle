@@ -482,9 +482,14 @@
         <input type="date" id="signature-date" style="width: 100%; padding: 0.75rem;" required />
       </div>
 
-      <button type="button" id="submit-waiver" class="button submit-waiver-btn" disabled>
-        Accept Waiver & Continue to Booking
-      </button>
+      <div style="display: flex; gap: 1rem; margin-top: 1.5rem; flex-wrap: wrap;">
+        <button type="button" id="download-waiver" class="button button-secondary" style="flex: 1; min-width: 200px;">
+          📄 Download Signed Waiver
+        </button>
+        <button type="button" id="submit-waiver" class="button submit-waiver-btn" style="flex: 1; min-width: 200px;" disabled>
+          Accept Waiver & Continue to Booking
+        </button>
+      </div>
     </div>
   </div>
 
@@ -659,6 +664,114 @@
         submitButton.style.cursor = 'pointer';
       }
     }
+
+    // Download waiver function
+    function downloadWaiver() {
+      const waiverData = {
+        fullName: fullNameInput.value.trim(),
+        date: signatureDateInput.value,
+        initials: {
+          section1: document.getElementById('initial1').value,
+          section2: document.getElementById('initial2').value,
+          section3: document.getElementById('initial3').value,
+          section4: document.getElementById('initial4').value,
+          section5: document.getElementById('initial5').value,
+        },
+        signature: signatureData,
+        timestamp: new Date().toISOString()
+      };
+
+      // Create a printable HTML version
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>DoggyPaddle Liability Waiver - ${waiverData.fullName}</title>
+          <style>
+            body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; line-height: 1.6; }
+            h1, h2, h3 { color: #114B5F; }
+            h1 { text-align: center; border-bottom: 3px solid #028090; padding-bottom: 10px; }
+            .header { text-align: center; margin-bottom: 30px; }
+            .section { margin: 20px 0; padding: 15px; background: #f9f9f9; border-left: 4px solid #028090; }
+            .initial-box { display: inline-block; padding: 5px 15px; background: white; border: 2px solid #028090; margin: 10px 5px; font-weight: bold; }
+            .signature-box { margin: 30px 0; padding: 20px; border: 2px solid #028090; background: white; }
+            .signature-img { max-width: 400px; border-bottom: 2px solid #000; }
+            ul, ol { margin: 10px 0 10px 30px; }
+            li { margin: 5px 0; }
+            @media print { button { display: none; } }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>DoggyPaddle Liability Waiver</h1>
+            <p><strong>A Jointwerx LLC Service</strong></p>
+            <p>St. Augustine, St. Johns County, Florida</p>
+          </div>
+
+          ${document.getElementById('waiver-content').innerHTML}
+
+          <div class="section">
+            <h3>Section Initials</h3>
+            <div class="initial-box">Section 1: ${waiverData.initials.section1}</div>
+            <div class="initial-box">Section 2: ${waiverData.initials.section2}</div>
+            <div class="initial-box">Section 3: ${waiverData.initials.section3}</div>
+            <div class="initial-box">Section 4: ${waiverData.initials.section4}</div>
+            <div class="initial-box">Section 5: ${waiverData.initials.section5}</div>
+          </div>
+
+          <div class="signature-box">
+            <h3>Electronic Signature</h3>
+            <p><strong>Full Name:</strong> ${waiverData.fullName}</p>
+            <p><strong>Date:</strong> ${new Date(waiverData.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            <p><strong>Signature:</strong></p>
+            <img src="${waiverData.signature}" class="signature-img" alt="Electronic Signature" />
+            <p style="margin-top: 20px;"><strong>Timestamp:</strong> ${new Date(waiverData.timestamp).toLocaleString()}</p>
+          </div>
+
+          <div style="margin-top: 40px; text-align: center; padding: 20px; background: #f0f0f0; border: 1px solid #ccc;">
+            <p><strong>This is a legally binding electronic signature.</strong></p>
+            <p>Document ID: ${waiverData.timestamp.replace(/[:.]/g, '-')}</p>
+          </div>
+
+          <div style="margin-top: 20px; text-align: center;">
+            <button onclick="window.print()" style="padding: 10px 30px; font-size: 16px; background: #028090; color: white; border: none; border-radius: 5px; cursor: pointer;">
+              Print / Save as PDF
+            </button>
+            <button onclick="window.close()" style="padding: 10px 30px; font-size: 16px; background: #666; color: white; border: none; border-radius: 5px; cursor: pointer; margin-left: 10px;">
+              Close
+            </button>
+          </div>
+        </body>
+        </html>
+      `);
+      printWindow.document.close();
+    }
+
+    // Download button handler
+    document.getElementById('download-waiver').addEventListener('click', () => {
+      if (!signatureData) {
+        alert('Please complete your signature first.');
+        return;
+      }
+      if (!fullNameInput.value.trim()) {
+        alert('Please enter your full legal name.');
+        return;
+      }
+      if (!signatureDateInput.value) {
+        alert('Please select a date.');
+        return;
+      }
+
+      // Check if all initials are filled
+      const allInitialsFilled = Array.from(initialInputs).every(input => input.value.length >= 2);
+      if (!allInitialsFilled) {
+        alert('Please initial all sections before downloading.');
+        return;
+      }
+
+      downloadWaiver();
+    });
 
     // Submit waiver
     submitButton.addEventListener('click', async () => {
