@@ -138,6 +138,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Render products
   function renderProducts() {
+    if (!productsGrid) return;
+
     const filteredProducts = currentCategory === 'all'
       ? products
       : products.filter(p => p.category === currentCategory);
@@ -220,13 +222,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     const itemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
     const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-    cartCount.textContent = itemCount;
-    cartTotal.textContent = `$${total.toFixed(2)}`;
+    if (cartCount) {
+      cartCount.textContent = itemCount;
+    }
+    if (cartTotal) {
+      cartTotal.textContent = `$${total.toFixed(2)}`;
+    }
 
-    if (itemCount > 0) {
-      cartBadge.style.display = 'flex';
-    } else {
-      cartBadge.style.display = 'none';
+    if (cartBadge) {
+      if (itemCount > 0) {
+        cartBadge.style.display = 'flex';
+      } else {
+        cartBadge.style.display = 'none';
+      }
     }
 
     renderCartItems();
@@ -234,6 +242,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Render cart items
   function renderCartItems() {
+    if (!cartItems) return;
+
     if (cart.length === 0) {
       cartItems.innerHTML = '<div class="empty-cart">Your cart is empty</div>';
       return;
@@ -304,17 +314,22 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   // Cart badge click
-  cartBadge.addEventListener('click', () => {
-    cartSidebar.classList.add('open');
-  });
+  if (cartBadge) {
+    cartBadge.addEventListener('click', () => {
+      cartSidebar.classList.add('open');
+    });
+  }
 
   // Close cart
-  closeCartBtn.addEventListener('click', () => {
-    cartSidebar.classList.remove('open');
-  });
+  if (closeCartBtn) {
+    closeCartBtn.addEventListener('click', () => {
+      cartSidebar.classList.remove('open');
+    });
+  }
 
   // Checkout
-  checkoutBtn.addEventListener('click', async () => {
+  if (checkoutBtn) {
+    checkoutBtn.addEventListener('click', async () => {
     if (cart.length === 0) {
       alert('Your cart is empty!');
       return;
@@ -358,7 +373,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                      'https://buy.stripe.com/14AaEW1GV3vIgaK7fE5J60c';
 
     window.location.href = stripeUrl;
-  });
+    });
+  }
 
   // Initialize
   await loadProducts();
@@ -431,30 +447,36 @@ document.addEventListener('DOMContentLoaded', async () => {
   const adminOrdersList = document.getElementById('admin-orders-list');
 
   // Admin Login Button Click
-  adminLoginBtn.addEventListener('click', () => {
-    if (isAdminLoggedIn) {
-      console.log('Admin already logged in, opening panel...');
-      openAdminPanel();
-    } else {
-      console.log('Admin not logged in, showing login modal...');
-      // Update allowed admins list dynamically
-      const allowedAdmins = window.DoggyPaddleConfig?.GOOGLE_AUTH?.allowedAdmins || [];
-      const adminListElement = document.getElementById('admin-allowed-list');
-      if (adminListElement) {
-        adminListElement.textContent = allowedAdmins.join(', ');
+  if (adminLoginBtn) {
+    adminLoginBtn.addEventListener('click', () => {
+      if (isAdminLoggedIn) {
+        console.log('Admin already logged in, opening panel...');
+        openAdminPanel();
+      } else {
+        console.log('Admin not logged in, showing login modal...');
+        // Update allowed admins list dynamically
+        const allowedAdmins = window.DoggyPaddleConfig?.GOOGLE_AUTH?.allowedAdmins || [];
+        const adminListElement = document.getElementById('admin-allowed-list');
+        if (adminListElement) {
+          adminListElement.textContent = allowedAdmins.join(', ');
+        }
+        adminLoginModal.style.display = 'flex';
       }
-      adminLoginModal.style.display = 'flex';
-    }
-  });
+    });
+  }
 
   // Close modals
-  closeAdminLoginBtn.addEventListener('click', () => {
-    adminLoginModal.style.display = 'none';
-  });
+  if (closeAdminLoginBtn) {
+    closeAdminLoginBtn.addEventListener('click', () => {
+      adminLoginModal.style.display = 'none';
+    });
+  }
 
-  closeAdminPanelBtn.addEventListener('click', () => {
-    adminPanel.style.display = 'none';
-  });
+  if (closeAdminPanelBtn) {
+    closeAdminPanelBtn.addEventListener('click', () => {
+      adminPanel.style.display = 'none';
+    });
+  }
 
   // Admin logout button
   if (adminLogoutBtn) {
@@ -475,13 +497,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.warn('Admin logout button not found');
   }
 
-  closeProductFormBtn.addEventListener('click', () => {
-    productFormModal.style.display = 'none';
-  });
+  if (closeProductFormBtn) {
+    closeProductFormBtn.addEventListener('click', () => {
+      productFormModal.style.display = 'none';
+    });
+  }
 
-  cancelProductFormBtn.addEventListener('click', () => {
-    productFormModal.style.display = 'none';
-  });
+  if (cancelProductFormBtn) {
+    cancelProductFormBtn.addEventListener('click', () => {
+      productFormModal.style.display = 'none';
+    });
+  }
 
   // Initialize Google Sign-In
   function initGoogleSignIn() {
@@ -719,15 +745,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   // Add Product Button
-  addProductBtn.addEventListener('click', () => {
-    currentEditingProduct = null;
-    document.getElementById('product-form-title').textContent = 'Add Product';
-    productForm.reset();
-    productFormModal.style.display = 'flex';
-  });
+  if (addProductBtn) {
+    addProductBtn.addEventListener('click', () => {
+      currentEditingProduct = null;
+      document.getElementById('product-form-title').textContent = 'Add Product';
+      productForm.reset();
+      productFormModal.style.display = 'flex';
+    });
+  }
 
   // Product Form Submit
-  productForm.addEventListener('submit', async (e) => {
+  if (productForm) {
+    productForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const isUpdate = !!currentEditingProduct;
@@ -770,7 +799,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderProducts();
     loadAdminProducts();
     showNotification(isUpdate ? 'Product updated!' : 'Product added!');
-  });
+    });
+  }
 
   // Open Admin Panel
   function openAdminPanel() {
@@ -803,6 +833,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Load Admin Products
   function loadAdminProducts() {
+    if (!adminProductsList) return;
+
     adminProductsList.innerHTML = products.map(product => {
       const quantity = product.quantity || 0;
       const lowStockThreshold = product.lowStockThreshold || 5;
@@ -969,6 +1001,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Load Admin Orders
   async function loadAdminOrders() {
+    if (!adminOrdersList) return;
+
     // Try to load orders from localStorage
     const orders = [];
 
