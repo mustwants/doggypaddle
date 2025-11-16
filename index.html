@@ -621,39 +621,307 @@
     </div>
   </div>
 
-  <!-- Featured Photos Gallery -->
+  <!-- Featured Photos Carousel -->
   <div class="gallery-section">
     <div class="container">
       <h2 style="text-align: center; color: white; margin-bottom: 2rem;">Featured Photos</h2>
-      <div class="gallery-grid" id="featured-gallery">
-        <!-- Featured photos will be loaded dynamically from admin-approved photos -->
-        <img src="/assets/Remi1.jpg" alt="Dog enjoying swim session at DoggyPaddle" loading="lazy" />
-        <img src="/assets/Remi2.jpg" alt="Happy dog swimming in our pool" loading="lazy" />
-        <img src="/assets/Remi3.jpg" alt="Dog having fun in the water" loading="lazy" />
-        <img src="/assets/Remi4.jpg" alt="Safe dog swimming environment" loading="lazy" />
+      <div class="carousel-container">
+        <button class="carousel-btn prev" id="carousel-prev" aria-label="Previous photo">‹</button>
+        <div class="carousel-wrapper">
+          <div class="carousel-track" id="carousel-track">
+            <!-- Carousel items will be loaded dynamically -->
+          </div>
+        </div>
+        <button class="carousel-btn next" id="carousel-next" aria-label="Next photo">›</button>
       </div>
+      <div class="carousel-dots" id="carousel-dots"></div>
     </div>
   </div>
 
+  <style>
+    .carousel-container {
+      position: relative;
+      max-width: 800px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    .carousel-wrapper {
+      overflow: hidden;
+      border-radius: 12px;
+    }
+
+    .carousel-track {
+      display: flex;
+      transition: transform 0.5s ease;
+    }
+
+    .carousel-item {
+      min-width: 100%;
+      position: relative;
+    }
+
+    .carousel-item img {
+      width: 100%;
+      height: 500px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .carousel-caption {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%);
+      color: white;
+      padding: 2rem 1.5rem 1.5rem;
+    }
+
+    .carousel-caption h3 {
+      margin: 0 0 0.5rem 0;
+      font-size: 1.5rem;
+    }
+
+    .carousel-caption p {
+      margin: 0;
+      font-size: 1rem;
+      opacity: 0.9;
+    }
+
+    .carousel-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255, 255, 255, 0.9);
+      border: none;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      font-size: 2rem;
+      cursor: pointer;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+      color: var(--primary);
+    }
+
+    .carousel-btn:hover {
+      background: white;
+      transform: translateY(-50%) scale(1.1);
+    }
+
+    .carousel-btn.prev {
+      left: 1rem;
+    }
+
+    .carousel-btn.next {
+      right: 1rem;
+    }
+
+    .carousel-dots {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 1.5rem;
+    }
+
+    .carousel-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.5);
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .carousel-dot.active {
+      background: white;
+      width: 32px;
+      border-radius: 6px;
+    }
+
+    @media (max-width: 768px) {
+      .carousel-item img {
+        height: 300px;
+      }
+
+      .carousel-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 1.5rem;
+      }
+
+      .carousel-caption h3 {
+        font-size: 1.2rem;
+      }
+
+      .carousel-caption p {
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+
   <script>
-    // Load featured photos from localStorage
+    // Carousel functionality
+    let currentSlide = 0;
+    let carouselPhotos = [];
+
     function loadFeaturedPhotos() {
       const photos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
-      const featuredPhotos = photos.filter(photo => photo.featured && photo.status === 'approved');
+      carouselPhotos = photos.filter(photo => photo.featured && photo.status === 'approved');
 
-      if (featuredPhotos.length > 0) {
-        const galleryGrid = document.getElementById('featured-gallery');
-        galleryGrid.innerHTML = featuredPhotos.slice(0, 4).map(photo => `
+      // Fallback to placeholder images if no featured photos
+      if (carouselPhotos.length === 0) {
+        carouselPhotos = [
+          {
+            imageUrl: '/assets/Remi1.jpg',
+            dogName: 'Remi',
+            caption: 'Loves to fetch after a good dive',
+            customerName: 'Sarah',
+            featured: true,
+            status: 'approved'
+          },
+          {
+            imageUrl: '/assets/Remi2.jpg',
+            dogName: 'Remi',
+            caption: 'Remi ball session',
+            customerName: 'Sarah',
+            featured: true,
+            status: 'approved'
+          },
+          {
+            imageUrl: '/assets/Remi3.jpg',
+            dogName: 'Remi',
+            caption: 'Remi belly flop',
+            customerName: 'Sarah',
+            featured: true,
+            status: 'approved'
+          },
+          {
+            imageUrl: '/assets/Remi4.jpg',
+            dogName: 'Remi',
+            caption: 'Remi Dive',
+            customerName: 'Sarah',
+            featured: true,
+            status: 'approved'
+          }
+        ];
+      }
+
+      renderCarousel();
+    }
+
+    function renderCarousel() {
+      const track = document.getElementById('carousel-track');
+      const dotsContainer = document.getElementById('carousel-dots');
+
+      if (carouselPhotos.length === 0) {
+        track.innerHTML = '<p style="color: white; text-align: center; padding: 3rem;">No featured photos yet. Check back soon!</p>';
+        return;
+      }
+
+      // Render carousel items
+      track.innerHTML = carouselPhotos.map(photo => `
+        <div class="carousel-item">
           <img src="${photo.imageUrl}"
-               alt="${photo.dogName} - ${photo.caption || 'Featured photo'}"
-               loading="lazy"
+               alt="${photo.dogName} - ${photo.caption || ''}"
                onerror="this.src='/assets/logo.png'" />
-        `).join('');
+          <div class="carousel-caption">
+            <h3>${photo.dogName}</h3>
+            <p>${photo.caption || ''}</p>
+            ${photo.customerName ? `<p style="font-size: 0.9rem; margin-top: 0.5rem;">📸 by ${photo.customerName}</p>` : ''}
+          </div>
+        </div>
+      `).join('');
+
+      // Render dots
+      dotsContainer.innerHTML = carouselPhotos.map((_, index) => `
+        <button class="carousel-dot ${index === 0 ? 'active' : ''}"
+                onclick="goToSlide(${index})"
+                aria-label="Go to slide ${index + 1}"></button>
+      `).join('');
+
+      // Show/hide navigation buttons based on number of photos
+      const prevBtn = document.getElementById('carousel-prev');
+      const nextBtn = document.getElementById('carousel-next');
+      if (carouselPhotos.length <= 1) {
+        prevBtn.style.display = 'none';
+        nextBtn.style.display = 'none';
+      } else {
+        prevBtn.style.display = 'flex';
+        nextBtn.style.display = 'flex';
       }
     }
 
-    // Load featured photos when page loads
-    document.addEventListener('DOMContentLoaded', loadFeaturedPhotos);
+    function goToSlide(index) {
+      const track = document.getElementById('carousel-track');
+      const dots = document.querySelectorAll('.carousel-dot');
+
+      currentSlide = index;
+      track.style.transform = `translateX(-${currentSlide * 100}%)`;
+
+      // Update active dot
+      dots.forEach((dot, i) => {
+        dot.classList.toggle('active', i === currentSlide);
+      });
+    }
+
+    function nextSlide() {
+      currentSlide = (currentSlide + 1) % carouselPhotos.length;
+      goToSlide(currentSlide);
+    }
+
+    function prevSlide() {
+      currentSlide = (currentSlide - 1 + carouselPhotos.length) % carouselPhotos.length;
+      goToSlide(currentSlide);
+    }
+
+    // Auto-advance carousel every 5 seconds
+    let autoAdvance;
+    function startAutoAdvance() {
+      autoAdvance = setInterval(nextSlide, 5000);
+    }
+
+    function stopAutoAdvance() {
+      clearInterval(autoAdvance);
+    }
+
+    // Initialize carousel
+    document.addEventListener('DOMContentLoaded', () => {
+      loadFeaturedPhotos();
+
+      // Set up navigation
+      document.getElementById('carousel-prev').addEventListener('click', () => {
+        prevSlide();
+        stopAutoAdvance();
+        startAutoAdvance();
+      });
+
+      document.getElementById('carousel-next').addEventListener('click', () => {
+        nextSlide();
+        stopAutoAdvance();
+        startAutoAdvance();
+      });
+
+      // Start auto-advance
+      if (carouselPhotos.length > 1) {
+        startAutoAdvance();
+      }
+
+      // Pause auto-advance on hover
+      const carouselContainer = document.querySelector('.carousel-container');
+      carouselContainer.addEventListener('mouseenter', stopAutoAdvance);
+      carouselContainer.addEventListener('mouseleave', () => {
+        if (carouselPhotos.length > 1) startAutoAdvance();
+      });
+    });
+
+    // Make goToSlide available globally
+    window.goToSlide = goToSlide;
   </script>
 
   <!-- Main Content -->
