@@ -209,11 +209,29 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function formatTime(timeString) {
-    const [hours, minutes] = timeString.split(":");
-    const hour = parseInt(hours);
+    if (!timeString || typeof timeString !== 'string') {
+      return 'Invalid Time';
+    }
+
+    const parts = timeString.split(":");
+    if (parts.length < 2) {
+      return 'Invalid Time';
+    }
+
+    const [hours, minutes] = parts;
+    const hour = parseInt(hours, 10);
+    const min = parseInt(minutes, 10);
+
+    // Validate hour and minute ranges
+    if (isNaN(hour) || isNaN(min) || hour < 0 || hour > 23 || min < 0 || min > 59) {
+      console.error('Invalid time format:', timeString);
+      return 'Invalid Time';
+    }
+
     const ampm = hour >= 12 ? "pm" : "am";
     const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-    return `${displayHour}:${minutes}${ampm}`;
+    const displayMinutes = String(min).padStart(2, '0');
+    return `${displayHour}:${displayMinutes}${ampm}`;
   }
 
   function formatDateLong(dateString) {

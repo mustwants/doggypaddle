@@ -116,7 +116,38 @@ function loadTimeSlots() {
   const timeslotsList = document.getElementById('admin-timeslots-list');
   if (!timeslotsList) return;
 
-  const slots = JSON.parse(localStorage.getItem('doggypaddle_timeslots') || '[]');
+  let slots = JSON.parse(localStorage.getItem('doggypaddle_timeslots') || '[]');
+
+  // Check for invalid time slots and offer to clean them up
+  const invalidSlots = slots.filter(slot => !validateTimeFormat(slot.time));
+  if (invalidSlots.length > 0) {
+    console.warn('Found invalid time slots:', invalidSlots);
+    const message = `Found ${invalidSlots.length} time slot${invalidSlots.length > 1 ? 's' : ''} with invalid time format. These will be highlighted in red below.`;
+
+    const warningDiv = document.createElement('div');
+    warningDiv.style.cssText = `
+      background: #fff3cd;
+      border: 2px solid #ffc107;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      color: #856404;
+    `;
+    warningDiv.innerHTML = `
+      <strong>⚠️ Warning:</strong> ${message}
+      <button onclick="cleanupInvalidTimeSlots()" style="
+        margin-left: 1rem;
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 600;
+      ">Delete Invalid Slots</button>
+    `;
+    timeslotsList.parentElement.insertBefore(warningDiv, timeslotsList);
+  }
 
   if (slots.length === 0) {
     timeslotsList.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-light);">No time slots available. Click "Add Time Slot" to create one.</p>';
@@ -137,11 +168,16 @@ function loadTimeSlots() {
       blocked: '#dc3545'
     };
     const statusColor = statusColors[slot.status] || '#666';
+    const isInvalid = !validateTimeFormat(slot.time);
 
     return `
-      <div class="admin-product-item">
+      <div class="admin-product-item" style="${isInvalid ? 'border: 2px solid #dc3545; background: #fff5f5;' : ''}">
         <div class="admin-item-details">
-          <div class="admin-item-name">${formatDate(slot.date)} at ${formatTime(slot.time)}</div>
+          <div class="admin-item-name">
+            ${formatDate(slot.date)} at ${formatTime(slot.time)}
+            ${isInvalid ? '<span style="color: #dc3545; font-weight: 700; margin-left: 0.5rem;">⚠️ INVALID TIME</span>' : ''}
+          </div>
+          ${isInvalid ? `<div class="admin-item-info" style="color: #dc3545;">Raw time value: ${slot.time}</div>` : ''}
           <div class="admin-item-info">Duration: ${slot.duration} minutes</div>
           <div class="admin-item-info">
             Status: <span style="color: ${statusColor}; font-weight: 600; text-transform: capitalize;">${slot.status}</span>
@@ -156,12 +192,32 @@ function loadTimeSlots() {
   }).join('');
 }
 
+window.cleanupInvalidTimeSlots = function() {
+  if (!confirm('This will permanently delete all time slots with invalid time formats. Continue?')) {
+    return;
+  }
+
+  const slots = JSON.parse(localStorage.getItem('doggypaddle_timeslots') || '[]');
+  const validSlots = slots.filter(slot => validateTimeFormat(slot.time));
+  const removedCount = slots.length - validSlots.length;
+
+  localStorage.setItem('doggypaddle_timeslots', JSON.stringify(validSlots));
+  loadTimeSlots();
+  showNotification(`Removed ${removedCount} invalid time slot${removedCount > 1 ? 's' : ''}`, 'success');
+}
+
 function saveTimeSlot() {
   const id = document.getElementById('timeslot-id').value || `slot-${Date.now()}`;
   const date = document.getElementById('timeslot-date').value;
   const time = document.getElementById('timeslot-time').value;
   const duration = parseInt(document.getElementById('timeslot-duration').value);
   const status = document.getElementById('timeslot-status').value;
+
+  // Validate time format
+  if (!validateTimeFormat(time)) {
+    alert('Invalid time format. Please select a valid time.');
+    return;
+  }
 
   const slot = { id, date, time, duration, status };
 
@@ -218,7 +274,19 @@ function generateBulkTimeSlots() {
     for (let mins = startMinutes; mins < endMinutes; mins += duration) {
       const hour = Math.floor(mins / 60);
       const minute = mins % 60;
+
+      // Skip if hour is beyond 23 (invalid time)
+      if (hour > 23) {
+        continue;
+      }
+
       const timeStr = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+
+      // Validate the generated time
+      if (!validateTimeFormat(timeStr)) {
+        console.error('Generated invalid time, skipping:', timeStr);
+        continue;
+      }
 
       // Check if slot already exists
       const existingSlot = slots.find(s => s.date === dateStr && s.time === timeStr);
@@ -714,6 +782,27 @@ function bulkRejectPhotos() {
 // UTILITY FUNCTIONS
 // ============================================
 
+function validateTimeFormat(timeString) {
+  if (!timeString || typeof timeString !== 'string') {
+    return false;
+  }
+
+  const parts = timeString.split(':');
+  if (parts.length < 2) {
+    return false;
+  }
+
+  const hour = parseInt(parts[0], 10);
+  const minute = parseInt(parts[1], 10);
+
+  // Validate hour and minute ranges
+  if (isNaN(hour) || isNaN(minute) || hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+    return false;
+  }
+
+  return true;
+}
+
 function formatDate(dateString) {
   const date = new Date(dateString);
   return date.toLocaleDateString('en-US', {
@@ -725,11 +814,29 @@ function formatDate(dateString) {
 }
 
 function formatTime(timeString) {
-  const [hours, minutes] = timeString.split(':');
-  const hour = parseInt(hours);
+  if (!timeString || typeof timeString !== 'string') {
+    return 'Invalid Time';
+  }
+
+  const parts = timeString.split(':');
+  if (parts.length < 2) {
+    return 'Invalid Time';
+  }
+
+  const [hours, minutes] = parts;
+  const hour = parseInt(hours, 10);
+  const min = parseInt(minutes, 10);
+
+  // Validate hour and minute ranges
+  if (isNaN(hour) || isNaN(min) || hour < 0 || hour > 23 || min < 0 || min > 59) {
+    console.error('Invalid time format:', timeString);
+    return 'Invalid Time';
+  }
+
   const ampm = hour >= 12 ? 'PM' : 'AM';
   const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-  return `${displayHour}:${minutes} ${ampm}`;
+  const displayMinutes = String(min).padStart(2, '0');
+  return `${displayHour}:${displayMinutes} ${ampm}`;
 }
 
 function formatDateTime(date) {
