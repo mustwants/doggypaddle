@@ -16,6 +16,14 @@ function doOptions(e) {
 
 // Main entry point for GET requests
 function doGet(e) {
+  // Handle manual testing from Apps Script editor
+  if (!e || !e.parameter) {
+    return createResponse({
+      status: 'error',
+      message: 'This function must be accessed via HTTP. Please deploy as Web App and test via URL.'
+    });
+  }
+
   const action = e.parameter.action;
 
   try {
@@ -42,6 +50,14 @@ function doGet(e) {
 
 // Main entry point for POST requests
 function doPost(e) {
+  // Handle manual testing from Apps Script editor
+  if (!e || !e.postData) {
+    return createResponse({
+      status: 'error',
+      message: 'This function must be accessed via HTTP POST. Please deploy as Web App and test via URL.'
+    });
+  }
+
   try {
     const data = JSON.parse(e.postData.contents);
     const action = data.action;
@@ -327,6 +343,46 @@ function createResponse(data) {
 }
 
 // ADMIN HELPER FUNCTIONS - Run these manually from Script Editor
+
+// Test function to verify setup
+function testSetup() {
+  try {
+    // Test 1: Check if we can access the spreadsheet
+    const ss = SpreadsheetApp.openById(SHEET_ID);
+    Logger.log('✓ Spreadsheet access successful');
+    Logger.log('Spreadsheet name: ' + ss.getName());
+
+    // Test 2: Check/create sheets
+    const slotsSheet = getSheet(SLOTS_SHEET_NAME);
+    Logger.log('✓ Slots sheet accessible: ' + SLOTS_SHEET_NAME);
+
+    const bookingsSheet = getSheet(BOOKINGS_SHEET_NAME);
+    Logger.log('✓ Bookings sheet accessible: ' + BOOKINGS_SHEET_NAME);
+
+    const productsSheet = getSheet(PRODUCTS_SHEET_NAME);
+    Logger.log('✓ Products sheet accessible: ' + PRODUCTS_SHEET_NAME);
+
+    // Test 3: Count existing data
+    Logger.log('\nCurrent data counts:');
+    Logger.log('- Slots: ' + (slotsSheet.getLastRow() - 1) + ' rows');
+    Logger.log('- Bookings: ' + (bookingsSheet.getLastRow() - 1) + ' rows');
+    Logger.log('- Products: ' + (productsSheet.getLastRow() - 1) + ' rows');
+
+    Logger.log('\n✓ ALL TESTS PASSED! Setup is correct.');
+    Logger.log('\nNext steps:');
+    Logger.log('1. Deploy this script as a Web App (Deploy > New deployment)');
+    Logger.log('2. Set "Who has access" to "Anyone"');
+    Logger.log('3. Copy the Web App URL to your website\'s config.js');
+
+    return 'Setup test completed successfully!';
+  } catch (error) {
+    Logger.log('✗ ERROR: ' + error.toString());
+    Logger.log('\nPlease check:');
+    Logger.log('1. SHEET_ID is correct (currently: ' + SHEET_ID + ')');
+    Logger.log('2. You have edit access to the spreadsheet');
+    return 'Setup test failed: ' + error.toString();
+  }
+}
 
 // Add sample slots for testing
 function addSampleSlots() {
