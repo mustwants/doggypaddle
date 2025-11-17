@@ -22,134 +22,52 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Check if backend is configured
   const isBackendConfigured = API_ENDPOINT && !API_ENDPOINT.includes('YOUR_DEPLOYED_WEBAPP_ID');
 
-  // Sample products (fallback if API not configured)
-  const sampleProducts = [
-    {
-      id: 'prod-1',
-      name: 'Dog Treats - Peanut Butter',
-      description: 'Delicious all-natural peanut butter treats. Made with real peanut butter and no artificial ingredients.',
-      price: 12.99,
-      category: 'Treats',
-      imageUrl: '/assets/products/treats1.jpg',
-      inStock: true
-    },
-    {
-      id: 'prod-2',
-      name: 'Dog Treats - Bacon Flavor',
-      description: 'Crispy bacon-flavored treats your dog will love. Perfect for training or as a special reward.',
-      price: 14.99,
-      category: 'Treats',
-      imageUrl: '/assets/products/treats2.jpg',
-      inStock: true
-    },
-    {
-      id: 'prod-3',
-      name: 'Swimming Vest - Small',
-      description: 'Safety vest for small dogs (up to 25 lbs). Bright orange color for visibility.',
-      price: 29.99,
-      category: 'Accessories',
-      imageUrl: '/assets/products/vest-small.jpg',
-      inStock: true
-    },
-    {
-      id: 'prod-4',
-      name: 'Swimming Vest - Large',
-      description: 'Safety vest for large dogs (25+ lbs). Adjustable straps and durable construction.',
-      price: 34.99,
-      category: 'Accessories',
-      imageUrl: '/assets/products/vest-large.jpg',
-      inStock: true
-    },
-    {
-      id: 'prod-5',
-      name: 'DoggyPaddle T-Shirt',
-      description: 'Show your DoggyPaddle pride! Comfortable cotton t-shirt with our logo.',
-      price: 24.99,
-      category: 'Merchandise',
-      imageUrl: '/assets/products/tshirt.jpg',
-      inStock: true
-    },
-    {
-      id: 'prod-6',
-      name: 'Waterproof Toy Bundle',
-      description: 'Set of 3 floating toys perfect for pool time. Durable and easy to clean.',
-      price: 19.99,
-      category: 'Toys',
-      imageUrl: '/assets/products/toys.jpg',
-      inStock: true
-    },
-    {
-      id: 'prod-7',
-      name: 'Dog Shampoo - Fresh Scent',
-      description: 'Gentle shampoo perfect for after-swim rinse. Fresh scent, moisturizing formula.',
-      price: 16.99,
-      category: 'Accessories',
-      imageUrl: '/assets/products/shampoo.jpg',
-      inStock: true
-    },
-    {
-      id: 'prod-8',
-      name: 'DoggyPaddle Water Bowl',
-      description: 'Collapsible water bowl for on-the-go hydration. Easy to pack and clean.',
-      price: 9.99,
-      category: 'Accessories',
-      imageUrl: '/assets/products/bowl.jpg',
-      inStock: true
-    }
-  ];
+  // NO MOCK DATA - All products must come from Google Sheets backend
 
   // Load products
   async function loadProducts() {
-    // FIRST: Check localStorage for saved products (admin updates)
-    const savedProducts = localStorage.getItem('doggypaddle_products');
-    if (savedProducts) {
-      try {
-        const parsedProducts = JSON.parse(savedProducts);
-        if (parsedProducts.length > 0) {
-          console.log('✓ Loading products from localStorage (admin-managed)');
-          products = parsedProducts;
-          renderProducts();
-          return;
-        }
-      } catch (error) {
-        console.warn('Could not parse saved products:', error);
-      }
-    }
-
-    // SECOND: Check if backend is configured
+    // REQUIRED: Backend must be configured - NO localStorage or mock data
     if (!isBackendConfigured) {
-      console.warn(
-        "%c⚠️ Backend Not Configured - Using Sample Products",
-        "color: #ff9800; font-size: 14px; font-weight: bold;",
-        "\n\nThe Google Apps Script backend hasn't been set up yet.",
-        "\nDisplaying sample products for demonstration purposes.",
-        "\n\nTo enable live product management:",
-        "\n1. Follow the instructions in /backend/README.md",
-        "\n2. Deploy the Google Apps Script",
-        "\n3. Update the API_ENDPOINT in /scripts/config.js"
+      console.error(
+        "%c⚠️ BACKEND NOT CONFIGURED - NO PRODUCTS AVAILABLE",
+        "color: #ff0000; font-size: 16px; font-weight: bold;",
+        "\n\nThe Google Apps Script backend is REQUIRED.",
+        "\nNo mock data - all products must come from Google Sheets.",
+        "\n\nTo fix this:",
+        "\n1. Verify the API_ENDPOINT in /scripts/config.js",
+        "\n2. Ensure your Google Apps Script is deployed",
+        "\n3. Check that the deployment has 'Anyone' access",
+        "\n4. Add products to the 'Products' sheet in your Google Sheet",
+        "\n\nCurrent API_ENDPOINT:", API_ENDPOINT
       );
-      products = sampleProducts;
+      products = [];
       renderProducts();
       return;
     }
 
-    // THIRD: Try to load from backend API
+    // Load products from Google Sheets backend ONLY
     try {
+      console.log('Fetching products from Google Sheets backend...');
       const response = await fetch(`${API_ENDPOINT}?action=getProducts`);
+
       if (response.ok) {
         const data = await response.json();
-        if (data.status === 'success' && data.products.length > 0) {
+        if (data.status === 'success' && data.products) {
           products = data.products;
+          console.log(`✓ Loaded ${products.length} products from Google Sheets`);
         } else {
-          products = sampleProducts;
+          console.error('Backend returned error:', data.message);
+          products = [];
         }
       } else {
-        products = sampleProducts;
+        console.error('Failed to fetch products. HTTP status:', response.status);
+        products = [];
       }
     } catch (error) {
-      console.warn('Using sample products:', error);
-      products = sampleProducts;
+      console.error('Error fetching products from backend:', error);
+      products = [];
     }
+
     renderProducts();
   }
 
