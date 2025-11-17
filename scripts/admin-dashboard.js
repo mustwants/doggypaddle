@@ -2013,11 +2013,21 @@ function formatDateTime(date) {
 }
 
 function showNotification(message, type = 'info') {
-  // Check if global showNotification exists from store.js
-  if (typeof window.showNotification === 'function') {
-    window.showNotification(message);
-  } else {
-    // Fallback to alert
-    alert(message);
-  }
+  // Create notification element directly
+  const notification = document.createElement('div');
+  notification.textContent = message;
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: ${type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : 'var(--primary, #028090)'};
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    z-index: 10001;
+    animation: slideIn 0.3s ease;
+  `;
+  document.body.appendChild(notification);
+  setTimeout(() => notification.remove(), 3000);
 }
