@@ -4,8 +4,8 @@
 // Expose initialization function globally so it can be called when loaded dynamically
 window.initAdminDashboard = function() {
   console.log('Initializing admin dashboard enhancements...');
-  // Initialize sample data if needed
-  initializeSampleData();
+  // DISABLED: Do not auto-initialize sample data (causes fake data to appear)
+  // initializeSampleData();
 
   // Wait for base store.js and modals to initialize
   setTimeout(initAdminEnhancements, 500);
@@ -17,6 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Initialize sample data (products and photos) if database is empty
+// DISABLED: This function auto-populated fake data when localStorage was empty
+// To restore functionality, uncomment the initializeSampleData() call in initAdminDashboard()
 function initializeSampleData() {
   // Initialize sample products if none exist
   const products = JSON.parse(localStorage.getItem('doggypaddle_products') || '[]');
