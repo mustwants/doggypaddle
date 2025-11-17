@@ -542,6 +542,11 @@ window.deleteAdminProduct = function(productId) {
 let currentWeekStart = null;
 let selectedSlots = new Set();
 let calendarViewMode = 'calendar'; // 'calendar' or 'list'
+let adminSlots = []; // Slots fetched from Google Sheets backend
+
+// Get API endpoint from config
+const API_ENDPOINT = window.DoggyPaddleConfig?.API_ENDPOINT || '';
+const isBackendConfigured = API_ENDPOINT && !API_ENDPOINT.includes('YOUR_DEPLOYED_WEBAPP_ID');
 
 function initTimeSlotManagement() {
   const addTimeslotBtn = document.getElementById('add-timeslot-btn');
@@ -648,11 +653,48 @@ function loadTimeSlots() {
   renderCalendarView();
 }
 
-function renderCalendarView() {
+// Fetch slots from Google Sheets backend
+async function fetchAdminSlots() {
+  if (!isBackendConfigured) {
+    console.error('❌ Backend not configured. Cannot fetch timeslots.');
+    showNotification('Backend not configured. Please check API_ENDPOINT in config.js', 'error');
+    return [];
+  }
+
+  try {
+    console.log('Fetching all timeslots from Google Sheets backend...');
+    const response = await fetch(`${API_ENDPOINT}?action=getAllSlots`);
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.status === 'success' && data.slots) {
+        adminSlots = data.slots;
+        console.log(`✓ Loaded ${adminSlots.length} timeslots from Google Sheets`);
+        return adminSlots;
+      } else {
+        console.error('Backend returned error:', data.message);
+        showNotification('Failed to load timeslots: ' + data.message, 'error');
+        return [];
+      }
+    } else {
+      console.error('Failed to fetch timeslots. HTTP status:', response.status);
+      showNotification('Failed to load timeslots from backend', 'error');
+      return [];
+    }
+  } catch (error) {
+    console.error('Error fetching timeslots:', error);
+    showNotification('Error connecting to backend: ' + error.message, 'error');
+    return [];
+  }
+}
+
+async function renderCalendarView() {
   const timeslotsList = document.getElementById('admin-timeslots-list');
   if (!timeslotsList) return;
 
-  const slots = JSON.parse(localStorage.getItem('doggypaddle_timeslots') || '[]');
+  // Fetch slots from Google Sheets backend (not localStorage)
+  await fetchAdminSlots();
+  const slots = adminSlots;
 
   // Define time slots: 8:00 AM to 9:00 PM EST, 20-minute intervals at :00 and :40
   const timeSlots = [];
@@ -932,8 +974,7 @@ window.cleanupInvalidTimeSlots = function() {
   showNotification(`Removed ${removedCount} invalid time slot${removedCount > 1 ? 's' : ''}`, 'success');
 }
 
-function saveTimeSlot() {
-  const id = document.getElementById('timeslot-id').value || `slot-${Date.now()}`;
+async function saveTimeSlot() {
   const date = document.getElementById('timeslot-date').value;
   const time = document.getElementById('timeslot-time').value;
   const duration = parseInt(document.getElementById('timeslot-duration').value);
@@ -945,26 +986,39 @@ function saveTimeSlot() {
     return;
   }
 
-  const slot = { id, date, time, duration, status };
-
-  const slots = JSON.parse(localStorage.getItem('doggypaddle_timeslots') || '[]');
-  const existingIndex = slots.findIndex(s => s.id === id);
-
-  if (existingIndex >= 0) {
-    slots[existingIndex] = slot;
-  } else {
-    slots.push(slot);
+  if (!isBackendConfigured) {
+    showNotification('Backend not configured. Cannot save timeslot.', 'error');
+    return;
   }
 
-  localStorage.setItem('doggypaddle_timeslots', JSON.stringify(slots));
+  const slot = { date, time, duration, status };
 
-  // Close modal and reload
-  document.getElementById('timeslot-form-modal').style.display = 'none';
-  loadTimeSlots();
-  showNotification('Time slot saved successfully!', 'success');
+  try {
+    const response = await fetch(API_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'addSlot', slot: slot })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.status === 'success') {
+        document.getElementById('timeslot-form-modal').style.display = 'none';
+        await renderCalendarView();
+        showNotification('Time slot saved successfully!', 'success');
+      } else {
+        showNotification('Error: ' + data.message, 'error');
+      }
+    } else {
+      showNotification('Failed to save timeslot', 'error');
+    }
+  } catch (error) {
+    console.error('Error saving timeslot:', error);
+    showNotification('Error saving timeslot: ' + error.message, 'error');
+  }
 }
 
-function generateBulkTimeSlots() {
+async function generateBulkTimeSlots() {
   const startDate = new Date(document.getElementById('bulk-start-date').value);
   const endDate = new Date(document.getElementById('bulk-end-date').value);
   const startTime = document.getElementById('bulk-start-time').value;
@@ -979,10 +1033,14 @@ function generateBulkTimeSlots() {
     return;
   }
 
-  const slots = JSON.parse(localStorage.getItem('doggypaddle_timeslots') || '[]');
-  let slotsAdded = 0;
+  if (!isBackendConfigured) {
+    showNotification('Backend not configured. Cannot add timeslots.', 'error');
+    return;
+  }
 
-  // Iterate through each day in the date range
+  const slotsToAdd = [];
+
+  // Generate all slots first
   for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
     const dayOfWeek = d.getDay();
 
@@ -1002,9 +1060,7 @@ function generateBulkTimeSlots() {
       const minute = mins % 60;
 
       // Skip if hour is beyond 23 (invalid time)
-      if (hour > 23) {
-        continue;
-      }
+      if (hour > 23) continue;
 
       const timeStr = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
 
@@ -1014,27 +1070,41 @@ function generateBulkTimeSlots() {
         continue;
       }
 
-      // Check if slot already exists
-      const existingSlot = slots.find(s => s.date === dateStr && s.time === timeStr);
-      if (!existingSlot) {
-        slots.push({
-          id: `slot-${Date.now()}-${slotsAdded}`,
-          date: dateStr,
-          time: timeStr,
-          duration,
-          status: 'available'
-        });
-        slotsAdded++;
-      }
+      slotsToAdd.push({ date: dateStr, time: timeStr, duration, status: 'available' });
     }
   }
 
-  localStorage.setItem('doggypaddle_timeslots', JSON.stringify(slots));
+  // Add all slots to backend
+  try {
+    showNotification(`Adding ${slotsToAdd.length} timeslots...`, 'info');
 
-  // Close modal and reload
-  document.getElementById('bulk-timeslot-modal').style.display = 'none';
-  loadTimeSlots();
-  showNotification(`${slotsAdded} time slots added successfully!`, 'success');
+    let successCount = 0;
+    for (const slot of slotsToAdd) {
+      try {
+        const response = await fetch(API_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'addSlot', slot: slot })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.status === 'success') {
+            successCount++;
+          }
+        }
+      } catch (error) {
+        console.error('Error adding slot:', error);
+      }
+    }
+
+    document.getElementById('bulk-timeslot-modal').style.display = 'none';
+    await renderCalendarView();
+    showNotification(`${successCount} of ${slotsToAdd.length} time slots added successfully!`, 'success');
+  } catch (error) {
+    console.error('Bulk add error:', error);
+    showNotification('Error adding timeslots: ' + error.message, 'error');
+  }
 }
 
 window.editTimeSlot = function(slotId) {
@@ -1052,15 +1122,36 @@ window.editTimeSlot = function(slotId) {
   }
 };
 
-window.deleteTimeSlot = function(slotId) {
+window.deleteTimeSlot = async function(slotId) {
   if (!confirm('Are you sure you want to delete this time slot?')) return;
 
-  const slots = JSON.parse(localStorage.getItem('doggypaddle_timeslots') || '[]');
-  const filtered = slots.filter(s => s.id !== slotId);
-  localStorage.setItem('doggypaddle_timeslots', JSON.stringify(filtered));
+  if (!isBackendConfigured) {
+    showNotification('Backend not configured. Cannot delete timeslot.', 'error');
+    return;
+  }
 
-  loadTimeSlots();
-  showNotification('Time slot deleted successfully!', 'success');
+  try {
+    const response = await fetch(API_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'deleteSlot', slotId: slotId })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.status === 'success') {
+        await renderCalendarView();
+        showNotification('Time slot deleted successfully!', 'success');
+      } else {
+        showNotification('Error: ' + data.message, 'error');
+      }
+    } else {
+      showNotification('Failed to delete timeslot', 'error');
+    }
+  } catch (error) {
+    console.error('Error deleting timeslot:', error);
+    showNotification('Error deleting timeslot: ' + error.message, 'error');
+  }
 };
 
 // ============================================
