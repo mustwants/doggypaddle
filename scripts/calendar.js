@@ -24,91 +24,52 @@ document.addEventListener("DOMContentLoaded", () => {
   // Check if API endpoint is configured
   const isBackendConfigured = API_ENDPOINT && !API_ENDPOINT.includes('YOUR_DEPLOYED_WEBAPP_ID');
 
-  // Mock available slots from admin (will be replaced by API call)
-  // Slots are now 30 minutes at top and bottom of hour
-  let availableSlots = [
-    { id: "slot-1", date: "2025-11-15", time: "10:00", duration: 30 },
-    { id: "slot-2", date: "2025-11-15", time: "10:30", duration: 30 },
-    { id: "slot-3", date: "2025-11-15", time: "14:00", duration: 30 },
-    { id: "slot-4", date: "2025-11-15", time: "14:30", duration: 30 },
-    { id: "slot-5", date: "2025-11-16", time: "11:00", duration: 30 },
-    { id: "slot-6", date: "2025-11-16", time: "11:30", duration: 30 },
-    { id: "slot-7", date: "2025-11-16", time: "15:00", duration: 30 },
-    { id: "slot-8", date: "2025-11-16", time: "15:30", duration: 30 },
-    { id: "slot-9", date: "2025-11-20", time: "09:00", duration: 30 },
-    { id: "slot-10", date: "2025-11-20", time: "09:30", duration: 30 },
-    { id: "slot-11", date: "2025-11-20", time: "12:00", duration: 30 },
-    { id: "slot-12", date: "2025-11-20", time: "12:30", duration: 30 },
-    { id: "slot-13", date: "2025-11-20", time: "16:00", duration: 30 },
-    { id: "slot-14", date: "2025-11-20", time: "16:30", duration: 30 },
-    { id: "slot-15", date: "2025-11-22", time: "10:00", duration: 30 },
-    { id: "slot-16", date: "2025-11-22", time: "11:00", duration: 30 },
-    { id: "slot-17", date: "2025-11-22", time: "13:00", duration: 30 },
-    { id: "slot-18", date: "2025-11-22", time: "14:00", duration: 30 },
-    { id: "slot-19", date: "2025-11-22", time: "15:00", duration: 30 },
-    { id: "slot-20", date: "2025-11-22", time: "16:00", duration: 30 },
-  ];
+  // Available slots - loaded exclusively from Google Sheets backend
+  // NO MOCK DATA - All data must come from the backend API
+  let availableSlots = [];
 
   const DAYS_OF_WEEK = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   // Fetch available slots from server
   async function fetchAvailableSlots() {
-    // Check if backend is configured
+    // REQUIRED: Backend must be configured - NO mock data or localStorage fallback
     if (!isBackendConfigured) {
-      console.warn(
-        "%c⚠️ Backend Not Configured",
-        "color: #ff9800; font-size: 14px; font-weight: bold;",
-        "\n\nThe Google Apps Script backend hasn't been set up yet.",
-        "\nChecking for admin-created time slots in local storage...",
-        "\n\nTo enable live booking:",
-        "\n1. Follow the instructions in /backend/README.md",
-        "\n2. Deploy the Google Apps Script",
-        "\n3. Update the API_ENDPOINT in /scripts/config.js",
-        "\n\nFor detailed setup instructions, see: /backend/README.md"
+      console.error(
+        "%c⚠️ BACKEND NOT CONFIGURED - NO DATA AVAILABLE",
+        "color: #ff0000; font-size: 16px; font-weight: bold;",
+        "\n\nThe Google Apps Script backend is REQUIRED.",
+        "\nNo mock data is available - all data must come from Google Sheets.",
+        "\n\nTo fix this:",
+        "\n1. Verify the API_ENDPOINT in /scripts/config.js",
+        "\n2. Ensure your Google Apps Script is deployed",
+        "\n3. Check that the deployment has 'Anyone' access",
+        "\n\nCurrent API_ENDPOINT:", API_ENDPOINT
       );
 
-      // Check for admin-created time slots in localStorage
-      const adminSlots = JSON.parse(localStorage.getItem('doggypaddle_timeslots') || '[]');
-      if (adminSlots.length > 0) {
-        // Filter only available slots for the current/future dates
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        availableSlots = adminSlots
-          .filter(slot => {
-            // Validate time format
-            if (!validateTimeFormat(slot.time)) {
-              console.warn('Skipping invalid time slot:', slot);
-              return false;
-            }
-
-            const slotDate = new Date(slot.date);
-            return slotDate >= today && slot.status === 'available';
-          })
-          .map(slot => ({
-            id: slot.id,
-            date: slot.date,
-            time: slot.time,
-            duration: slot.duration || 30,
-            status: slot.status
-          }));
-
-        console.log(`✓ Loaded ${availableSlots.length} admin-created time slots from local storage`);
-      } else {
-        console.log('No admin time slots found. Using mock data for demonstration.');
-      }
-
-      return; // Use admin slots or mock data
+      availableSlots = [];
+      return;
     }
 
     try {
+      console.log('Fetching slots from Google Sheets backend...');
       const response = await fetch(`${API_ENDPOINT}?action=getAvailableSlots&month=${currentMonth + 1}&year=${currentYear}`);
+
       if (response.ok) {
         const data = await response.json();
-        availableSlots = data.slots || availableSlots;
+        if (data.status === 'success' && data.slots) {
+          availableSlots = data.slots;
+          console.log(`✓ Loaded ${availableSlots.length} slots from Google Sheets`);
+        } else {
+          console.error('Backend returned error:', data.message);
+          availableSlots = [];
+        }
+      } else {
+        console.error('Failed to fetch from backend. HTTP status:', response.status);
+        availableSlots = [];
       }
     } catch (error) {
-      console.warn("Could not fetch slots from server, using mock data:", error);
+      console.error("Error fetching slots from backend:", error);
+      availableSlots = [];
     }
   }
 
