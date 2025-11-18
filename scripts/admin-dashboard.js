@@ -1049,18 +1049,22 @@ async function generateBulkTimeSlots() {
 
     const dateStr = d.toISOString().split('T')[0];
 
-    // Generate time slots for this day
+    // Generate time slots for this day - half-hour intervals only (:00 and :30)
     const [startHour, startMin] = startTime.split(':').map(Number);
     const [endHour, endMin] = endTime.split(':').map(Number);
     const startMinutes = startHour * 60 + startMin;
     const endMinutes = endHour * 60 + endMin;
 
-    for (let mins = startMinutes; mins < endMinutes; mins += duration) {
+    // Increment by 30 minutes (20 min swim + 10 min buffer for client departure)
+    for (let mins = startMinutes; mins < endMinutes; mins += 30) {
       const hour = Math.floor(mins / 60);
       const minute = mins % 60;
 
       // Skip if hour is beyond 23 (invalid time)
       if (hour > 23) continue;
+
+      // Only allow slots at :00 or :30 past the hour
+      if (minute !== 0 && minute !== 30) continue;
 
       const timeStr = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
 
