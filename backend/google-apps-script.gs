@@ -723,13 +723,15 @@ function initializeSheets() {
   Logger.log('Sheets initialized successfully!');
 }
 
-// Add sample slots for testing
+// Add sample slots for testing - uses half-hour intervals (:00 and :30)
 function addSampleSlots() {
   const sheet = getSheet(SLOTS_SHEET_NAME);
   const today = new Date();
 
   const sampleSlots = [];
-  const times = ['09:00', '11:00', '13:00', '15:00'];
+  // Half-hour intervals: top of hour and bottom of hour
+  // 30-minute spacing provides 20 min swim + 10 min buffer for client departure
+  const times = ['08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30'];
 
   for (let i = 0; i < 7; i++) {
     const date = new Date(today);
@@ -741,7 +743,7 @@ function addSampleSlots() {
         `slot-${Date.now()}-${i}-${time}`,
         dateStr,
         time,
-        20,
+        20, // 20 minutes swim time (10 min buffer before next slot)
         'available',
         new Date().toISOString(),
         ''

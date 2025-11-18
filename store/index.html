@@ -1056,16 +1056,16 @@
           <div class="form-group">
             <label for="bulk-duration">Slot Duration (minutes):</label>
             <select id="bulk-duration" class="form-input" required>
-              <option value="20">20 minutes</option>
-              <option value="30" selected>30 minutes</option>
+              <option value="20" selected>20 minutes</option>
+              <option value="30">30 minutes</option>
               <option value="45">45 minutes</option>
               <option value="60">60 minutes</option>
               <option value="90">90 minutes</option>
             </select>
-            <small style="color: var(--text-light); font-size: 0.85rem;">This will create slots of this length</small>
+            <small style="color: var(--text-light); font-size: 0.85rem;">Swim session duration (10 min buffer added between slots)</small>
           </div>
           <div class="info-box" style="background: #e8f4f8; border-left: 4px solid var(--primary); padding: 1rem; margin: 1rem 0;">
-            <p style="margin: 0; font-size: 0.9rem;">This will create time slots at 30-minute intervals (top and bottom of each hour) between the start and end times for the selected days.</p>
+            <p style="margin: 0; font-size: 0.9rem;">Time slots are created at 30-minute intervals (top :00 and bottom :30 of each hour) between the start and end times for the selected days. Each 20-minute swim session includes a 10-minute buffer for client departure to prevent dog interactions.</p>
           </div>
           <div class="form-actions">
             <button type="submit" class="btn-primary">Generate Slots</button>
