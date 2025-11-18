@@ -4,6 +4,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("booking-form");
   const submitButton = form.querySelector("button[type='submit']");
 
+  // Check for active subscription
+  checkSubscriptionStatus();
+
   // Display cart summary in booking section
   displayCartSummary();
 
@@ -50,6 +53,10 @@ document.addEventListener("DOMContentLoaded", () => {
     // Get pricing info
     const pricing = JSON.parse(localStorage.getItem('checkout_pricing') || '{}');
 
+    // Check if user has active subscription
+    const subscription = JSON.parse(localStorage.getItem('doggypaddle_subscription') || 'null');
+    const isSubscription = subscription && subscription.status === 'active' && cart.length === 1;
+
     // Format data for submission
     const bookingData = {
       ...data,
@@ -57,6 +64,8 @@ document.addEventListener("DOMContentLoaded", () => {
       pricing: pricing,
       timestamp: new Date().toISOString(),
       status: "pending",
+      isSubscription: isSubscription,
+      slotId: cart[0]?.id || ''
     };
 
     try {
@@ -93,21 +102,27 @@ document.addEventListener("DOMContentLoaded", () => {
         localStorage.setItem('doggypaddle_booking_id', result.bookingId);
 
         // Show success message
-        showSuccessMessage();
+        showSuccessMessage(isSubscription);
 
         // Clear cart after successful booking
         localStorage.removeItem('doggypaddle_booking_cart');
         localStorage.removeItem('checkout_cart');
         localStorage.removeItem('checkout_pricing');
 
-        // Redirect to Stripe checkout
-        // For now, using the single session URL - you'll need to create a custom checkout
-        const stripeUrl = window.DoggyPaddleConfig?.STRIPE?.singleSession ||
-                         "https://buy.stripe.com/placeholder";
+        if (isSubscription) {
+          // Subscription booking - no payment needed
+          setTimeout(() => {
+            window.location.href = '/subscription.html?email=' + encodeURIComponent(data.email) + '&booked=true';
+          }, 2000);
+        } else {
+          // Regular booking - redirect to Stripe checkout
+          const stripeUrl = window.DoggyPaddleConfig?.STRIPE?.singleSession ||
+                           "https://buy.stripe.com/placeholder";
 
-        setTimeout(() => {
-          window.location.href = stripeUrl;
-        }, 2000);
+          setTimeout(() => {
+            window.location.href = stripeUrl;
+          }, 2000);
+        }
       } else {
         throw new Error(result.message || "Booking submission failed");
       }
@@ -271,12 +286,12 @@ document.addEventListener("DOMContentLoaded", () => {
     form.classList.remove("loading");
   }
 
-  function showSuccessMessage() {
+  function showSuccessMessage(isSubscription = false) {
     const message = document.createElement("div");
     message.className = "alert alert-success";
     message.innerHTML = `
       <strong>✓ Booking Submitted!</strong><br>
-      Redirecting you to secure payment...
+      ${isSubscription ? 'Your session has been booked using your subscription!' : 'Redirecting you to secure payment...'}
     `;
     message.style.cssText = `
       position: fixed;
@@ -419,9 +434,70 @@ document.addEventListener("DOMContentLoaded", () => {
   window.addEventListener('cartUpdated', () => {
     displayCartSummary();
   });
+
+  // Check subscription status and display banner
+  async function checkSubscriptionStatus() {
+    const email = localStorage.getItem('doggypaddle_subscription_email');
+    if (!email) return;
+
+    try {
+      const endpoint = window.DoggyPaddleConfig?.API_ENDPOINT;
+      if (!endpoint || endpoint.includes('YOUR_DEPLOYED_WEBAPP_ID')) {
+        return;
+      }
+
+      const response = await fetch(`${endpoint}?action=getSubscription&email=${encodeURIComponent(email)}`);
+      const result = await response.json();
+
+      if (result.status === 'success' && result.subscription) {
+        const subscription = result.subscription;
+        localStorage.setItem('doggypaddle_subscription', JSON.stringify(subscription));
+        displaySubscriptionBanner(subscription);
+      } else {
+        localStorage.removeItem('doggypaddle_subscription_email');
+        localStorage.removeItem('doggypaddle_subscription');
+      }
+    } catch (error) {
+      console.error('Error checking subscription:', error);
+    }
+  }
+
+  function displaySubscriptionBanner(subscription) {
+    const bookingSection = document.getElementById('booking');
+    if (!bookingSection) return;
+
+    // Remove existing banner if present
+    const existingBanner = document.getElementById('subscription-banner');
+    if (existingBanner) existingBanner.remove();
+
+    // Create banner
+    const banner = document.createElement('div');
+    banner.id = 'subscription-banner';
+    banner.className = 'subscription-banner';
+    banner.innerHTML = `
+      <div class="banner-content">
+        <div class="banner-icon">🏊</div>
+        <div class="banner-text">
+          <h3>Dog Swim Club Member</h3>
+          <p>You have <strong>${subscription.sessionsRemaining} sessions</strong> remaining this month</p>
+        </div>
+        <a href="/subscription.html?email=${encodeURIComponent(subscription.email)}" class="banner-button">
+          Manage Subscription
+        </a>
+      </div>
+    `;
+
+    // Insert at the beginning of the booking section
+    const firstElement = bookingSection.querySelector('h2');
+    if (firstElement) {
+      firstElement.after(banner);
+    } else {
+      bookingSection.insertBefore(banner, bookingSection.firstChild);
+    }
+  }
 });
 
-// Add styles for cart summary
+// Add styles for cart summary and subscription banner
 const style = document.createElement("style");
 style.textContent = `
   @keyframes slideIn {
@@ -432,6 +508,68 @@ style.textContent = `
     to {
       transform: translateX(0);
       opacity: 1;
+    }
+  }
+
+  .subscription-banner {
+    background: linear-gradient(135deg, #028090 0%, #02C39A 100%);
+    border-radius: 16px;
+    padding: 2rem;
+    margin: 2rem 0;
+    box-shadow: 0 4px 16px rgba(2, 128, 144, 0.2);
+  }
+
+  .banner-content {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    color: white;
+  }
+
+  .banner-icon {
+    font-size: 3rem;
+    flex-shrink: 0;
+  }
+
+  .banner-text {
+    flex: 1;
+  }
+
+  .banner-text h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.5rem;
+    color: white;
+  }
+
+  .banner-text p {
+    margin: 0;
+    opacity: 0.95;
+  }
+
+  .banner-button {
+    background: white;
+    color: var(--primary);
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+  }
+
+  .banner-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  @media (max-width: 768px) {
+    .banner-content {
+      flex-direction: column;
+      text-align: center;
+    }
+
+    .banner-button {
+      width: 100%;
     }
   }
 
