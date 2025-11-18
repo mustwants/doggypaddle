@@ -85,7 +85,8 @@ function initializeSampleData() {
         caption: 'First time in the pool! Had so much fun!',
         sessionDate: '11/9/2024',
         imageUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iIzAyODA5MCIvPjx0ZXh0IHg9IjUwJSIgeT0iNDAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iNDgiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn5CVPC90ZXh0Pjx0ZXh0IHg9IjUwJSIgeT0iNjAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5SZW1pPC90ZXh0Pjx0ZXh0IHg9IjUwJSIgeT0iNzUlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5GaXJzdCB0aW1lIGluIHRoZSBwb29sITwvdGV4dD48L3N2Zz4=',
-        status: 'approved'
+        status: 'approved',
+        featured: false
       },
       {
         timestamp: new Date('2024-11-11').getTime(),
@@ -95,7 +96,8 @@ function initializeSampleData() {
         caption: 'Max loves his swimming sessions!',
         sessionDate: '11/11/2024',
         imageUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iIzAyQzM5QSIvPjx0ZXh0IHg9IjUwJSIgeT0iNDAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iNDgiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn5CVPC90ZXh0Pjx0ZXh0IHg9IjUwJSIgeT0iNjAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5NYXg8L3RleHQ+PHRleHQgeD0iNTAlIiB5PSI3NSUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNiIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkxvdmVzIHN3aW1taW5nITwvdGV4dD48L3N2Zz4=',
-        status: 'approved'
+        status: 'approved',
+        featured: false
       },
       {
         timestamp: new Date('2024-11-12').getTime(),
@@ -105,7 +107,8 @@ function initializeSampleData() {
         caption: 'Great exercise for Bella!',
         sessionDate: '11/12/2024',
         imageUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI0Y3OTI1NiIvPjx0ZXh0IHg9IjUwJSIgeT0iNDAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iNDgiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn5CVwqA8L3RleHQ+PHRleHQgeD0iNTAlIiB5PSI2MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyNCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkJlbGxhPC90ZXh0Pjx0ZXh0IHg9IjUwJSIgeT0iNzUlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5HcmVhdCBleGVyY2lzZSE8L3RleHQ+PC9zdmc+',
-        status: 'approved'
+        status: 'approved',
+        featured: false
       },
       {
         timestamp: new Date('2024-11-13').getTime(),
@@ -115,7 +118,8 @@ function initializeSampleData() {
         caption: 'Charlie is a natural swimmer!',
         sessionDate: '11/13/2024',
         imageUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iIzY2NjZGRiIvPjx0ZXh0IHg9IjUwJSIgeT0iNDAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iNDgiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn5CVPC90ZXh0Pjx0ZXh0IHg9IjUwJSIgeT0iNjAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5DaGFybGllPC90ZXh0Pjx0ZXh0IHg9IjUwJSIgeT0iNzUlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5OYXR1cmFsIHN3aW1tZXIhPC90ZXh0Pjwvc3ZnPg==',
-        status: 'approved'
+        status: 'approved',
+        featured: false
       }
     ];
     localStorage.setItem('doggypaddle_photos', JSON.stringify(samplePhotos));
@@ -1370,7 +1374,7 @@ function loadPhotos() {
 
 window.approvePhoto = function(timestamp) {
   const photos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
-  const photo = photos.find(p => p.timestamp === timestamp);
+  const photo = photos.find(p => p.timestamp == timestamp);
 
   if (photo) {
     photo.status = 'approved';
@@ -1384,7 +1388,7 @@ window.rejectPhoto = function(timestamp) {
   if (!confirm('Are you sure you want to reject this photo?')) return;
 
   const photos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
-  const photo = photos.find(p => p.timestamp === timestamp);
+  const photo = photos.find(p => p.timestamp == timestamp);
 
   if (photo) {
     photo.status = 'rejected';
@@ -1396,7 +1400,7 @@ window.rejectPhoto = function(timestamp) {
 
 window.resetPhotoStatus = function(timestamp) {
   const photos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
-  const photo = photos.find(p => p.timestamp === timestamp);
+  const photo = photos.find(p => p.timestamp == timestamp);
 
   if (photo) {
     photo.status = 'pending';
@@ -1411,7 +1415,7 @@ window.deletePhoto = function(timestamp) {
   if (!confirm('Are you sure you want to permanently delete this photo? This action cannot be undone.')) return;
 
   let photos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
-  photos = photos.filter(p => p.timestamp !== timestamp);
+  photos = photos.filter(p => p.timestamp != timestamp);
   localStorage.setItem('doggypaddle_photos', JSON.stringify(photos));
   loadPhotos();
   showNotification('Photo deleted permanently.', 'success');
@@ -1420,7 +1424,7 @@ window.deletePhoto = function(timestamp) {
 // Toggle featured status
 window.toggleFeatured = function(timestamp) {
   const photos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
-  const photo = photos.find(p => p.timestamp === timestamp);
+  const photo = photos.find(p => p.timestamp == timestamp);
 
   if (photo) {
     photo.featured = !photo.featured;
@@ -1433,7 +1437,7 @@ window.toggleFeatured = function(timestamp) {
 // Download photo
 window.downloadPhoto = function(timestamp) {
   const photos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
-  const photo = photos.find(p => p.timestamp === timestamp);
+  const photo = photos.find(p => p.timestamp == timestamp);
 
   if (photo) {
     // Create a temporary link element
@@ -1457,7 +1461,7 @@ window.downloadPhoto = function(timestamp) {
 // Share to Facebook
 window.shareToFacebook = function(timestamp) {
   const photos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
-  const photo = photos.find(p => p.timestamp === timestamp);
+  const photo = photos.find(p => p.timestamp == timestamp);
 
   if (photo) {
     const fbPageUrl = window.DoggyPaddleConfig?.SOCIAL?.facebook || 'https://www.facebook.com/dogpad';
@@ -1549,7 +1553,7 @@ window.shareToFacebook = function(timestamp) {
 // Edit photo details (customer name and caption)
 window.editPhotoCaption = function(timestamp) {
   const photos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
-  const photo = photos.find(p => p.timestamp === timestamp);
+  const photo = photos.find(p => p.timestamp == timestamp);
 
   if (!photo) return;
 
@@ -1919,7 +1923,8 @@ function openAddPhotoModal() {
         caption: document.getElementById('add-caption').value,
         sessionDate: document.getElementById('add-session-date').value,
         imageUrl: imageUrl,
-        status: document.getElementById('add-status').value
+        status: document.getElementById('add-status').value,
+        featured: false
       };
 
       photos.push(newPhoto);
@@ -1969,7 +1974,7 @@ function bulkApprovePhotos() {
   let approvedCount = 0;
 
   timestamps.forEach(timestamp => {
-    const photo = photos.find(p => p.timestamp === timestamp);
+    const photo = photos.find(p => p.timestamp == timestamp);
     if (photo && photo.status !== 'approved') {
       photo.status = 'approved';
       approvedCount++;
@@ -1995,7 +2000,7 @@ function bulkRejectPhotos() {
   let rejectedCount = 0;
 
   timestamps.forEach(timestamp => {
-    const photo = photos.find(p => p.timestamp === timestamp);
+    const photo = photos.find(p => p.timestamp == timestamp);
     if (photo && photo.status !== 'rejected') {
       photo.status = 'rejected';
       rejectedCount++;
