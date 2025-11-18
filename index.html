@@ -993,138 +993,173 @@
       <h2>Complete Your Booking</h2>
       <p style="text-align: center; font-size: 1.1rem; margin-bottom: 3rem;">Follow these simple steps to book your dog's swimming session</p>
 
-      <!-- Step 1: Choose Your Sessions -->
-      <div class="booking-step">
-        <div class="step-header">
-          <span class="step-number">STEP 1</span>
-          <h3>Choose Your Sessions</h3>
-        </div>
-        <p>View our available time slots below and select the sessions that work best for your schedule. Each session is 30 minutes.</p>
+    <div class="booking-layout">
+        <div class="booking-steps" id="booking-steps">
+          <!-- Step 1: Choose Your Sessions -->
+          <div class="booking-step expanded" data-step="1">
+            <button class="step-header" type="button" aria-expanded="true">
+              <span class="step-number">STEP 1</span>
+              <div class="step-title">
+                <h3>Choose Your Sessions</h3>
+                <p class="step-subtitle">View our available time slots below and select the sessions that work best for your schedule.</p>
+              </div>
+              <span class="step-toggle" aria-hidden="true">
+                <span class="chevron"></span>
+              </span>
+            </button>
+            <div class="step-content">
+              <p>Each session is 30 minutes. Book early to secure your preferred time.</p>
 
-        <div id="calendar" class="calendar-container" style="margin-top: 1.5rem;">
-          <h4>Available Time Slots</h4>
-          <p style="font-size: 0.95rem; color: var(--text-light);">Click on any date with available slots to view and select times. Book early to secure your preferred time!</p>
-          <div id="calendar-placeholder"></div>
-        </div>
-      </div>
-
-      <!-- Step 2: Provide Your Information -->
-      <div class="booking-step">
-        <div class="step-header">
-          <span class="step-number">STEP 2</span>
-          <h3>Provide Your Information</h3>
-        </div>
-        <p>After adding sessions to your cart, fill out your information below to complete your booking.</p>
-
-        <div class="info-box" style="margin: 1.5rem 0;">
-          <p><strong>Important:</strong> Maximum 2 dogs per session. Owner must be present or provide signed waiver for dog sitter.</p>
-        </div>
-
-        <form id="booking-form" class="form-grid">
-          <div class="form-group">
-            <label for="firstName">First Name *</label>
-            <input type="text" id="firstName" name="firstName" required />
-          </div>
-
-          <div class="form-group">
-            <label for="lastName">Last Name *</label>
-            <input type="text" id="lastName" name="lastName" required />
-          </div>
-
-          <div class="form-group">
-            <label for="phone">Phone Number *</label>
-            <input type="tel" id="phone" name="phone" required />
-          </div>
-
-          <div class="form-group">
-            <label for="email">Email Address *</label>
-            <input type="email" id="email" name="email" required />
-          </div>
-
-          <div class="form-group full-width">
-            <label for="dogNames">Dog Name(s) *</label>
-            <input type="text" id="dogNames" name="dogNames" placeholder="e.g., Buddy, Max" required />
-          </div>
-
-          <div class="form-group full-width">
-            <label for="dogBreeds">Breed(s) *</label>
-            <input type="text" id="dogBreeds" name="dogBreeds" placeholder="e.g., Golden Retriever, Labrador" required />
-          </div>
-
-          <div class="form-group">
-            <label for="numDogs">Number of Dogs *</label>
-            <select id="numDogs" name="numDogs" required>
-              <option value="">Select...</option>
-              <option value="1">1 Dog</option>
-              <option value="2">2 Dogs</option>
-            </select>
-          </div>
-
-          <div class="form-group full-width">
-            <div class="checkbox-group">
-              <input type="checkbox" id="ownershipConfirmed" name="ownershipConfirmed" required />
-              <label for="ownershipConfirmed">I confirm I am the owner of the dog(s) or have authorization from the owner.</label>
+              <div id="calendar" class="calendar-container" style="margin-top: 1.5rem;">
+                <h4>Available Time Slots</h4>
+                <p style="font-size: 0.95rem; color: var(--text-light);">Click on any date with available slots to view and select times. Book early to secure your preferred time!</p>
+                <div id="calendar-placeholder"></div>
+              </div>
             </div>
           </div>
 
-          <div class="form-group full-width">
-            <div class="checkbox-group">
-              <input type="checkbox" id="waiverAck" name="waiverAck" required />
-              <label for="waiverAck">I have read and agree to the <a href="/waiver/waiver.html" target="_blank">Liability Waiver</a>.</label>
+          <!-- Step 2: Provide Your Information -->
+          <div class="booking-step" data-step="2">
+            <button class="step-header" type="button" aria-expanded="false">
+              <span class="step-number">STEP 2</span>
+              <div class="step-title">
+                <h3>Provide Your Information</h3>
+                <p class="step-subtitle">After adding sessions to your cart, fill out your information below to complete your booking.</p>
+              </div>
+              <span class="step-toggle" aria-hidden="true">
+                <span class="chevron"></span>
+              </span>
+            </button>
+            <div class="step-content">
+              <div class="info-box" style="margin: 1.5rem 0;">
+                <p><strong>Important:</strong> Maximum 2 dogs per session. Owner must be present or provide signed waiver for dog sitter.</p>
+              </div>
+
+              <form id="booking-form" class="booking-form">
+                <div class="form-group">
+                  <label for="firstName">First Name *</label>
+                  <input type="text" id="firstName" name="firstName" required />
+                </div>
+
+                <div class="form-group">
+                  <label for="lastName">Last Name *</label>
+                  <input type="text" id="lastName" name="lastName" required />
+                </div>
+
+                <div class="form-group">
+                  <label for="phone">Phone Number *</label>
+                  <input type="tel" id="phone" name="phone" required />
+                </div>
+
+                <div class="form-group">
+                  <label for="email">Email Address *</label>
+                  <input type="email" id="email" name="email" required />
+                </div>
+
+                <div class="form-group full-width">
+                  <label for="dogNames">Dog Name(s) *</label>
+                  <input type="text" id="dogNames" name="dogNames" placeholder="e.g., Buddy, Max" required />
+                </div>
+
+                <div class="form-group full-width">
+                  <label for="dogBreeds">Breed(s) *</label>
+                  <input type="text" id="dogBreeds" name="dogBreeds" placeholder="e.g., Golden Retriever, Labrador" required />
+                </div>
+
+                <div class="form-group">
+                  <label for="numDogs">Number of Dogs *</label>
+                  <select id="numDogs" name="numDogs" required>
+                    <option value="">Select...</option>
+                    <option value="1">1 Dog</option>
+                    <option value="2">2 Dogs</option>
+                  </select>
+                </div>
+
+                <div class="form-group full-width">
+                  <div class="checkbox-group">
+                    <input type="checkbox" id="ownershipConfirmed" name="ownershipConfirmed" required />
+                    <label for="ownershipConfirmed">I confirm I am the owner of the dog(s) or have authorization from the owner.</label>
+                  </div>
+                </div>
+
+                <div class="form-group full-width">
+                  <div class="checkbox-group">
+                    <input type="checkbox" id="waiverAck" name="waiverAck" required />
+                    <label for="waiverAck">I have read and agree to the <a href="/waiver/waiver.html" target="_blank">Liability Waiver</a>.</label>
+                  </div>
+                </div>
+
+                <div class="form-group full-width">
+                  <button type="submit">Complete Booking & Pay with Stripe</button>
+                </div>
+              </form>
+
+              <div style="margin-top: 2rem; padding: 1.5rem; background: #f5f5f5; border-radius: 8px; text-align: center;">
+                <p style="margin-bottom: 1rem;"><strong>Or pay directly using Stripe:</strong></p>
+                <stripe-buy-button
+                  buy-button-id="buy_btn_1SRg5JAWz02AuqyyQNxXtKgW"
+                  publishable-key="pk_live_51Jw6McAWz02Auqyy2ssxTNAhxp3vNGmAfUv4gbUA6NzT8jJb5FefT3lfqObiQwK5ClTRfkzzd3YQaFvZhWIIFsHX00biYat54r"
+                ></stripe-buy-button>
+              </div>
             </div>
           </div>
 
-          <div class="form-group full-width">
-            <button type="submit">Complete Booking & Pay with Stripe</button>
+          <!-- Step 3: Add to Your Calendar -->
+          <div class="booking-step" data-step="3">
+            <button class="step-header" type="button" aria-expanded="false">
+              <span class="step-number">STEP 3</span>
+              <div class="step-title">
+                <h3>Add to Your Calendar</h3>
+                <p class="step-subtitle">Don't forget your session! Download a calendar reminder file after completing your booking.</p>
+              </div>
+              <span class="step-toggle" aria-hidden="true">
+                <span class="chevron"></span>
+              </span>
+            </button>
+            <div class="step-content">
+              <div style="margin-top: 1.5rem;">
+                <a href="/assets/session-reminder.ics" download class="button button-secondary">📅 Download Calendar Reminder</a>
+              </div>
+            </div>
           </div>
-        </form>
 
-        <div style="margin-top: 2rem; padding: 1.5rem; background: #f5f5f5; border-radius: 8px; text-align: center;">
-          <p style="margin-bottom: 1rem;"><strong>Or pay directly using Stripe:</strong></p>
-          <stripe-buy-button
-            buy-button-id="buy_btn_1SRg5JAWz02AuqyyQNxXtKgW"
-            publishable-key="pk_live_51Jw6McAWz02Auqyy2ssxTNAhxp3vNGmAfUv4gbUA6NzT8jJb5FefT3lfqObiQwK5ClTRfkzzd3YQaFvZhWIIFsHX00biYat54r"
-          ></stripe-buy-button>
+          <!-- Step 4: Download Rules -->
+          <div class="booking-step" data-step="4">
+            <button class="step-header" type="button" aria-expanded="false">
+              <span class="step-number">STEP 4</span>
+              <div class="step-title">
+                <h3>Download Rules</h3>
+                <p class="step-subtitle">Before your session, please review our facility rules and safety guidelines to ensure a safe and enjoyable experience for your dog.</p>
+              </div>
+              <span class="step-toggle" aria-hidden="true">
+                <span class="chevron"></span>
+              </span>
+            </button>
+            <div class="step-content">
+              <div style="margin-top: 1.5rem;">
+                <a href="/waiver/waiver.html#rules" class="button button-secondary" target="_blank">📋 View & Download Facility Rules</a>
+              </div>
+              <div class="info-box" style="margin-top: 1.5rem;">
+                <p><strong>Key Rules to Remember:</strong></p>
+                <ul style="margin: 0.5rem 0 0 1.5rem; text-align: left;">
+                  <li>Remain in your car until your scheduled time slot</li>
+                  <li>Owner supervision required at all times</li>
+                  <li>Maximum 2 dogs per session</li>
+                  <li>Dogs must be current on vaccinations</li>
+                  <li>No humans in the pool</li>
+                  <li>Clean up waste immediately</li>
+                  <li>Depart promptly at end of session</li>
+                </ul>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <!-- Step 3: Add to Your Calendar -->
-      <div class="booking-step">
-        <div class="step-header">
-          <span class="step-number">STEP 3</span>
-          <h3>Add to Your Calendar</h3>
-        </div>
-        <p>Don't forget your session! Download a calendar reminder file after completing your booking.</p>
-        <div style="margin-top: 1.5rem;">
-          <a href="/assets/session-reminder.ics" download class="button button-secondary">📅 Download Calendar Reminder</a>
-        </div>
-      </div>
-
-      <!-- Step 4: Download Rules -->
-      <div class="booking-step">
-        <div class="step-header">
-          <span class="step-number">STEP 4</span>
-          <h3>Download Rules</h3>
-        </div>
-        <p>Before your session, please review our facility rules and safety guidelines to ensure a safe and enjoyable experience for your dog.</p>
-        <div style="margin-top: 1.5rem;">
-          <a href="/waiver/waiver.html#rules" class="button button-secondary" target="_blank">📋 View & Download Facility Rules</a>
-        </div>
-        <div class="info-box" style="margin-top: 1.5rem;">
-          <p><strong>Key Rules to Remember:</strong></p>
-          <ul style="margin: 0.5rem 0 0 1.5rem; text-align: left;">
-            <li>Remain in your car until your scheduled time slot</li>
-            <li>Owner supervision required at all times</li>
-            <li>Maximum 2 dogs per session</li>
-            <li>Dogs must be current on vaccinations</li>
-            <li>No humans in the pool</li>
-            <li>Clean up waste immediately</li>
-            <li>Depart promptly at end of session</li>
-          </ul>
-        </div>
+        <aside id="cart-summary-mount" class="cart-summary-shell" aria-live="polite" aria-label="Selected sessions summary"></aside>
       </div>
     </section>
   </main>
+
 
   <!-- Footer -->
   <footer>
