@@ -560,7 +560,9 @@ function initTimeSlotManagement() {
   const timeslotForm = document.getElementById('timeslot-form');
   const bulkTimeslotForm = document.getElementById('bulk-timeslot-form');
 
-  if (!addTimeslotBtn) return;
+  if (!addTimeslotBtn || !bulkAddSlotsBtn || !timeslotFormModal || !bulkTimeslotModal || !timeslotForm || !bulkTimeslotForm) {
+    return;
+  }
 
   // Initialize current week to this week
   const today = new Date();
