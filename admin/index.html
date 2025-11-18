@@ -637,7 +637,8 @@
   <script src="/scripts/admin.js"></script>
   <script>
     // Admin Dashboard Main Script
-    let isAdminLoggedIn = false;
+    // Expose globally so admin.js can access it
+    window.isAdminLoggedIn = false;
     let adminUserEmail = null;
 
     // Check for existing session on page load
@@ -654,7 +655,7 @@
           // Session valid for 7 days
           if (daysSinceLogin < 7) {
             console.log('Valid admin session found');
-            isAdminLoggedIn = true;
+            window.isAdminLoggedIn = true;
             adminUserEmail = sessionData.email;
             showDashboard();
             return true;
@@ -733,7 +734,7 @@
 
       console.log('Dev login activated for:', devEmail);
 
-      isAdminLoggedIn = true;
+      window.isAdminLoggedIn = true;
       adminUserEmail = devEmail;
 
       // Store session
@@ -772,7 +773,7 @@
         if (allowedAdminsLower.includes(userEmail)) {
           console.log('✓ User authorized! Granting admin access...');
 
-          isAdminLoggedIn = true;
+          window.isAdminLoggedIn = true;
           adminUserEmail = userEmail;
 
           // Store session
@@ -828,7 +829,7 @@
     function handleLogout() {
       if (confirm('Are you sure you want to logout?')) {
         localStorage.removeItem('doggypaddle_admin_session');
-        isAdminLoggedIn = false;
+        window.isAdminLoggedIn = false;
         adminUserEmail = null;
 
         if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
