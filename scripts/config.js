@@ -33,8 +33,9 @@ const CONFIG = {
   // 6. Copy the Client ID below
   GOOGLE_AUTH: {
     clientId: '20135650074-aae05fujqi58h2kk58idd638p2djmhvt.apps.googleusercontent.com', // <-- Missing quote added here
-        // Admin allowlist is now managed server-side via the ADMIN_ALLOWLIST script property
-    },
+    allowedAdmins: ['scott@mustwants.com'],
+    // Admin allowlist is now managed server-side via the ADMIN_ALLOWLIST script property
+  },
 
   // Stripe Configuration
   STRIPE: {
