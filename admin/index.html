@@ -521,12 +521,12 @@
 
       <div class="admin-info">
         <h3>Authorized Admins:</h3>
-        <p class="admin-email" id="admin-allowed-list">Loading...</p>
-        <p style="margin-top: 1rem; font-style: italic;">
-          Note: Only authorized Google Workspace accounts can access the admin panel.
-          To add more admins, update the allowedAdmins list in config.js.
-        </p>
-      </div>
+        <p class="admin-email" id="admin-allowed-list">Loading...</p>␊
+        <p style="margin-top: 1rem; font-style: italic;">␊
+          Note: Only authorized Google Workspace accounts can access the admin panel.␊
+          To add more admins, update the ADMIN_ALLOWLIST script property on the backend.
+        </p>␊
+      </div>␊
     </div>
   </div>
 
@@ -636,47 +636,142 @@
 
   <script src="/scripts/admin.js"></script>
   <script>
-    // Admin Dashboard Main Script
+   // Admin Dashboard Main Script
     // Expose globally so admin.js can access it
     window.isAdminLoggedIn = false;
     let adminUserEmail = null;
-    let currentSession = null;
+    let cachedAllowedAdmins = [];
+    let allowlistLoaded = false;
 
-    // Check for existing session on page load
-    async function checkAdminSession() {
-      try {
-        const response = await fetch('/.netlify/functions/session', {
-          credentials: 'include'
-        });
+    function updateAllowedAdminListDisplay(admins) {
+      const adminListElement = document.getElementById('admin-allowed-list');
 
-        if (!response.ok) {
-          console.log('No valid admin session found');
-          return false;
+      if (adminListElement) {
+        if (Array.isArray(admins) && admins.length > 0) {
+          adminListElement.textContent = admins.join(', ');
+        } else {
+          adminListElement.textContent = 'Admin allowlist is managed on the backend.';
         }
-
-        const session = await response.json();
-        window.isAdminLoggedIn = true;
-        adminUserEmail = session.email;
-        currentSession = session;
-        showDashboard();
-        return true;
-      } catch (error) {
-        console.error('Failed to validate session:', error);
-        return false;
       }
     }
 
+    async function loadAdminAllowlist() {
+      if (allowlistLoaded && cachedAllowedAdmins.length > 0) {
+        updateAllowedAdminListDisplay(cachedAllowedAdmins);
+        return cachedAllowedAdmins;
+      }
+
+      const apiEndpoint = window.DoggyPaddleConfig?.API_ENDPOINT;
+
+      if (!apiEndpoint) {
+        console.warn('API endpoint not configured; unable to load admin allowlist.');
+        return cachedAllowedAdmins;
+      }
+
+      try {
+        const response = await fetch(`${apiEndpoint}?action=getAdminAllowlist`);
+
+        if (!response.ok) {
+          throw new Error(`Failed to load allowlist (HTTP ${response.status})`);
+        }
+
+        const data = await response.json();
+
+        if (data.status === 'success' && Array.isArray(data.allowedAdmins)) {
+          cachedAllowedAdmins = data.allowedAdmins;
+          allowlistLoaded = true;
+          updateAllowedAdminListDisplay(cachedAllowedAdmins);
+        } else {
+          console.warn('Backend did not return an allowlist:', data.message || 'Unknown error');
+        }
+      } catch (error) {
+        console.error('Error loading admin allowlist:', error);
+      }
+
+      return cachedAllowedAdmins;
+    }
+
+    function getApiEndpointOrThrow() {
+      const endpoint = window.DoggyPaddleConfig?.API_ENDPOINT;
+
+      if (!endpoint) {
+        throw new Error('Backend API endpoint is not configured.');
+      }
+
+      return endpoint;
+    }
+
+    async function verifyAdminIdToken(idToken) {
+      const endpoint = getApiEndpointOrThrow();
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          action: 'verifyAdminToken',
+          idToken
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Backend verification failed with status ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      if (result.status !== 'success' || !result.admin) {
+        throw new Error(result.message || 'Admin verification failed');
+      }
+
+      if (Array.isArray(result.allowedAdmins)) {
+        cachedAllowedAdmins = result.allowedAdmins;
+        allowlistLoaded = true;
+        updateAllowedAdminListDisplay(cachedAllowedAdmins);
+      }
+
+      return result.admin;
+    }
+
+    // Check for existing session on page load
+    function checkAdminSession() {
+      const session = localStorage.getItem('doggypaddle_admin_session');
+
+      if (session) {
+        try {
+          const sessionData = JSON.parse(session);
+          const loginTime = new Date(sessionData.timestamp || sessionData.loginTime);
+          const now = new Date();
+          const daysSinceLogin = (now - loginTime) / (1000 * 60 * 60 * 24);
+
+          // Session valid for 7 days
+          if (daysSinceLogin < 7) {
+            console.log('Valid admin session found');
+            window.isAdminLoggedIn = true;
+            adminUserEmail = sessionData.email;
+            showDashboard();
+            return true;
+          } else {
+            console.log('Admin session expired');
+            localStorage.removeItem('doggypaddle_admin_session');
+          }
+        } catch (e) {
+          console.error('Error parsing session:', e);
+          localStorage.removeItem('doggypaddle_admin_session');
+        }
+      }
+
+      console.log('No valid admin session found');
+      return false;
+    }
+
     // Initialize Google Sign-In
-    function initGoogleSignIn() {
+    async function initGoogleSignIn() {
       const clientId = window.DoggyPaddleConfig?.GOOGLE_AUTH?.clientId;
       const googleBtnContainer = document.getElementById('google-signin-button');
-      const allowedAdmins = window.DoggyPaddleConfig?.GOOGLE_AUTH?.allowedAdmins || [];
 
-      // Update allowed admins list
-      const adminListElement = document.getElementById('admin-allowed-list');
-      if (adminListElement) {
-        adminListElement.textContent = allowedAdmins.join(', ');
-      }
+      await loadAdminAllowlist();
 
       if (!clientId || clientId === 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com') {
         console.warn('Google OAuth not configured. Using development login mode.');
@@ -720,63 +815,50 @@
       }
     }
 
-        // Handle dev login
+    // Handle dev login
     async function handleDevLogin() {
-      try {
-        const allowedAdmins = window.DoggyPaddleConfig?.GOOGLE_AUTH?.allowedAdmins || ['Scott@mustwants.com'];
-        const devEmail = allowedAdmins[0].toLowerCase();
+      const allowedAdmins = await loadAdminAllowlist();
+      const devEmail = (allowedAdmins[0] || 'admin@dogpaddle.club').toLowerCase();
 
-        console.log('Dev login activated for:', devEmail);
+      console.log('Dev login activated for:', devEmail);
 
-        // Dev login still flows through server to receive an HttpOnly session
-        const loginResponse = await fetch('/.netlify/functions/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ credential: null, devEmail })
-        });
+      window.isAdminLoggedIn = true;
+      adminUserEmail = devEmail;
 
-        if (!loginResponse.ok) {
-          const errorText = await loginResponse.text();
-          throw new Error(`Dev authentication failed: ${errorText || loginResponse.status}`);
-        }
+      // Store session
+      const session = {
+        email: devEmail,
+        name: 'Dev Admin',
+        loginTime: new Date().toISOString(),
+        timestamp: Date.now(),
+        isDev: true
+      };
+      localStorage.setItem('doggypaddle_admin_session', JSON.stringify(session));
 
-        const session = await loginResponse.json();
-        window.isAdminLoggedIn = true;
-        adminUserEmail = session.email;
-        currentSession = session;
-
-        showNotification('Logged in successfully (Dev Mode)');
-        showDashboard();
-      } catch (error) {
-        console.error('Dev login failed:', error);
-        alert('Dev login failed. Please check server configuration.');
-      }
+      showNotification('Logged in successfully (Dev Mode)');
+      showDashboard();
     }
 
     // Handle Google Sign-In
     async function handleGoogleSignIn(response) {
       try {
-        console.log('Google Sign-In callback triggered, sending ID token to server');
+        console.log('Google Sign-In callback triggered');
 
-        const loginResponse = await fetch('/.netlify/functions/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ credential: response.credential })
-        });
+        const verifiedAdmin = await verifyAdminIdToken(response.credential);
 
-        if (!loginResponse.ok) {
-          const errorText = await loginResponse.text();
-          throw new Error(`Authentication failed: ${errorText || loginResponse.status}`);
-        }
-
-        const session = await loginResponse.json();
         window.isAdminLoggedIn = true;
-        adminUserEmail = session.email;
-        currentSession = session;
+        adminUserEmail = verifiedAdmin.email.toLowerCase();
 
-        showNotification(`Welcome, ${session.name || session.email}!`);
+        // Store session
+        const session = {
+          email: adminUserEmail,
+          name: verifiedAdmin.name,
+          picture: verifiedAdmin.picture,
+          timestamp: Date.now()
+        };
+        localStorage.setItem('doggypaddle_admin_session', JSON.stringify(session));
+
+        showNotification(`Welcome, ${verifiedAdmin.name}!`);
         showDashboard();
       } catch (error) {
         console.error('Error handling Google Sign-In:', error);
@@ -790,8 +872,8 @@
       document.getElementById('dashboard-screen').classList.add('active');
 
       // Update user info
-      const displayName = currentSession?.name || adminUserEmail || 'Admin';
-      document.getElementById('user-info').textContent = `Logged in as: ${displayName}`;
+      const session = JSON.parse(localStorage.getItem('doggypaddle_admin_session') || '{}');
+      document.getElementById('user-info').textContent = `Logged in as: ${session.name || adminUserEmail}`;
 
       // Initialize dashboard features
       initDashboard();
@@ -964,12 +1046,14 @@
 
 // Initialize on page load
     document.addEventListener('DOMContentLoaded', async () => {
-      const hasSession = await checkAdminSession();
-      if (!hasSession) {
-        initGoogleSignIn();
+      await loadAdminAllowlist();
+
+      if (!checkAdminSession()) {
+        await initGoogleSignIn();
       }
     });
   </script>
 </body>
 </html>
+
 
