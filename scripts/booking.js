@@ -10,6 +10,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // Display cart summary in booking section
   displayCartSummary();
 
+   // Enable collapsible booking steps
+  initBookingAccordions();
+  
   // Form validation
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -137,6 +140,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function displayCartSummary() {
     const cart = JSON.parse(localStorage.getItem('doggypaddle_booking_cart')) || [];
     const bookingSection = document.getElementById('booking');
+       const cartMount = document.getElementById('cart-summary-mount');
 
     // Remove existing cart summary if present
     const existingSummary = document.getElementById('cart-summary-display');
@@ -215,14 +219,43 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
 
     // Insert at the beginning of the booking section
-    const firstElement = bookingSection.querySelector('h2');
-    if (firstElement) {
-      firstElement.after(summaryDiv);
+    // Insert at the beginning of the booking section
+    if (cartMount) {
+      cartMount.innerHTML = '';
+      cartMount.appendChild(summaryDiv);
     } else {
-      bookingSection.insertBefore(summaryDiv, bookingSection.firstChild);
+      const firstElement = bookingSection.querySelector('h2');
+      if (firstElement) {
+        firstElement.after(summaryDiv);
+      } else {
+        bookingSection.insertBefore(summaryDiv, bookingSection.firstChild);
+      }
     }
   }
 
+  function initBookingAccordions() {
+    const steps = Array.from(document.querySelectorAll('.booking-step'));
+
+    steps.forEach((step) => {
+      const header = step.querySelector('.step-header');
+      if (!header) return;
+
+      header.addEventListener('click', () => {
+        const isExpanded = step.classList.contains('expanded');
+
+        steps.forEach((s) => {
+          s.classList.remove('expanded');
+          const h = s.querySelector('.step-header');
+          if (h) h.setAttribute('aria-expanded', 'false');
+        });
+
+        if (!isExpanded) {
+          step.classList.add('expanded');
+          header.setAttribute('aria-expanded', 'true');
+        }
+      });
+    });
+  }
   function formatTime(timeString) {
     if (!timeString) {
       return 'Invalid Time';
