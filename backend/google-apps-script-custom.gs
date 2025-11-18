@@ -5,7 +5,7 @@
 const SHEET_ID = '1q7yUDjuVSwXfL9PJUTny0oy5Nr5jlVKsdyik2-vTL8I';
 const SLOTS_SHEET_NAME = 'available_slots';
 const BOOKINGS_SHEET_NAME = 'bookings';
-const PRODUCTS_SHEET_NAME = 'Products';
+const PRODUCTS_SHEET_NAME = 'Products & Treats';
 
 // Handle CORS preflight (OPTIONS) requests
 // Note: When deployed with "Anyone" access, Google Apps Script automatically handles CORS
@@ -71,6 +71,12 @@ function doPost(e) {
         return addSlot(data.slot);
       case 'deleteSlot':
         return deleteSlot(data.slotId);
+      case 'saveProduct':
+        return saveProduct(data.product);
+      case 'updateProduct':
+        return updateProduct(data.product);
+      case 'deleteProduct':
+        return deleteProduct(data.productId);
       default:
         return createResponse({
           status: 'error',
@@ -175,7 +181,8 @@ function getProducts() {
         inStock: row[6] !== 'false',
         quantity: row[7] || 0,
         lowStockThreshold: row[8] || 5,
-        createdAt: row[9]
+        createdAt: row[9],
+        purchaseLink: row[10] || '' // Optional purchase link
       });
     }
   }
@@ -183,6 +190,85 @@ function getProducts() {
   return createResponse({
     status: 'success',
     products: products
+  });
+}
+
+// Save new product
+function saveProduct(product) {
+  const sheet = getSheet(PRODUCTS_SHEET_NAME);
+
+  sheet.appendRow([
+    product.id,
+    product.name,
+    product.description,
+    product.price,
+    product.category,
+    product.imageUrl,
+    product.inStock ? 'true' : 'false',
+    product.quantity || 0,
+    product.lowStockThreshold || 5,
+    new Date().toISOString(),
+    product.purchaseLink || ''
+  ]);
+
+  return createResponse({
+    status: 'success',
+    message: 'Product saved successfully'
+  });
+}
+
+// Update existing product
+function updateProduct(product) {
+  const sheet = getSheet(PRODUCTS_SHEET_NAME);
+  const data = sheet.getDataRange().getValues();
+
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === product.id) {
+      sheet.getRange(i + 1, 1, 1, 11).setValues([[
+        product.id,
+        product.name,
+        product.description,
+        product.price,
+        product.category,
+        product.imageUrl,
+        product.inStock ? 'true' : 'false',
+        product.quantity || 0,
+        product.lowStockThreshold || 5,
+        data[i][9], // Keep original createdAt
+        product.purchaseLink || ''
+      ]]);
+
+      return createResponse({
+        status: 'success',
+        message: 'Product updated successfully'
+      });
+    }
+  }
+
+  return createResponse({
+    status: 'error',
+    message: 'Product not found'
+  });
+}
+
+// Delete product
+function deleteProduct(productId) {
+  const sheet = getSheet(PRODUCTS_SHEET_NAME);
+  const data = sheet.getDataRange().getValues();
+
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === productId) {
+      sheet.deleteRow(i + 1);
+      return createResponse({
+        status: 'success',
+        message: 'Product deleted successfully'
+      });
+    }
+  }
+
+  return createResponse({
+    status: 'error',
+    message: 'Product not found'
   });
 }
 
@@ -313,9 +399,9 @@ function getSheet(sheetName) {
     } else if (sheetName === PRODUCTS_SHEET_NAME) {
       sheet.appendRow([
         'ID', 'Name', 'Description', 'Price', 'Category',
-        'Image URL', 'In Stock', 'Quantity', 'Low Stock Threshold', 'Created At'
+        'Image URL', 'In Stock', 'Quantity', 'Low Stock Threshold', 'Created At', 'Purchase Link'
       ]);
-      sheet.getRange('A1:J1').setFontWeight('bold').setBackground('#028090').setFontColor('#FFFFFF');
+      sheet.getRange('A1:K1').setFontWeight('bold').setBackground('#028090').setFontColor('#FFFFFF');
     }
 
     // Auto-resize columns
