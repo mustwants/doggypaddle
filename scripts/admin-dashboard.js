@@ -1,6 +1,17 @@
 // Admin Dashboard Enhancements for DoggyPaddle
 // This file extends the base admin functionality with time slots, bookings, and photos management
 
+// Security: HTML escaping function to prevent XSS attacks
+function escapeHtml(unsafe) {
+  if (unsafe === null || unsafe === undefined) return '';
+  return String(unsafe)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 // Expose initialization function globally so it can be called when loaded dynamically
 window.initAdminDashboard = function() {
   console.log('Initializing admin dashboard enhancements...');
@@ -1371,33 +1382,41 @@ async function loadPhotos() {
       const statusColor = statusColors[status] || '#666';
       const photoId = photo.id;
 
+      // Security: Escape all user-supplied fields to prevent XSS
+      const escapedImageUrl = escapeHtml(photo.imageUrl);
+      const escapedDogName = escapeHtml(photo.dogName);
+      const escapedCustomerName = escapeHtml(photo.customerName);
+      const escapedEmail = escapeHtml(photo.email);
+      const escapedCaption = escapeHtml(photo.caption || 'No caption');
+      const escapedSessionDate = escapeHtml(photo.sessionDate || 'Not specified');
+
       return `
         <div class="admin-product-item">
           <div style="display: flex; align-items: center; padding: 0.5rem;">
-            <input type="checkbox" class="photo-checkbox" data-photo-id="${photoId}"
+            <input type="checkbox" class="photo-checkbox" data-photo-id="${escapeHtml(photoId)}"
                    style="cursor: pointer; width: 20px; height: 20px;" onchange="updateBulkActionButtons()">
           </div>
-          <img src="${photo.imageUrl}" class="admin-product-image" alt="${photo.dogName}"
+          <img src="${escapedImageUrl}" class="admin-product-image" alt="${escapedDogName}"
                onerror="this.src='/assets/logo.png'" />
           <div class="admin-item-details">
-            <div class="admin-item-name">🐕 ${photo.dogName}</div>
-            <div class="admin-item-info">Submitted by: ${photo.customerName} (${photo.email})</div>
-            <div class="admin-item-info">Caption: ${photo.caption || 'No caption'}</div>
-            <div class="admin-item-info">Session Date: ${photo.sessionDate || 'Not specified'}</div>
+            <div class="admin-item-name">🐕 ${escapedDogName}</div>
+            <div class="admin-item-info">Submitted by: ${escapedCustomerName} (${escapedEmail})</div>
+            <div class="admin-item-info">Caption: ${escapedCaption}</div>
+            <div class="admin-item-info">Session Date: ${escapedSessionDate}</div>
             <div class="admin-item-info">Submitted: ${formatDateTime(new Date(photo.createdAt || photo.timestamp))}</div>
             <div class="admin-item-info">
               Status: <span style="color: ${statusColor}; font-weight: 600; text-transform: capitalize;">${status}</span>
             </div>
           </div>
           <div class="admin-item-actions">
-            ${status !== 'approved' ? `<button class="admin-btn admin-btn-edit" onclick="approvePhoto('${photoId}')">✓ Approve</button>` : ''}
-            ${status !== 'rejected' ? `<button class="admin-btn admin-btn-delete" onclick="rejectPhoto('${photoId}')">✗ Reject</button>` : ''}
-            ${status !== 'pending' ? `<button class="admin-btn admin-btn-toggle" onclick="resetPhotoStatus('${photoId}')">Reset</button>` : ''}
-            ${photo.featured ? `<button class="admin-btn admin-btn-toggle" onclick="toggleFeatured('${photoId}', true)" title="Remove from featured" style="background: #ff9800;">⭐ Featured</button>` : `<button class="admin-btn admin-btn-secondary" onclick="toggleFeatured('${photoId}', false)" title="Add to featured">☆ Feature</button>`}
-            <button class="admin-btn admin-btn-edit" onclick="downloadPhoto('${photoId}')" title="Download photo">⬇ Download</button>
-            <button class="admin-btn admin-btn-edit" onclick="shareToFacebook('${photoId}')" title="Share to Facebook" style="background: #1877f2;">📘 Share FB</button>
-            <button class="admin-btn admin-btn-secondary" onclick="editPhotoCaption('${photoId}')" title="Edit details">✏️ Edit</button>
-            <button class="admin-btn admin-btn-delete" onclick="deletePhoto('${photoId}')" title="Delete permanently">🗑 Delete</button>
+            ${status !== 'approved' ? `<button class="admin-btn admin-btn-edit" onclick="approvePhoto('${escapeHtml(photoId)}')">✓ Approve</button>` : ''}
+            ${status !== 'rejected' ? `<button class="admin-btn admin-btn-delete" onclick="rejectPhoto('${escapeHtml(photoId)}')">✗ Reject</button>` : ''}
+            ${status !== 'pending' ? `<button class="admin-btn admin-btn-toggle" onclick="resetPhotoStatus('${escapeHtml(photoId)}')">Reset</button>` : ''}
+            ${photo.featured ? `<button class="admin-btn admin-btn-toggle" onclick="toggleFeatured('${escapeHtml(photoId)}', true)" title="Remove from featured" style="background: #ff9800;">⭐ Featured</button>` : `<button class="admin-btn admin-btn-secondary" onclick="toggleFeatured('${escapeHtml(photoId)}', false)" title="Add to featured">☆ Feature</button>`}
+            <button class="admin-btn admin-btn-edit" onclick="downloadPhoto('${escapeHtml(photoId)}')" title="Download photo">⬇ Download</button>
+            <button class="admin-btn admin-btn-edit" onclick="shareToFacebook('${escapeHtml(photoId)}')" title="Share to Facebook" style="background: #1877f2;">📘 Share FB</button>
+            <button class="admin-btn admin-btn-secondary" onclick="editPhotoCaption('${escapeHtml(photoId)}')" title="Edit details">✏️ Edit</button>
+            <button class="admin-btn admin-btn-delete" onclick="deletePhoto('${escapeHtml(photoId)}')" title="Delete permanently">🗑 Delete</button>
           </div>
         </div>
       `;
