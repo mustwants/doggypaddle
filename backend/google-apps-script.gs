@@ -41,6 +41,8 @@ const PRODUCTS_SHEET_NAME = 'Products';
 const ORDERS_SHEET_NAME = 'Orders';
 const PHOTOS_SHEET_NAME = 'Photos';
 const SUBSCRIPTIONS_SHEET_NAME = 'Subscriptions';
+const ADMIN_ALLOWLIST_PROPERTY = 'ADMIN_ALLOWLIST';
+const GOOGLE_OAUTH_CLIENT_ID_PROPERTY = 'GOOGLE_OAUTH_CLIENT_ID';
 
 // Handle CORS preflight (OPTIONS) requests
 function doOptions(e) {
@@ -70,6 +72,8 @@ function doGet(e) {
         return getSubscription(e.parameter.email);
       case 'getSubscriptions':
         return getSubscriptions();
+      case 'getAdminAllowlist':
+        return getAdminAllowlistResponse();
       default:
         return createResponse({
           status: 'error',
@@ -115,6 +119,8 @@ function doPost(e) {
         return updatePhoto(data.photoId, data.updates);
       case 'deletePhoto':
         return deletePhoto(data.photoId);
+      case 'verifyAdminToken':
+        return verifyAdminToken(data.idToken);
       case 'saveProduct':
         return saveProduct(data.product);
       case 'updateProduct':
@@ -824,6 +830,108 @@ function createCORSResponse(data) {
     .setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
     .setHeader('Access-Control-Allow-Headers', 'Content-Type')
     .setHeader('Access-Control-Max-Age', '86400');
+}
+
+function getScriptProperty(key) {
+  return PropertiesService.getScriptProperties().getProperty(key) || '';
+}
+
+function getAdminAllowlist() {
+  const propertyValue = getScriptProperty(ADMIN_ALLOWLIST_PROPERTY);
+
+  if (propertyValue && propertyValue.trim()) {
+    return propertyValue
+      .split(/[\n,]/)
+      .map(email => email.trim())
+      .filter(Boolean);
+  }
+
+  return ['Scott@mustwants.com'];
+}
+
+function getAdminAllowlistResponse() {
+  return createResponse({
+    status: 'success',
+    allowedAdmins: getAdminAllowlist()
+  });
+}
+
+function getGoogleClientId() {
+  return getScriptProperty(GOOGLE_OAUTH_CLIENT_ID_PROPERTY);
+}
+
+function verifyIdToken(idToken) {
+  if (!idToken) {
+    throw new Error('Missing ID token');
+  }
+
+  const verificationResponse = UrlFetchApp.fetch(
+    `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`
+  );
+  const tokenInfo = JSON.parse(verificationResponse.getContentText());
+
+  if (tokenInfo.error_description) {
+    throw new Error(tokenInfo.error_description);
+  }
+
+  const audience = getGoogleClientId();
+  if (audience && tokenInfo.aud !== audience) {
+    throw new Error('Token audience does not match configured client ID');
+  }
+
+  const issuer = tokenInfo.iss;
+  if (issuer !== 'https://accounts.google.com' && issuer !== 'accounts.google.com') {
+    throw new Error('Invalid token issuer');
+  }
+
+  const expiry = parseInt(tokenInfo.exp, 10);
+  if (expiry && (Date.now() / 1000) >= expiry) {
+    throw new Error('ID token has expired');
+  }
+
+  if (tokenInfo.email_verified !== 'true' && tokenInfo.email_verified !== true) {
+    throw new Error('Google account email is not verified');
+  }
+
+  return tokenInfo;
+}
+
+function verifyAdminToken(idToken) {
+  try {
+    const tokenInfo = verifyIdToken(idToken);
+    const email = (tokenInfo.email || '').toLowerCase();
+
+    if (!email) {
+      throw new Error('Token does not include an email address');
+    }
+
+    const allowedAdmins = getAdminAllowlist();
+    const allowedLookup = allowedAdmins.map(admin => admin.toLowerCase());
+
+    if (!allowedLookup.includes(email)) {
+      return createResponse({
+        status: 'error',
+        message: 'Access denied: email is not on the admin allowlist'
+      });
+    }
+
+    const adminProfile = {
+      email: tokenInfo.email,
+      name: tokenInfo.name || tokenInfo.email,
+      picture: tokenInfo.picture || ''
+    };
+
+    return createResponse({
+      status: 'success',
+      admin: adminProfile,
+      allowedAdmins
+    });
+  } catch (error) {
+    return createResponse({
+      status: 'error',
+      message: error.toString()
+    });
+  }
 }
 
 // SUBSCRIPTION FUNCTIONS
