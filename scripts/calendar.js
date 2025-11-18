@@ -13,6 +13,12 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentYear = new Date().getFullYear();
   let cart = JSON.parse(localStorage.getItem('doggypaddle_booking_cart')) || [];
 
+  // Status banner to show connection between admin dashboard and client calendar
+  const calendarStatus = document.createElement('div');
+  calendarStatus.id = 'calendar-status';
+  calendarStatus.className = 'calendar-status status-loading';
+  calendarPlaceholder.parentElement.insertBefore(calendarStatus, calendarPlaceholder);
+  
   // Pricing constants
   const PRICE_PER_SLOT = 25;
   const DISCOUNT_THRESHOLD = 5; // Every 5 slots
@@ -28,12 +34,20 @@ document.addEventListener("DOMContentLoaded", () => {
   // NO MOCK DATA - All data must come from the backend API
   let availableSlots = [];
 
+  const STATUS_ICONS = {
+    success: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>`,
+    warning: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a1 1 0 00.86 1.5h18.64a1 1 0 00.86-1.5L12.71 3.86a1 1 0 00-1.72 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12" y2="17"/></svg>`,
+    error: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`,
+    loading: `<svg width="20" height="20" viewBox="0 0 50 50" fill="none" stroke="currentColor" stroke-width="4"><circle cx="25" cy="25" r="20" stroke-opacity="0.25"/><path d="M45 25a20 20 0 00-20-20"/></svg>`
+  };
+
   const DAYS_OF_WEEK = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   // Fetch available slots from server
   async function fetchAvailableSlots() {
     // REQUIRED: Backend must be configured - NO mock data or localStorage fallback
     if (!isBackendConfigured) {
+            const message = 'Calendar cannot load because the Google Apps Script endpoint is missing.';
       console.error(
         "%c⚠️ BACKEND NOT CONFIGURED - NO DATA AVAILABLE",
         "color: #ff0000; font-size: 16px; font-weight: bold;",
@@ -46,8 +60,12 @@ document.addEventListener("DOMContentLoaded", () => {
         "\n\nCurrent API_ENDPOINT:", API_ENDPOINT
       );
 
-      availableSlots = [];
-      return;
+       availableSlots = [];
+      return {
+        status: 'warning',
+        message,
+        detail: 'Update scripts/config.js with your deployed Web App URL to connect the admin dashboard calendar.'
+      };
     }
 
     try {
@@ -59,18 +77,57 @@ document.addEventListener("DOMContentLoaded", () => {
         if (data.status === 'success' && data.slots) {
           availableSlots = data.slots;
           console.log(`✓ Loaded ${availableSlots.length} slots from Google Sheets`);
-        } else {
-          console.error('Backend returned error:', data.message);
-          availableSlots = [];
+          return {
+            status: 'success',
+            message: `Loaded ${availableSlots.length} available slot${availableSlots.length === 1 ? '' : 's'} from the admin dashboard.`
+          };
         }
-      } else {
-        console.error('Failed to fetch from backend. HTTP status:', response.status);
+
+        console.error('Backend returned error:', data.message);
         availableSlots = [];
+        return {
+          status: 'error',
+          message: 'The admin dashboard responded with an error.',
+          detail: data.message || 'Unexpected response received while loading the calendar.'
+        };
       }
+
+      console.error('Failed to fetch from backend. HTTP status:', response.status);
+      availableSlots = [];
+      return {
+        status: 'error',
+        message: 'Unable to reach the admin calendar.',
+        detail: `HTTP status ${response.status} received from the booking backend.`
+      };
     } catch (error) {
       console.error("Error fetching slots from backend:", error);
       availableSlots = [];
+      return {
+        status: 'error',
+        message: 'Unable to load available slots right now.',
+        detail: error.message
+      };
     }
+  }
+
+  function updateCalendarStatus(state, title, detail = '') {
+    if (!calendarStatus) return;
+
+    const icon = STATUS_ICONS[state] || STATUS_ICONS.loading;
+    const normalizedState = ['success', 'warning', 'error', 'loading'].includes(state) ? state : 'loading';
+
+    calendarStatus.className = `calendar-status status-${normalizedState}`;
+    calendarStatus.innerHTML = `
+      <div class="status-icon">${icon}</div>
+      <div class="status-copy">
+        <div class="status-title">${title}</div>
+        ${detail ? `<p>${detail}</p>` : ''}
+      </div>
+      <button type="button" class="calendar-refresh-btn">Refresh</button>
+    `;
+
+    const refreshBtn = calendarStatus.querySelector('.calendar-refresh-btn');
+    refreshBtn.onclick = () => renderCalendar();
   }
 
   function validateTimeFormat(timeString) {
@@ -570,10 +627,53 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  async function renderCalendar() {
+    async function renderCalendar() {
+    const monthLabel = new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long', year: 'numeric' });
     calendarPlaceholder.innerHTML = '<div class="loading-spinner"><div class="spinner"></div><p>Loading available slots...</p></div>';
-    await fetchAvailableSlots();
+    updateCalendarStatus('loading', 'Syncing with admin dashboard...', `Checking availability for ${monthLabel}.`);
+
+    const fetchResult = await fetchAvailableSlots();
+    const statusState = fetchResult?.status || 'loading';
+    const statusMessage = fetchResult?.message || 'Calendar data is refreshing.';
+    const statusDetail = fetchResult?.detail || '';
+
+    if (statusState === 'success') {
+      const availabilityMessage = availableSlots.length > 0
+        ? `Showing ${availableSlots.length} open slot${availableSlots.length === 1 ? '' : 's'} for ${monthLabel}.`
+        : `No open slots published for ${monthLabel}. Try another month or check back soon.`;
+      updateCalendarStatus('success', 'Calendar connected', availabilityMessage);
+    } else if (statusState === 'warning') {
+      updateCalendarStatus('warning', 'Calendar not connected', statusDetail || statusMessage);
+    } else {
+      updateCalendarStatus('error', statusMessage, statusDetail);
+    }
+
     calendarPlaceholder.innerHTML = generateCalendar(currentMonth, currentYear);
+
+    if (availableSlots.length === 0) {
+      const emptyState = document.createElement('div');
+      emptyState.className = 'calendar-empty-state';
+      emptyState.innerHTML = `
+        <div class="empty-icon">
+          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10" stroke-opacity="0.2"/>
+            <path d="M8 12h8"/>
+            <path d="M12 8v8"/>
+          </svg>
+        </div>
+        <h4>No sessions available for ${monthLabel}</h4>
+        <p>${statusState === 'success' ? 'Please try another month or check back later.' : 'The schedule could not be loaded. Please refresh or verify the admin dashboard connection.'}</p>
+        <div class="empty-actions">
+          <button type="button" class="calendar-retry-btn">Refresh Calendar</button>
+        </div>
+      `;
+
+      const retryBtn = emptyState.querySelector('.calendar-retry-btn');
+      retryBtn.addEventListener('click', () => renderCalendar());
+
+      calendarPlaceholder.appendChild(emptyState);
+    }
+
     attachCalendarListeners();
   }
 
@@ -621,6 +721,133 @@ document.addEventListener("DOMContentLoaded", () => {
   const style = document.createElement("style");
   style.textContent = `
     /* Enhanced Calendar Styles */
+    .calendar-status {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 1rem 1.25rem;
+      border-radius: 12px;
+      border: 1px solid var(--border, #e5e7eb);
+      background: #ffffff;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+      margin-bottom: 1rem;
+    }
+
+    .calendar-status .status-icon {
+      display: grid;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: rgba(2, 128, 144, 0.1);
+      color: var(--primary);
+      flex-shrink: 0;
+    }
+
+    .calendar-status .status-title {
+      font-weight: 700;
+      margin: 0 0 0.1rem 0;
+      color: var(--secondary);
+    }
+
+    .calendar-status p {
+      margin: 0;
+      color: var(--text-light, #6b7280);
+      font-size: 0.95rem;
+      line-height: 1.4;
+    }
+
+    .calendar-refresh-btn {
+      margin-left: auto;
+      background: var(--secondary);
+      color: white;
+      border: none;
+      padding: 0.55rem 1rem;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .calendar-refresh-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 18px rgba(2, 128, 144, 0.2);
+    }
+
+    .calendar-status.status-success {
+      border-color: #bbf7d0;
+      background: #f0fdf4;
+    }
+
+    .calendar-status.status-warning {
+      border-color: #fef08a;
+      background: #fffbeb;
+    }
+
+    .calendar-status.status-error {
+      border-color: #fecdd3;
+      background: #fff1f2;
+    }
+
+    .calendar-status.status-loading {
+      border-color: #e0f2fe;
+      background: #f0f9ff;
+    }
+
+    .calendar-empty-state {
+      text-align: center;
+      padding: 1.25rem;
+      margin-top: 1rem;
+      background: #f8fafc;
+      border: 1px dashed var(--border, #e5e7eb);
+      border-radius: 16px;
+    }
+
+    .calendar-empty-state h4 {
+      margin: 0.75rem 0 0.35rem 0;
+      font-size: 1.25rem;
+      color: var(--secondary);
+    }
+
+    .calendar-empty-state p {
+      margin: 0 0 0.75rem 0;
+      color: var(--text-light, #6b7280);
+    }
+
+    .calendar-empty-state .empty-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 72px;
+      height: 72px;
+      border-radius: 16px;
+      background: white;
+      border: 1px solid var(--border, #e5e7eb);
+      color: var(--primary);
+    }
+
+    .calendar-empty-state .empty-actions {
+      display: flex;
+      justify-content: center;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+    }
+
+    .calendar-empty-state .calendar-retry-btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .calendar-empty-state .calendar-retry-btn:hover {
+      background: var(--primary-dark);
+    }
+
     .calendar-header {
       display: flex;
       justify-content: space-between;
