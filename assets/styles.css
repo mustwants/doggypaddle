@@ -629,14 +629,27 @@ textarea:focus-visible {
 /* ============================================
    BOOKING FLOW STEPS
    ============================================ */
+.booking-layout {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.booking-steps {
+  display: flex;
+  flex-direction: column;
+}
+
 .booking-step {
   background: white;
   border: 2px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 2.5rem;
-  margin-bottom: 2rem;
+  padding: 0;
+  margin-bottom: 1.5rem;
   box-shadow: var(--shadow);
   transition: var(--transition);
+  overflow: hidden;
 }
 
 .booking-step:hover {
@@ -645,12 +658,22 @@ textarea:focus-visible {
 }
 
 .step-header {
+  width: 100%;
   display: flex;
   align-items: center;
   gap: 1rem;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
+  padding: 1.5rem 2rem;
+  background: linear-gradient(90deg, rgba(2, 128, 144, 0.08), rgba(2, 128, 144, 0.02));
+  border: none;
   border-bottom: 2px solid var(--border-light);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.step-header:hover,
+.step-header:focus-visible {
+  background: linear-gradient(90deg, rgba(2, 128, 144, 0.14), rgba(2, 128, 144, 0.05));
+  outline: none;
 }
 
 .step-number {
@@ -668,27 +691,80 @@ textarea:focus-visible {
   box-shadow: 0 4px 12px rgba(2, 128, 144, 0.3);
 }
 
-.step-header h3 {
+.step-title h3 {
   margin: 0;
   color: var(--secondary);
   font-size: 1.5rem;
 }
 
-.booking-step > p {
+.step-subtitle {
+  margin: 0.25rem 0 0;
+  color: var(--text-light);
+  font-size: 0.95rem;
+}
+
+.step-toggle {
+  margin-left: auto;
+  display: inline-flex;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(2, 128, 144, 0.12);
+}
+
+.chevron {
+  border-style: solid;
+  border-width: 0 2px 2px 0;
+  display: inline-block;
+  padding: 5px;
+  transform: rotate(45deg);
+  transition: transform 0.2s ease;
+  color: var(--secondary);
+}
+
+.booking-step.expanded .chevron {
+  transform: rotate(-135deg);
+}
+
+.step-content {
+  padding: 0 2rem 2rem;
+  display: none;
+}
+
+.booking-step.expanded .step-content {
+  display: block;
+}
+
+.booking-step .step-content > p {
   color: var(--text-light);
   font-size: 1rem;
   line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.cart-summary-shell {
+  position: sticky;
+  top: 1.5rem;
+  align-self: start;
+  min-height: 100%;
 }
 
 @media (max-width: 768px) {
+  .booking-layout {
+    grid-template-columns: 1fr;
+  }
+
   .booking-step {
-    padding: 1.5rem;
+    margin-bottom: 1rem;
   }
 
   .step-header {
     flex-direction: column;
     align-items: flex-start;
     text-align: left;
+    padding: 1.25rem 1.5rem;
   }
 
   .step-number {
