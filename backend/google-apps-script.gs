@@ -40,6 +40,7 @@ const WAIVERS_SHEET_NAME = 'Waivers';
 const PRODUCTS_SHEET_NAME = 'Products';
 const ORDERS_SHEET_NAME = 'Orders';
 const PHOTOS_SHEET_NAME = 'Photos';
+const SUBSCRIPTIONS_SHEET_NAME = 'Subscriptions';
 
 // Handle CORS preflight (OPTIONS) requests
 function doOptions(e) {
@@ -65,6 +66,10 @@ function doGet(e) {
         return getProducts();
       case 'getPhotos':
         return getPhotos(e.parameter);
+      case 'getSubscription':
+        return getSubscription(e.parameter.email);
+      case 'getSubscriptions':
+        return getSubscriptions();
       default:
         return createResponse({
           status: 'error',
@@ -112,6 +117,14 @@ function doPost(e) {
         return updateProduct(data.product);
       case 'deleteProduct':
         return deleteProduct(data.productId);
+      case 'saveSubscription':
+        return saveSubscription(data.subscription);
+      case 'updateSubscription':
+        return updateSubscription(data.subscription);
+      case 'useSubscriptionSession':
+        return useSubscriptionSession(data.email);
+      case 'cancelSubscription':
+        return cancelSubscription(data.subscriptionId);
       default:
         return createResponse({
           status: 'error',
@@ -339,6 +352,20 @@ function saveBooking(booking) {
   const sheet = getSheet(BOOKINGS_SHEET_NAME);
 
   const bookingId = `booking-${Date.now()}`;
+  const isSubscription = booking.isSubscription || false;
+
+  // If this is a subscription booking, use a session
+  if (isSubscription && booking.email) {
+    const result = useSubscriptionSession(booking.email);
+    const resultData = JSON.parse(result.getContent());
+
+    if (resultData.status === 'error') {
+      return createResponse({
+        status: 'error',
+        message: resultData.message
+      });
+    }
+  }
 
   sheet.appendRow([
     bookingId,
@@ -353,8 +380,10 @@ function saveBooking(booking) {
     booking.ownershipConfirmed ? 'Yes' : 'No',
     booking.waiverAck ? 'Yes' : 'No',
     booking.timestamp || new Date().toISOString(),
-    'pending', // payment status
-    booking.slotId || ''
+    isSubscription ? 'subscription' : 'pending', // payment status
+    booking.slotId || '',
+    isSubscription ? 'Yes' : 'No', // is subscription
+    isSubscription ? booking.email : '' // subscription email
   ]);
 
   // Mark slot as booked if slot ID provided
@@ -646,9 +675,9 @@ function getSheet(sheetName) {
         'Booking ID', 'First Name', 'Last Name', 'Email', 'Phone',
         'Dog Names', 'Dog Breeds', 'Num Dogs', 'Session Time',
         'Ownership Confirmed', 'Waiver Acknowledged', 'Timestamp',
-        'Payment Status', 'Slot ID'
+        'Payment Status', 'Slot ID', 'Is Subscription', 'Subscription Email'
       ]);
-      sheet.getRange('A1:N1').setFontWeight('bold').setBackground('#028090').setFontColor('#FFFFFF');
+      sheet.getRange('A1:P1').setFontWeight('bold').setBackground('#028090').setFontColor('#FFFFFF');
     } else if (sheetName === WAIVERS_SHEET_NAME) {
       sheet.appendRow([
         'Waiver ID', 'Full Name', 'Date', 'Initial 1', 'Initial 2',
@@ -674,6 +703,14 @@ function getSheet(sheetName) {
         'Caption', 'Status', 'Created At', 'Session Date'
       ]);
       sheet.getRange('A1:I1').setFontWeight('bold').setBackground('#028090').setFontColor('#FFFFFF');
+    } else if (sheetName === SUBSCRIPTIONS_SHEET_NAME) {
+      sheet.appendRow([
+        'Subscription ID', 'Email', 'First Name', 'Last Name', 'Phone',
+        'Status', 'Sessions Per Month', 'Sessions Used This Month', 'Sessions Remaining',
+        'Monthly Price', 'Start Date', 'Next Billing Date', 'Last Reset Date',
+        'Stripe Subscription ID', 'Created At', 'Cancelled At', 'Priority Booking'
+      ]);
+      sheet.getRange('A1:Q1').setFontWeight('bold').setBackground('#028090').setFontColor('#FFFFFF');
     }
 
     // Auto-resize columns
@@ -708,6 +745,239 @@ function createCORSResponse(data) {
     .setHeader('Access-Control-Max-Age', '86400');
 }
 
+// SUBSCRIPTION FUNCTIONS
+
+// Save new subscription
+function saveSubscription(subscription) {
+  const sheet = getSheet(SUBSCRIPTIONS_SHEET_NAME);
+
+  const subscriptionId = `sub-${Date.now()}`;
+  const now = new Date();
+  const nextBillingDate = new Date(now);
+  nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
+
+  sheet.appendRow([
+    subscriptionId,
+    subscription.email,
+    subscription.firstName,
+    subscription.lastName,
+    subscription.phone,
+    'active', // status
+    4, // sessions per month
+    0, // sessions used this month
+    4, // sessions remaining
+    75, // monthly price
+    now.toISOString(), // start date
+    nextBillingDate.toISOString(), // next billing date
+    now.toISOString(), // last reset date
+    subscription.stripeSubscriptionId || '',
+    now.toISOString(), // created at
+    '', // cancelled at
+    'true' // priority booking
+  ]);
+
+  return createResponse({
+    status: 'success',
+    subscriptionId: subscriptionId,
+    message: 'Subscription created successfully'
+  });
+}
+
+// Get subscription by email
+function getSubscription(email) {
+  const sheet = getSheet(SUBSCRIPTIONS_SHEET_NAME);
+  const data = sheet.getDataRange().getValues();
+
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    if (row[1] === email && row[5] === 'active') { // Check email and active status
+      const subscription = {
+        id: row[0],
+        email: row[1],
+        firstName: row[2],
+        lastName: row[3],
+        phone: row[4],
+        status: row[5],
+        sessionsPerMonth: row[6],
+        sessionsUsedThisMonth: row[7],
+        sessionsRemaining: row[8],
+        monthlyPrice: row[9],
+        startDate: row[10],
+        nextBillingDate: row[11],
+        lastResetDate: row[12],
+        stripeSubscriptionId: row[13],
+        createdAt: row[14],
+        cancelledAt: row[15],
+        priorityBooking: row[16]
+      };
+
+      // Check if we need to reset monthly sessions
+      const lastReset = new Date(subscription.lastResetDate);
+      const now = new Date();
+      const daysSinceReset = Math.floor((now - lastReset) / (1000 * 60 * 60 * 24));
+
+      if (daysSinceReset >= 30) {
+        // Reset sessions for new month
+        subscription.sessionsUsedThisMonth = 0;
+        subscription.sessionsRemaining = subscription.sessionsPerMonth;
+        subscription.lastResetDate = now.toISOString();
+
+        // Update the sheet
+        sheet.getRange(i + 1, 8).setValue(0); // sessions used
+        sheet.getRange(i + 1, 9).setValue(subscription.sessionsPerMonth); // sessions remaining
+        sheet.getRange(i + 1, 13).setValue(now.toISOString()); // last reset date
+      }
+
+      return createResponse({
+        status: 'success',
+        subscription: subscription
+      });
+    }
+  }
+
+  return createResponse({
+    status: 'error',
+    message: 'No active subscription found'
+  });
+}
+
+// Get all subscriptions (admin)
+function getSubscriptions() {
+  const sheet = getSheet(SUBSCRIPTIONS_SHEET_NAME);
+  const data = sheet.getDataRange().getValues();
+
+  const subscriptions = [];
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    if (row[0]) {
+      subscriptions.push({
+        id: row[0],
+        email: row[1],
+        firstName: row[2],
+        lastName: row[3],
+        phone: row[4],
+        status: row[5],
+        sessionsPerMonth: row[6],
+        sessionsUsedThisMonth: row[7],
+        sessionsRemaining: row[8],
+        monthlyPrice: row[9],
+        startDate: row[10],
+        nextBillingDate: row[11],
+        lastResetDate: row[12],
+        stripeSubscriptionId: row[13],
+        createdAt: row[14],
+        cancelledAt: row[15],
+        priorityBooking: row[16]
+      });
+    }
+  }
+
+  return createResponse({
+    status: 'success',
+    subscriptions: subscriptions
+  });
+}
+
+// Update subscription
+function updateSubscription(subscription) {
+  const sheet = getSheet(SUBSCRIPTIONS_SHEET_NAME);
+  const data = sheet.getDataRange().getValues();
+
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === subscription.id) {
+      sheet.getRange(i + 1, 1, 1, 17).setValues([[
+        subscription.id,
+        subscription.email,
+        subscription.firstName,
+        subscription.lastName,
+        subscription.phone,
+        subscription.status,
+        subscription.sessionsPerMonth,
+        subscription.sessionsUsedThisMonth,
+        subscription.sessionsRemaining,
+        subscription.monthlyPrice,
+        subscription.startDate,
+        subscription.nextBillingDate,
+        subscription.lastResetDate,
+        subscription.stripeSubscriptionId || '',
+        subscription.createdAt,
+        subscription.cancelledAt || '',
+        subscription.priorityBooking
+      ]]);
+
+      return createResponse({
+        status: 'success',
+        message: 'Subscription updated successfully'
+      });
+    }
+  }
+
+  return createResponse({
+    status: 'error',
+    message: 'Subscription not found'
+  });
+}
+
+// Use a subscription session
+function useSubscriptionSession(email) {
+  const sheet = getSheet(SUBSCRIPTIONS_SHEET_NAME);
+  const data = sheet.getDataRange().getValues();
+
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][1] === email && data[i][5] === 'active') {
+      const sessionsRemaining = data[i][8];
+
+      if (sessionsRemaining <= 0) {
+        return createResponse({
+          status: 'error',
+          message: 'No sessions remaining this month. Your subscription will renew on ' + new Date(data[i][11]).toLocaleDateString()
+        });
+      }
+
+      // Decrement sessions
+      const newUsed = data[i][7] + 1;
+      const newRemaining = data[i][8] - 1;
+
+      sheet.getRange(i + 1, 8).setValue(newUsed);
+      sheet.getRange(i + 1, 9).setValue(newRemaining);
+
+      return createResponse({
+        status: 'success',
+        message: 'Session used',
+        sessionsRemaining: newRemaining
+      });
+    }
+  }
+
+  return createResponse({
+    status: 'error',
+    message: 'No active subscription found'
+  });
+}
+
+// Cancel subscription
+function cancelSubscription(subscriptionId) {
+  const sheet = getSheet(SUBSCRIPTIONS_SHEET_NAME);
+  const data = sheet.getDataRange().getValues();
+
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === subscriptionId) {
+      sheet.getRange(i + 1, 6).setValue('cancelled');
+      sheet.getRange(i + 1, 16).setValue(new Date().toISOString());
+
+      return createResponse({
+        status: 'success',
+        message: 'Subscription cancelled'
+      });
+    }
+  }
+
+  return createResponse({
+    status: 'error',
+    message: 'Subscription not found'
+  });
+}
+
 // ADMIN FUNCTIONS - Call these manually from Script Editor
 
 // Initialize sheets with sample data
@@ -719,6 +989,7 @@ function initializeSheets() {
   getSheet(PRODUCTS_SHEET_NAME);
   getSheet(ORDERS_SHEET_NAME);
   getSheet(PHOTOS_SHEET_NAME);
+  getSheet(SUBSCRIPTIONS_SHEET_NAME);
 
   Logger.log('Sheets initialized successfully!');
 }

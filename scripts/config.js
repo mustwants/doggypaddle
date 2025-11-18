@@ -46,9 +46,25 @@ const CONFIG = {
     singleSession: 'https://buy.stripe.com/14AaEW1GV3vIgaK7fE5J60c',
     fiveSessionPackage: 'https://buy.stripe.com/14AaEW1GV3vIgaK7fE5J60c',
     giftCard: 'https://buy.stripe.com/14AaEW1GV3vIgaK7fE5J60c',
+    subscription: 'https://buy.stripe.com/14AaEW1GV3vIgaK7fE5J60c', // TODO: Update with actual subscription product link
 
     // Stripe buy button ID (already configured)
     buyButtonId: 'buy_btn_1SRg5JAWz02AuqyyQNxXtKgW'
+  },
+
+  // Subscription Configuration
+  SUBSCRIPTION: {
+    name: 'Dog Swim Club',
+    price: 75, // per month
+    sessionsPerMonth: 4,
+    features: [
+      '4 sessions per month',
+      'Up to 2 dogs per session',
+      'Priority booking',
+      'Save $25/month vs single sessions',
+      'Auto-renews monthly'
+    ],
+    rolloverSessions: false // Whether unused sessions roll over
   },
 
   // Social Media

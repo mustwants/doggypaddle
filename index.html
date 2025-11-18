@@ -254,8 +254,8 @@
 
     .pricing-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 2rem;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.5rem;
       margin-top: 2rem;
     }
 
@@ -945,7 +945,7 @@
           <a href="#booking" class="button">Book Now</a>
         </div>
 
-        <div class="price-card featured">
+        <div class="price-card">
           <h3>5-Session Package</h3>
           <div class="price">$100</div>
           <p>Save $25 with our package</p>
@@ -957,6 +957,20 @@
             <li>$20 per session (save 20%)</li>
           </ul>
           <a href="#booking" class="button">Buy Package</a>
+        </div>
+
+        <div class="price-card featured">
+          <h3>Dog Swim Club</h3>
+          <div class="price">$75<span style="font-size: 1rem;">/mo</span></div>
+          <p>Best value for regular swimmers</p>
+          <ul>
+            <li>4 sessions per month</li>
+            <li>Up to 2 dogs per session</li>
+            <li>Priority booking access</li>
+            <li>Save $25/month vs singles</li>
+            <li>Auto-renews monthly</li>
+          </ul>
+          <a href="#subscription-signup" class="button" onclick="showSubscriptionModal(event)">Join the Club</a>
         </div>
 
         <div class="price-card">
@@ -1135,5 +1149,12 @@
   <script async src="https://js.stripe.com/v3/buy-button.js"></script>
   <script src="/scripts/booking.js"></script>
   <script src="/scripts/calendar.js"></script>
+  <script>
+    // Subscription modal handler
+    function showSubscriptionModal(event) {
+      event.preventDefault();
+      window.location.href = '/subscription.html';
+    }
+  </script>
 </body>
 </html>

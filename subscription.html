@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dog Swim Club - Subscription Management | DoggyPaddle</title>
+  <link rel="stylesheet" href="styles/main.css" />
+  <link rel="icon" type="image/png" href="/assets/logo.png" />
+  <style>
+    :root {
+      --primary: #028090;
+      --primary-dark: #016773;
+      --secondary: #02C39A;
+      --accent: #F0B429;
+      --background: #F7F9FB;
+      --text: #333;
+      --text-light: #666;
+      --border: #E0E7EC;
+      --white: #FFFFFF;
+      --shadow: rgba(0, 0, 0, 0.08);
+      --radius: 12px;
+      --transition: all 0.3s ease;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: var(--background);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .header {
+      background: var(--white);
+      padding: 2rem;
+      border-radius: var(--radius);
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 12px var(--shadow);
+      text-align: center;
+    }
+
+    .header h1 {
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .subscription-card {
+      background: var(--white);
+      padding: 2.5rem;
+      border-radius: var(--radius);
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 12px var(--shadow);
+    }
+
+    .subscription-status {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+      color: white;
+      border-radius: var(--radius);
+      margin-bottom: 2rem;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      font-weight: 600;
+    }
+
+    .sessions-counter {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+      margin: 2rem 0;
+    }
+
+    .counter-box {
+      background: var(--background);
+      padding: 1.5rem;
+      border-radius: var(--radius);
+      text-align: center;
+    }
+
+    .counter-number {
+      font-size: 3rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .counter-label {
+      color: var(--text-light);
+      font-size: 0.95rem;
+    }
+
+    .button {
+      display: inline-block;
+      padding: 1rem 2rem;
+      background: var(--primary);
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 600;
+      transition: var(--transition);
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    .button:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(2, 128, 144, 0.3);
+    }
+
+    .button-secondary {
+      background: var(--text-light);
+    }
+
+    .button-secondary:hover {
+      background: var(--text);
+    }
+
+    .button-danger {
+      background: #dc3545;
+    }
+
+    .button-danger:hover {
+      background: #c82333;
+    }
+
+    .signup-form {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    input {
+      width: 100%;
+      padding: 0.875rem;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: var(--transition);
+      font-family: inherit;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(2, 128, 144, 0.1);
+    }
+
+    .benefits-list {
+      list-style: none;
+      margin: 2rem 0;
+    }
+
+    .benefits-list li {
+      padding: 0.75rem 0;
+      padding-left: 2rem;
+      position: relative;
+    }
+
+    .benefits-list li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: var(--secondary);
+      font-weight: 700;
+      font-size: 1.2rem;
+    }
+
+    .loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .alert {
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+    }
+
+    .alert-success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .alert-error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .alert-info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 1rem;
+      }
+
+      .subscription-status {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+      }
+
+      .sessions-counter {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="nav" style="background: var(--primary); padding: 1rem 0;">
+    <div class="container" style="display: flex; justify-content: space-between; align-items: center;">
+      <a href="/" style="color: white; text-decoration: none; font-size: 1.5rem; font-weight: 700;">
+        <img src="/assets/logo.png" alt="DoggyPaddle Logo" style="height: 40px; vertical-align: middle; margin-right: 0.5rem;" />
+        DoggyPaddle
+      </a>
+      <a href="/" class="button button-secondary" style="padding: 0.5rem 1rem;">← Back to Home</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <!-- Subscription Status View (shown when logged in) -->
+    <div id="subscription-view" style="display: none;">
+      <div class="header">
+        <h1>Dog Swim Club</h1>
+        <p>Manage your subscription and book sessions</p>
+      </div>
+
+      <div class="subscription-card">
+        <div class="subscription-status">
+          <div>
+            <h2 id="subscriber-name">Welcome back!</h2>
+            <p id="subscriber-email"></p>
+          </div>
+          <div class="status-badge" id="status-badge">Active</div>
+        </div>
+
+        <div class="sessions-counter">
+          <div class="counter-box">
+            <div class="counter-number" id="sessions-remaining">4</div>
+            <div class="counter-label">Sessions Remaining</div>
+          </div>
+          <div class="counter-box">
+            <div class="counter-number" id="sessions-used">0</div>
+            <div class="counter-label">Sessions Used This Month</div>
+          </div>
+          <div class="counter-box">
+            <div class="counter-number">4</div>
+            <div class="counter-label">Sessions Per Month</div>
+          </div>
+        </div>
+
+        <div class="alert alert-info">
+          <strong>Next Billing Date:</strong> <span id="next-billing">—</span><br>
+          <strong>Monthly Price:</strong> $75
+        </div>
+
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 2rem;">
+          <a href="/#booking" class="button">Book a Session</a>
+          <button class="button button-secondary" onclick="viewBillingHistory()">Billing History</button>
+          <button class="button button-danger" onclick="cancelSubscription()">Cancel Subscription</button>
+        </div>
+      </div>
+
+      <div class="subscription-card">
+        <h2 style="margin-bottom: 1rem;">Membership Benefits</h2>
+        <ul class="benefits-list">
+          <li>4 swim sessions per month (20 minutes each)</li>
+          <li>Up to 2 dogs per session</li>
+          <li>Priority booking - get first pick of time slots</li>
+          <li>Save $25/month compared to single sessions</li>
+          <li>Cancel anytime - no long-term commitment</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Signup View (shown when not subscribed) -->
+    <div id="signup-view">
+      <div class="header">
+        <h1>Join the Dog Swim Club</h1>
+        <p>Get unlimited access to the best dog swimming experience</p>
+      </div>
+
+      <div class="subscription-card">
+        <h2 style="text-align: center; margin-bottom: 2rem; color: var(--primary);">
+          $75/month - 4 Sessions Included
+        </h2>
+
+        <ul class="benefits-list">
+          <li>4 swim sessions per month (20 minutes each)</li>
+          <li>Up to 2 dogs per session</li>
+          <li>Priority booking access</li>
+          <li>Save $25/month vs single sessions</li>
+          <li>Auto-renews monthly, cancel anytime</li>
+        </ul>
+
+        <form id="subscription-form" class="signup-form" style="margin-top: 3rem;">
+          <div class="form-group">
+            <label for="sub-firstName">First Name *</label>
+            <input type="text" id="sub-firstName" name="firstName" required />
+          </div>
+
+          <div class="form-group">
+            <label for="sub-lastName">Last Name *</label>
+            <input type="text" id="sub-lastName" name="lastName" required />
+          </div>
+
+          <div class="form-group">
+            <label for="sub-email">Email *</label>
+            <input type="email" id="sub-email" name="email" required />
+          </div>
+
+          <div class="form-group">
+            <label for="sub-phone">Phone *</label>
+            <input type="tel" id="sub-phone" name="phone" required />
+          </div>
+
+          <button type="submit" class="button" style="width: 100%; margin-top: 1rem;">
+            Subscribe Now - $75/month
+          </button>
+        </form>
+
+        <p style="text-align: center; color: var(--text-light); margin-top: 1.5rem; font-size: 0.9rem;">
+          You'll be redirected to Stripe for secure payment processing
+        </p>
+      </div>
+    </div>
+  </main>
+
+  <script src="scripts/config.js"></script>
+  <script src="scripts/subscription.js"></script>
+</body>
+</html>
