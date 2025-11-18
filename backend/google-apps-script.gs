@@ -45,13 +45,11 @@ const ADMIN_ALLOWLIST_PROPERTY = 'ADMIN_ALLOWLIST';
 const GOOGLE_OAUTH_CLIENT_ID_PROPERTY = 'GOOGLE_OAUTH_CLIENT_ID';
 
 // Handle CORS preflight (OPTIONS) requests
+// Note: CORS is handled by Web App deployment with "Anyone" access.
+// setHeader is deprecated and has been removed.
 function doOptions(e) {
   return ContentService.createTextOutput('')
-    .setMimeType(ContentService.MimeType.TEXT)
-    .setHeader('Access-Control-Allow-Origin', 'https://dogpaddle.club')
-    .setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-    .setHeader('Access-Control-Allow-Headers', 'Content-Type')
-    .setHeader('Access-Control-Max-Age', '86400');
+    .setMimeType(ContentService.MimeType.TEXT);
 }
 
 // Main entry point for GET requests
@@ -807,29 +805,21 @@ function getSheet(sheetName) {
   return sheet;
 }
 
-// Helper: Create JSON response with CORS headers
+// Helper: Create JSON response
+// Note: CORS headers are handled by Web App deployment with "Anyone" access.
+// setHeader is deprecated and has been removed to prevent runtime errors.
 function createResponse(data) {
   const jsonOutput = JSON.stringify(data);
 
   return ContentService
     .createTextOutput(jsonOutput)
-    .setMimeType(ContentService.MimeType.JSON)
-    .setHeader('Access-Control-Allow-Origin', 'https://dogpaddle.club')
-    .setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-    .setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
-// Helper: Create CORS preflight response
+// Helper: Create CORS preflight response (legacy function, no longer needed)
+// Kept for backward compatibility but now just calls createResponse
 function createCORSResponse(data) {
-  const jsonOutput = JSON.stringify(data);
-
-  return ContentService
-    .createTextOutput(jsonOutput)
-    .setMimeType(ContentService.MimeType.JSON)
-    .setHeader('Access-Control-Allow-Origin', 'https://dogpaddle.club')
-    .setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-    .setHeader('Access-Control-Allow-Headers', 'Content-Type')
-    .setHeader('Access-Control-Max-Age', '86400');
+  return createResponse(data);
 }
 
 function getScriptProperty(key) {

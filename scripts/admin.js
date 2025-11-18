@@ -4,6 +4,17 @@
 (function() {
   'use strict';
 
+  // Security: HTML escaping function to prevent XSS attacks
+  function escapeHtml(unsafe) {
+    if (unsafe === null || unsafe === undefined) return '';
+    return String(unsafe)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
   // API endpoint
   const API_ENDPOINT = window.DoggyPaddleConfig?.API_ENDPOINT ||
                        'https://script.google.com/macros/s/YOUR_DEPLOYED_WEBAPP_ID/exec';
@@ -231,18 +242,24 @@
         }
       }
 
+      // Security: Escape all user-supplied fields to prevent XSS
+      const escapedImageUrl = escapeHtml(product.imageUrl || '/assets/products/placeholder.jpg');
+      const escapedName = escapeHtml(product.name);
+      const escapedDescription = escapeHtml(product.description || '');
+      const escapedId = escapeHtml(product.id);
+
       html += `
         <div class="product-card">
-          <img src="${product.imageUrl || '/assets/products/placeholder.jpg'}" alt="${product.name}" class="product-image" onerror="this.src='/assets/products/placeholder.jpg'">
+          <img src="${escapedImageUrl}" alt="${escapedName}" class="product-image" onerror="this.src='/assets/products/placeholder.jpg'">
           <div class="product-info">
-            <div class="product-name">${product.name}</div>
-            <div class="product-description">${product.description || ''}</div>
+            <div class="product-name">${escapedName}</div>
+            <div class="product-description">${escapedDescription}</div>
             <div class="product-price">$${(product.price || 0).toFixed(2)}</div>
             ${stockBadge}
           </div>
           <div class="product-actions">
-            <button class="product-btn btn-edit" onclick="window.editProduct('${product.id}')">Edit</button>
-            <button class="product-btn btn-delete" onclick="window.deleteProduct('${product.id}')">Delete</button>
+            <button class="product-btn btn-edit" onclick="window.editProduct('${escapedId}')">Edit</button>
+            <button class="product-btn btn-delete" onclick="window.deleteProduct('${escapedId}')">Delete</button>
           </div>
         </div>
       `;
@@ -546,20 +563,27 @@
       const isRejected = photo.status === 'rejected';
       const isPending = !isApproved && !isRejected;
 
+      // Security: Escape all user-supplied fields to prevent XSS
+      const escapedUrl = escapeHtml(photo.url || photo.imageUrl);
+      const escapedCaption = escapeHtml(photo.caption || 'Photo');
+      const escapedCaptionText = escapeHtml(photo.caption || 'No caption');
+      const escapedCustomerName = escapeHtml(photo.customerName || 'Anonymous');
+      const escapedId = escapeHtml(photo.id);
+
       html += `
         <div class="photo-card">
-          <img src="${photo.url || photo.imageUrl}" alt="${photo.caption || 'Photo'}" class="photo-image" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2Y1ZjVmNSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4='">
+          <img src="${escapedUrl}" alt="${escapedCaption}" class="photo-image" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2Y1ZjVmNSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4='">
           <div class="photo-details">
-            <div class="photo-caption">${photo.caption || 'No caption'}</div>
+            <div class="photo-caption">${escapedCaptionText}</div>
             <div class="photo-meta">
-              By: ${photo.customerName || 'Anonymous'}<br>
+              By: ${escapedCustomerName}<br>
               ${photo.submittedAt ? 'Submitted: ' + new Date(photo.submittedAt).toLocaleDateString() : ''}
             </div>
           </div>
           <div class="photo-actions">
             ${isPending ? `
-              <button class="photo-btn btn-edit" onclick="window.approvePhoto('${photo.id}')"> Approve</button>
-              <button class="photo-btn btn-delete" onclick="window.rejectPhoto('${photo.id}')"> Reject</button>
+              <button class="photo-btn btn-edit" onclick="window.approvePhoto('${escapedId}')"> Approve</button>
+              <button class="photo-btn btn-delete" onclick="window.rejectPhoto('${escapedId}')"> Reject</button>
             ` : ''}
             ${isApproved ? `<span style="color: #155724; flex: 1; text-align: center; font-weight: 600;"> Approved</span>` : ''}
             ${isRejected ? `<span style="color: #721c24; flex: 1; text-align: center; font-weight: 600;"> Rejected</span>` : ''}

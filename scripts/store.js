@@ -1,5 +1,16 @@
 // DoggyPaddle Store JavaScript
 
+// Security: HTML escaping function to prevent XSS attacks
+function escapeHtml(unsafe) {
+  if (unsafe === null || unsafe === undefined) return '';
+  return String(unsafe)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   const productsGrid = document.getElementById('products-grid');
   const cartSidebar = document.getElementById('cart-sidebar');
@@ -79,30 +90,40 @@ document.addEventListener('DOMContentLoaded', async () => {
       ? products
       : products.filter(p => p.category === currentCategory);
 
-    productsGrid.innerHTML = filteredProducts.map(product => `
+    productsGrid.innerHTML = filteredProducts.map(product => {
+      // Security: Escape all user-supplied fields to prevent XSS
+      const escapedImageUrl = escapeHtml(product.imageUrl);
+      const escapedName = escapeHtml(product.name);
+      const escapedCategory = escapeHtml(product.category);
+      const escapedDescription = escapeHtml(product.description);
+      const escapedPurchaseLink = escapeHtml(product.purchaseLink);
+      const escapedId = escapeHtml(product.id);
+
+      return `
       <div class="product-card ${!product.inStock ? 'out-of-stock' : ''}">
-        <img src="${product.imageUrl}" alt="${product.name}" class="product-image"
+        <img src="${escapedImageUrl}" alt="${escapedName}" class="product-image"
              onerror="this.src='/assets/logo.png'" />
         <div class="product-details">
-          <div class="product-category">${product.category}</div>
-          <div class="product-name">${product.name}</div>
-          <div class="product-description">${product.description}</div>
+          <div class="product-category">${escapedCategory}</div>
+          <div class="product-name">${escapedName}</div>
+          <div class="product-description">${escapedDescription}</div>
           <div class="product-footer">
             <div class="product-price">$${product.price.toFixed(2)}</div>
             ${!product.inStock
               ? `<span class="out-of-stock-badge">Out of Stock</span>`
               : product.purchaseLink
-              ? `<a href="${product.purchaseLink}" target="_blank" rel="noopener noreferrer" class="add-to-cart-btn" style="text-decoration: none; display: inline-block;">
+              ? `<a href="${escapedPurchaseLink}" target="_blank" rel="noopener noreferrer" class="add-to-cart-btn" style="text-decoration: none; display: inline-block;">
                    Buy Now →
                  </a>`
-              : `<button class="add-to-cart-btn" data-product-id="${product.id}">
+              : `<button class="add-to-cart-btn" data-product-id="${escapedId}">
                    Add to Cart
                  </button>`
             }
           </div>
         </div>
       </div>
-    `).join('');
+      `;
+    }).join('');
 
     // Add event listeners to add-to-cart buttons
     document.querySelectorAll('.add-to-cart-btn').forEach(btn => {
@@ -188,22 +209,29 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
-    cartItems.innerHTML = cart.map(item => `
+    cartItems.innerHTML = cart.map(item => {
+      // Security: Escape all user-supplied fields to prevent XSS
+      const escapedImageUrl = escapeHtml(item.imageUrl);
+      const escapedName = escapeHtml(item.name);
+      const escapedId = escapeHtml(item.id);
+
+      return `
       <div class="cart-item">
-        <img src="${item.imageUrl}" alt="${item.name}" class="cart-item-image"
+        <img src="${escapedImageUrl}" alt="${escapedName}" class="cart-item-image"
              onerror="this.src='/assets/logo.png'" />
         <div class="cart-item-details">
-          <div class="cart-item-name">${item.name}</div>
+          <div class="cart-item-name">${escapedName}</div>
           <div class="cart-item-price">$${item.price.toFixed(2)}</div>
           <div class="cart-item-quantity">
-            <button class="qty-btn" data-action="decrease" data-product-id="${item.id}">-</button>
+            <button class="qty-btn" data-action="decrease" data-product-id="${escapedId}">-</button>
             <span>${item.quantity}</span>
-            <button class="qty-btn" data-action="increase" data-product-id="${item.id}">+</button>
+            <button class="qty-btn" data-action="increase" data-product-id="${escapedId}">+</button>
           </div>
-          <div class="remove-item" data-product-id="${item.id}">Remove</div>
+          <div class="remove-item" data-product-id="${escapedId}">Remove</div>
         </div>
       </div>
-    `).join('');
+      `;
+    }).join('');
 
     // Add event listeners
     cartItems.querySelectorAll('.qty-btn').forEach(btn => {
@@ -962,30 +990,37 @@ document.addEventListener('DOMContentLoaded', async () => {
       const lowStockThreshold = product.lowStockThreshold || 5;
       const isLowStock = quantity > 0 && quantity <= lowStockThreshold;
 
+      // Security: Escape all user-supplied fields to prevent XSS
+      const escapedImageUrl = escapeHtml(product.imageUrl);
+      const escapedName = escapeHtml(product.name);
+      const escapedCategory = escapeHtml(product.category);
+      const escapedDescription = escapeHtml(product.description);
+      const escapedId = escapeHtml(product.id);
+
       return `
       <div class="admin-product-item">
-        <img src="${product.imageUrl}" alt="${product.name}" class="admin-product-image"
+        <img src="${escapedImageUrl}" alt="${escapedName}" class="admin-product-image"
              onerror="this.src='/assets/logo.png'" />
         <div class="admin-item-details">
           <div class="admin-item-name">
-            ${product.name}
+            ${escapedName}
             <span class="stock-badge ${product.inStock ? 'in-stock' : 'out-of-stock'}">
               ${product.inStock ? 'Active' : 'Inactive'}
             </span>
             ${isLowStock ? '<span class="stock-badge" style="background: #ff9800;">⚠️ Low Stock</span>' : ''}
             ${quantity === 0 ? '<span class="stock-badge out-of-stock">0 Stock</span>' : ''}
           </div>
-          <div class="admin-item-info">${product.category}</div>
-          <div class="admin-item-info">${product.description}</div>
+          <div class="admin-item-info">${escapedCategory}</div>
+          <div class="admin-item-info">${escapedDescription}</div>
           <div class="admin-item-info"><strong>Quantity:</strong> ${quantity} ${isLowStock ? '⚠️' : ''}</div>
           <div class="admin-item-price">$${product.price.toFixed(2)}</div>
         </div>
         <div class="admin-item-actions">
-          <button class="admin-btn admin-btn-edit" data-product-id="${product.id}">Edit</button>
-          <button class="admin-btn admin-btn-toggle" data-product-id="${product.id}">
+          <button class="admin-btn admin-btn-edit" data-product-id="${escapedId}">Edit</button>
+          <button class="admin-btn admin-btn-toggle" data-product-id="${escapedId}">
             ${product.inStock ? 'Mark Inactive' : 'Mark Active'}
           </button>
-          <button class="admin-btn admin-btn-delete" data-product-id="${product.id}">Delete</button>
+          <button class="admin-btn admin-btn-delete" data-product-id="${escapedId}">Delete</button>
         </div>
       </div>
     `;
