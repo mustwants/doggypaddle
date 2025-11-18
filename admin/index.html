@@ -640,37 +640,30 @@
     // Expose globally so admin.js can access it
     window.isAdminLoggedIn = false;
     let adminUserEmail = null;
+    let currentSession = null;
 
     // Check for existing session on page load
-    function checkAdminSession() {
-      const session = localStorage.getItem('doggypaddle_admin_session');
+    async function checkAdminSession() {
+      try {
+        const response = await fetch('/.netlify/functions/session', {
+          credentials: 'include'
+        });
 
-      if (session) {
-        try {
-          const sessionData = JSON.parse(session);
-          const loginTime = new Date(sessionData.timestamp || sessionData.loginTime);
-          const now = new Date();
-          const daysSinceLogin = (now - loginTime) / (1000 * 60 * 60 * 24);
-
-          // Session valid for 7 days
-          if (daysSinceLogin < 7) {
-            console.log('Valid admin session found');
-            window.isAdminLoggedIn = true;
-            adminUserEmail = sessionData.email;
-            showDashboard();
-            return true;
-          } else {
-            console.log('Admin session expired');
-            localStorage.removeItem('doggypaddle_admin_session');
-          }
-        } catch (e) {
-          console.error('Error parsing session:', e);
-          localStorage.removeItem('doggypaddle_admin_session');
+        if (!response.ok) {
+          console.log('No valid admin session found');
+          return false;
         }
-      }
 
-      console.log('No valid admin session found');
-      return false;
+        const session = await response.json();
+        window.isAdminLoggedIn = true;
+        adminUserEmail = session.email;
+        currentSession = session;
+        showDashboard();
+        return true;
+      } catch (error) {
+        console.error('Failed to validate session:', error);
+        return false;
+      }
     }
 
     // Initialize Google Sign-In
@@ -727,88 +720,67 @@
       }
     }
 
-    // Handle dev login
-    function handleDevLogin() {
-      const allowedAdmins = window.DoggyPaddleConfig?.GOOGLE_AUTH?.allowedAdmins || ['Scott@mustwants.com'];
-      const devEmail = allowedAdmins[0].toLowerCase();
-
-      console.log('Dev login activated for:', devEmail);
-
-      window.isAdminLoggedIn = true;
-      adminUserEmail = devEmail;
-
-      // Store session
-      const session = {
-        email: devEmail,
-        name: 'Dev Admin',
-        loginTime: new Date().toISOString(),
-        timestamp: Date.now(),
-        isDev: true
-      };
-      localStorage.setItem('doggypaddle_admin_session', JSON.stringify(session));
-
-      showNotification('Logged in successfully (Dev Mode)');
-      showDashboard();
-    }
-
-    // Handle Google Sign-In
-    function handleGoogleSignIn(response) {
+        // Handle dev login
+    async function handleDevLogin() {
       try {
-        console.log('Google Sign-In callback triggered');
+        const allowedAdmins = window.DoggyPaddleConfig?.GOOGLE_AUTH?.allowedAdmins || ['Scott@mustwants.com'];
+        const devEmail = allowedAdmins[0].toLowerCase();
 
-        // Decode JWT token
-        const payload = parseJwt(response.credential);
-        if (!payload) {
-          throw new Error('Failed to parse JWT token');
+        console.log('Dev login activated for:', devEmail);
+
+        // Dev login still flows through server to receive an HttpOnly session
+        const loginResponse = await fetch('/.netlify/functions/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ credential: null, devEmail })
+        });
+
+        if (!loginResponse.ok) {
+          const errorText = await loginResponse.text();
+          throw new Error(`Dev authentication failed: ${errorText || loginResponse.status}`);
         }
 
-        const userEmail = payload.email.toLowerCase();
-        console.log('User email:', userEmail);
+        const session = await loginResponse.json();
+        window.isAdminLoggedIn = true;
+        adminUserEmail = session.email;
+        currentSession = session;
 
-        // Check authorization
-        const allowedAdmins = window.DoggyPaddleConfig?.GOOGLE_AUTH?.allowedAdmins || [];
-        const allowedAdminsLower = allowedAdmins.map(email => email.toLowerCase());
-        console.log('Allowed admins:', allowedAdminsLower);
-
-        if (allowedAdminsLower.includes(userEmail)) {
-          console.log('✓ User authorized! Granting admin access...');
-
-          window.isAdminLoggedIn = true;
-          adminUserEmail = userEmail;
-
-          // Store session
-          const session = {
-            email: userEmail,
-            name: payload.name,
-            picture: payload.picture,
-            timestamp: Date.now()
-          };
-          localStorage.setItem('doggypaddle_admin_session', JSON.stringify(session));
-
-          showNotification(`Welcome, ${payload.name}!`);
-          showDashboard();
-        } else {
-          console.warn('✗ Access denied for email:', userEmail);
-          alert(`Access denied. Only authorized Google Workspace accounts can access the admin panel.\n\nYour email: ${userEmail}\n\nAllowed admins: ${allowedAdmins.join(', ')}`);
-        }
+        showNotification('Logged in successfully (Dev Mode)');
+        showDashboard();
       } catch (error) {
-        console.error('Error handling Google Sign-In:', error);
-        alert('Authentication failed. Please try again.\n\nError: ' + error.message);
+        console.error('Dev login failed:', error);
+        alert('Dev login failed. Please check server configuration.');
       }
     }
 
-    // Parse JWT token
-    function parseJwt(token) {
+    // Handle Google Sign-In
+    async function handleGoogleSignIn(response) {
       try {
-        const base64Url = token.split('.')[1];
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-        }).join(''));
-        return JSON.parse(jsonPayload);
+        console.log('Google Sign-In callback triggered, sending ID token to server');
+
+        const loginResponse = await fetch('/.netlify/functions/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ credential: response.credential })
+        });
+
+        if (!loginResponse.ok) {
+          const errorText = await loginResponse.text();
+          throw new Error(`Authentication failed: ${errorText || loginResponse.status}`);
+        }
+
+        const session = await loginResponse.json();
+        window.isAdminLoggedIn = true;
+        adminUserEmail = session.email;
+        currentSession = session;
+
+        showNotification(`Welcome, ${session.name || session.email}!`);
+        showDashboard();
       } catch (error) {
-        console.error('Error parsing JWT:', error);
-        return null;
+        console.error('Error handling Google Sign-In:', error);
+        alert('Authentication failed. Please try again.\n\nError: ' + error.message);
       }
     }
 
@@ -818,30 +790,59 @@
       document.getElementById('dashboard-screen').classList.add('active');
 
       // Update user info
-      const session = JSON.parse(localStorage.getItem('doggypaddle_admin_session') || '{}');
-      document.getElementById('user-info').textContent = `Logged in as: ${session.name || adminUserEmail}`;
+      const displayName = currentSession?.name || adminUserEmail || 'Admin';
+      document.getElementById('user-info').textContent = `Logged in as: ${displayName}`;
 
       // Initialize dashboard features
       initDashboard();
     }
 
     // Logout
-    function handleLogout() {
-      if (confirm('Are you sure you want to logout?')) {
-        localStorage.removeItem('doggypaddle_admin_session');
-        window.isAdminLoggedIn = false;
-        adminUserEmail = null;
+    async function handleLogout(skipConfirm = false) {
+      if (!skipConfirm && !confirm('Are you sure you want to logout?')) {
+        return;
+      }
 
-        if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
-          google.accounts.id.disableAutoSelect();
+      try {
+        await fetch('/.netlify/functions/logout', { method: 'POST', credentials: 'include' });
+      } catch (error) {
+        console.warn('Logout request failed:', error);
+      }
+
+      window.isAdminLoggedIn = false;
+      adminUserEmail = null;
+      currentSession = null;
+
+      if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+        google.accounts.id.disableAutoSelect();
+      }
+
+      showNotification('Logged out successfully');
+
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    }
+
+    async function revalidateSession() {
+      try {
+        const response = await fetch('/.netlify/functions/session', {
+          credentials: 'include'
+        });
+
+        if (!response.ok) {
+          throw new Error('Session is no longer valid');
         }
 
-        showNotification('Logged out successfully');
-
-        // Redirect to login screen
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
+        const session = await response.json();
+        window.isAdminLoggedIn = true;
+        adminUserEmail = session.email;
+        currentSession = session;
+        return true;
+      } catch (error) {
+        console.warn('Session revalidation failed:', error);
+        await handleLogout(true);
+        return false;
       }
     }
 
@@ -863,7 +864,10 @@
       const tabContents = document.querySelectorAll('.admin-tab-content');
 
       tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
+        tab.addEventListener('click', async () => {
+          const sessionValid = await revalidateSession();
+          if (!sessionValid) return;
+
           const tabName = tab.dataset.tab;
 
           // Update active tab
@@ -878,9 +882,9 @@
           }
 
           // Load data for selected tab
-          loadTabData(tabName);
-        });
-      });
+          await loadTabData(tabName);
+        });␊
+      });␊
 
       // Logout button
       document.getElementById('logout-btn').addEventListener('click', handleLogout);
@@ -891,8 +895,10 @@
     }
 
     // Load tab data
-    function loadTabData(tabName) {
+    async function loadTabData(tabName) {
       console.log('Loading tab data for:', tabName);
+      const sessionValid = await revalidateSession();
+      if (!sessionValid) return;
       // This will be handled by the loaded admin modules
       if (window.loadAdminProducts && tabName === 'products') {
         window.loadAdminProducts();
@@ -906,7 +912,6 @@
         window.loadOrders();
       }
     }
-
     // Load admin modules
     function loadAdminModules() {
       console.log('Loading admin modules...');
@@ -957,12 +962,14 @@
         .catch(err => console.error('Error loading modals:', err));
     }
 
-    // Initialize on page load
-    document.addEventListener('DOMContentLoaded', () => {
-      if (!checkAdminSession()) {
+// Initialize on page load
+    document.addEventListener('DOMContentLoaded', async () => {
+      const hasSession = await checkAdminSession();
+      if (!hasSession) {
         initGoogleSignIn();
       }
     });
   </script>
 </body>
 </html>
+
