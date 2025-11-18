@@ -648,13 +648,18 @@ textarea:focus-visible {
   padding: 0;
   margin-bottom: 1.5rem;
   box-shadow: var(--shadow);
-  transition: var(--transition);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
 }
 
 .booking-step:hover {
   box-shadow: var(--shadow-md);
   transform: translateY(-2px);
+}
+
+.booking-step.expanded {
+  border-color: var(--primary);
+  box-shadow: 0 8px 24px rgba(2, 128, 144, 0.15);
 }
 
 .step-header {
@@ -667,13 +672,18 @@ textarea:focus-visible {
   border: none;
   border-bottom: 2px solid var(--border-light);
   cursor: pointer;
-  transition: var(--transition);
+  transition: all 0.3s ease;
 }
 
 .step-header:hover,
 .step-header:focus-visible {
   background: linear-gradient(90deg, rgba(2, 128, 144, 0.14), rgba(2, 128, 144, 0.05));
   outline: none;
+}
+
+.booking-step.expanded .step-header {
+  background: linear-gradient(90deg, rgba(2, 128, 144, 0.12), rgba(2, 128, 144, 0.04));
+  border-bottom-color: var(--primary);
 }
 
 .step-number {
@@ -729,12 +739,19 @@ textarea:focus-visible {
 }
 
 .step-content {
-  padding: 0 2rem 2rem;
-  display: none;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  padding: 0 2rem;
+  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.3s ease,
+              padding 0.3s ease;
 }
 
 .booking-step.expanded .step-content {
-  display: block;
+  max-height: 3000px; /* Large enough to accommodate any content */
+  opacity: 1;
+  padding: 0 2rem 2rem;
 }
 
 .booking-step .step-content > p {
