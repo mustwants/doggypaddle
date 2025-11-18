@@ -1313,145 +1313,290 @@ function initPhotosManagement() {
   }
 }
 
-function loadPhotos() {
+// Global cache for photos
+let photosCache = [];
+
+async function loadPhotos() {
   const photosList = document.getElementById('admin-photos-list');
   if (!photosList) return;
 
-  const photos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
+  // Show loading state
+  photosList.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-light);">Loading photos...</p>';
 
-  if (photos.length === 0) {
-    photosList.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-light);">No photos submitted yet.</p>';
-    return;
-  }
+  try {
+    // Fetch photos from backend
+    const API_ENDPOINT = window.DoggyPaddleConfig?.API_ENDPOINT;
+    if (!API_ENDPOINT) {
+      throw new Error('API endpoint not configured');
+    }
 
-  // Sort photos by date (most recent first)
-  photos.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    const response = await fetch(`${API_ENDPOINT}?action=getPhotos&admin=true`);
 
-  photosList.innerHTML = photos.map(photo => {
-    const statusColors = {
-      pending: '#ffc107',
-      approved: '#28a745',
-      rejected: '#dc3545'
-    };
-    const status = photo.status || 'pending';
-    const statusColor = statusColors[status] || '#666';
+    if (!response.ok) {
+      throw new Error('Failed to fetch photos');
+    }
 
-    return `
-      <div class="admin-product-item">
-        <div style="display: flex; align-items: center; padding: 0.5rem;">
-          <input type="checkbox" class="photo-checkbox" data-timestamp="${photo.timestamp}"
-                 style="cursor: pointer; width: 20px; height: 20px;" onchange="updateBulkActionButtons()">
-        </div>
-        <img src="${photo.imageUrl}" class="admin-product-image" alt="${photo.dogName}"
-             onerror="this.src='/assets/logo.png'" />
-        <div class="admin-item-details">
-          <div class="admin-item-name">🐕 ${photo.dogName}</div>
-          <div class="admin-item-info">Submitted by: ${photo.customerName} (${photo.email})</div>
-          <div class="admin-item-info">Caption: ${photo.caption || 'No caption'}</div>
-          <div class="admin-item-info">Session Date: ${photo.sessionDate || 'Not specified'}</div>
-          <div class="admin-item-info">Submitted: ${formatDateTime(new Date(photo.timestamp))}</div>
-          <div class="admin-item-info">
-            Status: <span style="color: ${statusColor}; font-weight: 600; text-transform: capitalize;">${status}</span>
+    const result = await response.json();
+
+    if (result.status !== 'success') {
+      throw new Error(result.message || 'Failed to load photos');
+    }
+
+    const photos = result.photos || [];
+
+    // Update global cache
+    photosCache = photos;
+
+    if (photos.length === 0) {
+      photosList.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-light);">No photos submitted yet.</p>';
+      return;
+    }
+
+    // Sort photos by date (most recent first)
+    photos.sort((a, b) => {
+      const dateA = new Date(a.createdAt || a.timestamp || 0);
+      const dateB = new Date(b.createdAt || b.timestamp || 0);
+      return dateB - dateA;
+    });
+
+    photosList.innerHTML = photos.map(photo => {
+      const statusColors = {
+        pending: '#ffc107',
+        approved: '#28a745',
+        rejected: '#dc3545'
+      };
+      const status = photo.status || 'pending';
+      const statusColor = statusColors[status] || '#666';
+      const photoId = photo.id;
+
+      return `
+        <div class="admin-product-item">
+          <div style="display: flex; align-items: center; padding: 0.5rem;">
+            <input type="checkbox" class="photo-checkbox" data-photo-id="${photoId}"
+                   style="cursor: pointer; width: 20px; height: 20px;" onchange="updateBulkActionButtons()">
+          </div>
+          <img src="${photo.imageUrl}" class="admin-product-image" alt="${photo.dogName}"
+               onerror="this.src='/assets/logo.png'" />
+          <div class="admin-item-details">
+            <div class="admin-item-name">🐕 ${photo.dogName}</div>
+            <div class="admin-item-info">Submitted by: ${photo.customerName} (${photo.email})</div>
+            <div class="admin-item-info">Caption: ${photo.caption || 'No caption'}</div>
+            <div class="admin-item-info">Session Date: ${photo.sessionDate || 'Not specified'}</div>
+            <div class="admin-item-info">Submitted: ${formatDateTime(new Date(photo.createdAt || photo.timestamp))}</div>
+            <div class="admin-item-info">
+              Status: <span style="color: ${statusColor}; font-weight: 600; text-transform: capitalize;">${status}</span>
+            </div>
+          </div>
+          <div class="admin-item-actions">
+            ${status !== 'approved' ? `<button class="admin-btn admin-btn-edit" onclick="approvePhoto('${photoId}')">✓ Approve</button>` : ''}
+            ${status !== 'rejected' ? `<button class="admin-btn admin-btn-delete" onclick="rejectPhoto('${photoId}')">✗ Reject</button>` : ''}
+            ${status !== 'pending' ? `<button class="admin-btn admin-btn-toggle" onclick="resetPhotoStatus('${photoId}')">Reset</button>` : ''}
+            ${photo.featured ? `<button class="admin-btn admin-btn-toggle" onclick="toggleFeatured('${photoId}', true)" title="Remove from featured" style="background: #ff9800;">⭐ Featured</button>` : `<button class="admin-btn admin-btn-secondary" onclick="toggleFeatured('${photoId}', false)" title="Add to featured">☆ Feature</button>`}
+            <button class="admin-btn admin-btn-edit" onclick="downloadPhoto('${photoId}')" title="Download photo">⬇ Download</button>
+            <button class="admin-btn admin-btn-edit" onclick="shareToFacebook('${photoId}')" title="Share to Facebook" style="background: #1877f2;">📘 Share FB</button>
+            <button class="admin-btn admin-btn-secondary" onclick="editPhotoCaption('${photoId}')" title="Edit details">✏️ Edit</button>
+            <button class="admin-btn admin-btn-delete" onclick="deletePhoto('${photoId}')" title="Delete permanently">🗑 Delete</button>
           </div>
         </div>
-        <div class="admin-item-actions">
-          ${status !== 'approved' ? `<button class="admin-btn admin-btn-edit" onclick="approvePhoto('${photo.timestamp}')">✓ Approve</button>` : ''}
-          ${status !== 'rejected' ? `<button class="admin-btn admin-btn-delete" onclick="rejectPhoto('${photo.timestamp}')">✗ Reject</button>` : ''}
-          ${status !== 'pending' ? `<button class="admin-btn admin-btn-toggle" onclick="resetPhotoStatus('${photo.timestamp}')">Reset</button>` : ''}
-          ${photo.featured ? `<button class="admin-btn admin-btn-toggle" onclick="toggleFeatured('${photo.timestamp}')" title="Remove from featured" style="background: #ff9800;">⭐ Featured</button>` : `<button class="admin-btn admin-btn-secondary" onclick="toggleFeatured('${photo.timestamp}')" title="Add to featured">☆ Feature</button>`}
-          <button class="admin-btn admin-btn-edit" onclick="downloadPhoto('${photo.timestamp}')" title="Download photo">⬇ Download</button>
-          <button class="admin-btn admin-btn-edit" onclick="shareToFacebook('${photo.timestamp}')" title="Share to Facebook" style="background: #1877f2;">📘 Share FB</button>
-          <button class="admin-btn admin-btn-secondary" onclick="editPhotoCaption('${photo.timestamp}')" title="Edit details">✏️ Edit</button>
-          <button class="admin-btn admin-btn-delete" onclick="deletePhoto('${photo.timestamp}')" title="Delete permanently">🗑 Delete</button>
-        </div>
-      </div>
-    `;
-  }).join('');
+      `;
+    }).join('');
 
-  // Reset select all checkbox
-  const selectAllCheckbox = document.getElementById('select-all-photos');
-  if (selectAllCheckbox) selectAllCheckbox.checked = false;
+    // Reset select all checkbox
+    const selectAllCheckbox = document.getElementById('select-all-photos');
+    if (selectAllCheckbox) selectAllCheckbox.checked = false;
 
-  // Update bulk action buttons
-  updateBulkActionButtons();
+    // Update bulk action buttons
+    updateBulkActionButtons();
+
+  } catch (error) {
+    console.error('Error loading photos:', error);
+    photosList.innerHTML = `<p style="text-align: center; padding: 2rem; color: #dc3545;">Error loading photos: ${error.message}</p>`;
+  }
 }
 
-window.approvePhoto = function(timestamp) {
-  const photos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
-  const photo = photos.find(p => p.timestamp == timestamp);
+window.approvePhoto = async function(photoId) {
+  try {
+    const API_ENDPOINT = window.DoggyPaddleConfig?.API_ENDPOINT;
+    if (!API_ENDPOINT) {
+      throw new Error('API endpoint not configured');
+    }
 
-  if (photo) {
-    photo.status = 'approved';
-    localStorage.setItem('doggypaddle_photos', JSON.stringify(photos));
-    loadPhotos();
-    showNotification('Photo approved and will be displayed in gallery!', 'success');
+    const response = await fetch(API_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'approvePhoto',
+        photoId: photoId
+      })
+    });
+
+    const result = await response.json();
+
+    if (result.status === 'success') {
+      showNotification('Photo approved and will be displayed in gallery!', 'success');
+      loadPhotos();
+    } else {
+      throw new Error(result.message || 'Failed to approve photo');
+    }
+  } catch (error) {
+    console.error('Error approving photo:', error);
+    showNotification('Error approving photo: ' + error.message, 'error');
   }
 };
 
-window.rejectPhoto = function(timestamp) {
+window.rejectPhoto = async function(photoId) {
   if (!confirm('Are you sure you want to reject this photo?')) return;
 
-  const photos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
-  const photo = photos.find(p => p.timestamp == timestamp);
+  try {
+    const API_ENDPOINT = window.DoggyPaddleConfig?.API_ENDPOINT;
+    if (!API_ENDPOINT) {
+      throw new Error('API endpoint not configured');
+    }
 
-  if (photo) {
-    photo.status = 'rejected';
-    localStorage.setItem('doggypaddle_photos', JSON.stringify(photos));
-    loadPhotos();
-    showNotification('Photo rejected.', 'success');
+    const response = await fetch(API_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'rejectPhoto',
+        photoId: photoId
+      })
+    });
+
+    const result = await response.json();
+
+    if (result.status === 'success') {
+      showNotification('Photo rejected.', 'success');
+      loadPhotos();
+    } else {
+      throw new Error(result.message || 'Failed to reject photo');
+    }
+  } catch (error) {
+    console.error('Error rejecting photo:', error);
+    showNotification('Error rejecting photo: ' + error.message, 'error');
   }
 };
 
-window.resetPhotoStatus = function(timestamp) {
-  const photos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
-  const photo = photos.find(p => p.timestamp == timestamp);
+window.resetPhotoStatus = async function(photoId) {
+  try {
+    const API_ENDPOINT = window.DoggyPaddleConfig?.API_ENDPOINT;
+    if (!API_ENDPOINT) {
+      throw new Error('API endpoint not configured');
+    }
 
-  if (photo) {
-    photo.status = 'pending';
-    localStorage.setItem('doggypaddle_photos', JSON.stringify(photos));
-    loadPhotos();
-    showNotification('Photo status reset to pending.', 'success');
+    const response = await fetch(API_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'updatePhoto',
+        photoId: photoId,
+        updates: { status: 'pending' }
+      })
+    });
+
+    const result = await response.json();
+
+    if (result.status === 'success') {
+      showNotification('Photo status reset to pending.', 'success');
+      loadPhotos();
+    } else {
+      throw new Error(result.message || 'Failed to reset photo status');
+    }
+  } catch (error) {
+    console.error('Error resetting photo status:', error);
+    showNotification('Error resetting photo status: ' + error.message, 'error');
   }
 };
 
 // Delete photo permanently
-window.deletePhoto = function(timestamp) {
+window.deletePhoto = async function(photoId) {
   if (!confirm('Are you sure you want to permanently delete this photo? This action cannot be undone.')) return;
 
-  let photos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
-  photos = photos.filter(p => p.timestamp != timestamp);
-  localStorage.setItem('doggypaddle_photos', JSON.stringify(photos));
-  loadPhotos();
-  showNotification('Photo deleted permanently.', 'success');
+  try {
+    const API_ENDPOINT = window.DoggyPaddleConfig?.API_ENDPOINT;
+    if (!API_ENDPOINT) {
+      throw new Error('API endpoint not configured');
+    }
+
+    const response = await fetch(API_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'deletePhoto',
+        photoId: photoId
+      })
+    });
+
+    const result = await response.json();
+
+    if (result.status === 'success') {
+      showNotification('Photo deleted permanently.', 'success');
+      loadPhotos();
+    } else {
+      throw new Error(result.message || 'Failed to delete photo');
+    }
+  } catch (error) {
+    console.error('Error deleting photo:', error);
+    showNotification('Error deleting photo: ' + error.message, 'error');
+  }
 };
 
 // Toggle featured status
-window.toggleFeatured = function(timestamp) {
-  const photos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
-  const photo = photos.find(p => p.timestamp == timestamp);
+window.toggleFeatured = async function(photoId, currentFeatured) {
+  const newFeatured = !currentFeatured;
 
-  if (photo) {
-    photo.featured = !photo.featured;
-    localStorage.setItem('doggypaddle_photos', JSON.stringify(photos));
-    loadPhotos();
-    showNotification(photo.featured ? 'Photo marked as featured! It will appear on the home page.' : 'Photo removed from featured.', 'success');
+  try {
+    const API_ENDPOINT = window.DoggyPaddleConfig?.API_ENDPOINT;
+    if (!API_ENDPOINT) {
+      throw new Error('API endpoint not configured');
+    }
+
+    const response = await fetch(API_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'updatePhoto',
+        photoId: photoId,
+        updates: { featured: newFeatured }
+      })
+    });
+
+    const result = await response.json();
+
+    if (result.status === 'success') {
+      showNotification(newFeatured ? 'Photo marked as featured! It will appear on the home page.' : 'Photo removed from featured.', 'success');
+      loadPhotos();
+    } else {
+      throw new Error(result.message || 'Failed to toggle featured status');
+    }
+  } catch (error) {
+    console.error('Error toggling featured status:', error);
+    showNotification('Error toggling featured status: ' + error.message, 'error');
   }
 };
 
 // Download photo
-window.downloadPhoto = function(timestamp) {
-  const photos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
-  const photo = photos.find(p => p.timestamp == timestamp);
+window.downloadPhoto = function(photoId) {
+  const photo = photosCache.find(p => p.id === photoId);
 
   if (photo) {
     // Create a temporary link element
     const link = document.createElement('a');
     link.href = photo.imageUrl;
-    link.download = `doggypaddle-${photo.dogName.replace(/\s+/g, '-')}-${timestamp}.jpg`;
+    link.download = `doggypaddle-${photo.dogName.replace(/\s+/g, '-')}-${photoId}.jpg`;
 
     // For base64 images, we need to handle differently
     if (photo.imageUrl.startsWith('data:')) {
-      link.download = `doggypaddle-${photo.dogName.replace(/\s+/g, '-')}-${timestamp}.jpg`;
+      link.download = `doggypaddle-${photo.dogName.replace(/\s+/g, '-')}-${photoId}.jpg`;
     }
 
     document.body.appendChild(link);
@@ -1463,9 +1608,8 @@ window.downloadPhoto = function(timestamp) {
 };
 
 // Share to Facebook
-window.shareToFacebook = function(timestamp) {
-  const photos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
-  const photo = photos.find(p => p.timestamp == timestamp);
+window.shareToFacebook = function(photoId) {
+  const photo = photosCache.find(p => p.id === photoId);
 
   if (photo) {
     const fbPageUrl = window.DoggyPaddleConfig?.SOCIAL?.facebook || 'https://www.facebook.com/dogpad';
@@ -1555,9 +1699,8 @@ window.shareToFacebook = function(timestamp) {
 };
 
 // Edit photo details (customer name and caption)
-window.editPhotoCaption = function(timestamp) {
-  const photos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
-  const photo = photos.find(p => p.timestamp == timestamp);
+window.editPhotoCaption = function(photoId) {
+  const photo = photosCache.find(p => p.id === photoId);
 
   if (!photo) return;
 
@@ -1651,19 +1794,48 @@ window.editPhotoCaption = function(timestamp) {
   document.body.appendChild(modal);
 
   // Handle form submission
-  document.getElementById('edit-photo-form').addEventListener('submit', (e) => {
+  document.getElementById('edit-photo-form').addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    photo.dogName = document.getElementById('edit-dog-name').value;
-    photo.customerName = document.getElementById('edit-customer-name').value;
-    photo.email = document.getElementById('edit-email').value;
-    photo.caption = document.getElementById('edit-caption').value;
-    photo.sessionDate = document.getElementById('edit-session-date').value;
+    const updates = {
+      dogName: document.getElementById('edit-dog-name').value,
+      customerName: document.getElementById('edit-customer-name').value,
+      email: document.getElementById('edit-email').value,
+      caption: document.getElementById('edit-caption').value,
+      sessionDate: document.getElementById('edit-session-date').value
+    };
 
-    localStorage.setItem('doggypaddle_photos', JSON.stringify(photos));
-    loadPhotos();
-    modal.remove();
-    showNotification('Photo details updated!', 'success');
+    try {
+      const API_ENDPOINT = window.DoggyPaddleConfig?.API_ENDPOINT;
+      if (!API_ENDPOINT) {
+        throw new Error('API endpoint not configured');
+      }
+
+      const response = await fetch(API_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'updatePhoto',
+          photoId: photoId,
+          updates: updates
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.status === 'success') {
+        loadPhotos();
+        modal.remove();
+        showNotification('Photo details updated!', 'success');
+      } else {
+        throw new Error(result.message || 'Failed to update photo');
+      }
+    } catch (error) {
+      console.error('Error updating photo:', error);
+      showNotification('Error updating photo: ' + error.message, 'error');
+    }
   });
 
   // Handle cancel
@@ -1968,53 +2140,121 @@ window.updateBulkActionButtons = function() {
   if (selectedCount) selectedCount.textContent = count > 0 ? `${count} photo${count > 1 ? 's' : ''} selected` : '';
 };
 
-function bulkApprovePhotos() {
+async function bulkApprovePhotos() {
   const checkboxes = document.querySelectorAll('.photo-checkbox:checked');
-  const timestamps = Array.from(checkboxes).map(cb => cb.dataset.timestamp);
+  const photoIds = Array.from(checkboxes).map(cb => cb.dataset.photoId);
 
-  if (timestamps.length === 0) return;
+  if (photoIds.length === 0) return;
 
-  const photos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
-  let approvedCount = 0;
-
-  timestamps.forEach(timestamp => {
-    const photo = photos.find(p => p.timestamp == timestamp);
-    if (photo && photo.status !== 'approved') {
-      photo.status = 'approved';
-      approvedCount++;
+  try {
+    const API_ENDPOINT = window.DoggyPaddleConfig?.API_ENDPOINT;
+    if (!API_ENDPOINT) {
+      throw new Error('API endpoint not configured');
     }
-  });
 
-  if (approvedCount > 0) {
-    localStorage.setItem('doggypaddle_photos', JSON.stringify(photos));
+    let approvedCount = 0;
+    const errors = [];
+
+    // Process each photo
+    for (const photoId of photoIds) {
+      const photo = photosCache.find(p => p.id === photoId);
+      if (!photo || photo.status === 'approved') continue;
+
+      try {
+        const response = await fetch(API_ENDPOINT, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'approvePhoto',
+            photoId: photoId
+          })
+        });
+
+        const result = await response.json();
+        if (result.status === 'success') {
+          approvedCount++;
+        } else {
+          errors.push(`Failed to approve photo ${photoId}`);
+        }
+      } catch (error) {
+        errors.push(`Error approving photo ${photoId}: ${error.message}`);
+      }
+    }
+
     loadPhotos();
-    showNotification(`${approvedCount} photo${approvedCount > 1 ? 's' : ''} approved successfully!`, 'success');
+
+    if (approvedCount > 0) {
+      showNotification(`${approvedCount} photo${approvedCount > 1 ? 's' : ''} approved successfully!`, 'success');
+    }
+    if (errors.length > 0) {
+      console.error('Bulk approve errors:', errors);
+      showNotification(`Some photos failed to approve. Check console for details.`, 'error');
+    }
+  } catch (error) {
+    console.error('Error in bulk approve:', error);
+    showNotification('Error approving photos: ' + error.message, 'error');
   }
 }
 
-function bulkRejectPhotos() {
+async function bulkRejectPhotos() {
   const checkboxes = document.querySelectorAll('.photo-checkbox:checked');
-  const timestamps = Array.from(checkboxes).map(cb => cb.dataset.timestamp);
+  const photoIds = Array.from(checkboxes).map(cb => cb.dataset.photoId);
 
-  if (timestamps.length === 0) return;
+  if (photoIds.length === 0) return;
 
-  if (!confirm(`Are you sure you want to reject ${timestamps.length} photo${timestamps.length > 1 ? 's' : ''}?`)) return;
+  if (!confirm(`Are you sure you want to reject ${photoIds.length} photo${photoIds.length > 1 ? 's' : ''}?`)) return;
 
-  const photos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
-  let rejectedCount = 0;
-
-  timestamps.forEach(timestamp => {
-    const photo = photos.find(p => p.timestamp == timestamp);
-    if (photo && photo.status !== 'rejected') {
-      photo.status = 'rejected';
-      rejectedCount++;
+  try {
+    const API_ENDPOINT = window.DoggyPaddleConfig?.API_ENDPOINT;
+    if (!API_ENDPOINT) {
+      throw new Error('API endpoint not configured');
     }
-  });
 
-  if (rejectedCount > 0) {
-    localStorage.setItem('doggypaddle_photos', JSON.stringify(photos));
+    let rejectedCount = 0;
+    const errors = [];
+
+    // Process each photo
+    for (const photoId of photoIds) {
+      const photo = photosCache.find(p => p.id === photoId);
+      if (!photo || photo.status === 'rejected') continue;
+
+      try {
+        const response = await fetch(API_ENDPOINT, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'rejectPhoto',
+            photoId: photoId
+          })
+        });
+
+        const result = await response.json();
+        if (result.status === 'success') {
+          rejectedCount++;
+        } else {
+          errors.push(`Failed to reject photo ${photoId}`);
+        }
+      } catch (error) {
+        errors.push(`Error rejecting photo ${photoId}: ${error.message}`);
+      }
+    }
+
     loadPhotos();
-    showNotification(`${rejectedCount} photo${rejectedCount > 1 ? 's' : ''} rejected.`, 'success');
+
+    if (rejectedCount > 0) {
+      showNotification(`${rejectedCount} photo${rejectedCount > 1 ? 's' : ''} rejected.`, 'success');
+    }
+    if (errors.length > 0) {
+      console.error('Bulk reject errors:', errors);
+      showNotification(`Some photos failed to reject. Check console for details.`, 'error');
+    }
+  } catch (error) {
+    console.error('Error in bulk reject:', error);
+    showNotification('Error rejecting photos: ' + error.message, 'error');
   }
 }
 

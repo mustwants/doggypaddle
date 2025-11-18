@@ -109,6 +109,10 @@ function doPost(e) {
         return savePhoto(data.photo);
       case 'approvePhoto':
         return approvePhoto(data.photoId);
+      case 'rejectPhoto':
+        return rejectPhoto(data.photoId);
+      case 'updatePhoto':
+        return updatePhoto(data.photoId, data.updates);
       case 'deletePhoto':
         return deletePhoto(data.photoId);
       case 'saveProduct':
@@ -591,6 +595,10 @@ function getPhotos(params) {
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
     if (row[0]) {
+      // Check if photo is featured (stored as note on status cell)
+      const statusNote = sheet.getRange(i + 1, 7).getNote() || '';
+      const isFeatured = statusNote === 'featured';
+
       const photo = {
         id: row[0],
         customerName: row[1],
@@ -600,7 +608,8 @@ function getPhotos(params) {
         caption: row[5],
         status: row[6],
         createdAt: row[7],
-        sessionDate: row[8]
+        sessionDate: row[8],
+        featured: isFeatured
       };
 
       // If admin request, return all; otherwise only approved
@@ -627,6 +636,78 @@ function approvePhoto(photoId) {
       return createResponse({
         status: 'success',
         message: 'Photo approved'
+      });
+    }
+  }
+
+  return createResponse({
+    status: 'error',
+    message: 'Photo not found'
+  });
+}
+
+// Reject photo
+function rejectPhoto(photoId) {
+  const sheet = getSheet(PHOTOS_SHEET_NAME);
+  const data = sheet.getDataRange().getValues();
+
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === photoId) {
+      sheet.getRange(i + 1, 7).setValue('rejected');
+      return createResponse({
+        status: 'success',
+        message: 'Photo rejected'
+      });
+    }
+  }
+
+  return createResponse({
+    status: 'error',
+    message: 'Photo not found'
+  });
+}
+
+// Update photo (for status, featured flag, caption, etc.)
+function updatePhoto(photoId, updates) {
+  const sheet = getSheet(PHOTOS_SHEET_NAME);
+  const data = sheet.getDataRange().getValues();
+
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === photoId) {
+      // Column mapping: [0]=id, [1]=customerName, [2]=email, [3]=dogName,
+      // [4]=imageUrl, [5]=caption, [6]=status, [7]=createdAt, [8]=sessionDate
+      if (updates.customerName !== undefined) {
+        sheet.getRange(i + 1, 2).setValue(updates.customerName);
+      }
+      if (updates.email !== undefined) {
+        sheet.getRange(i + 1, 3).setValue(updates.email);
+      }
+      if (updates.dogName !== undefined) {
+        sheet.getRange(i + 1, 4).setValue(updates.dogName);
+      }
+      if (updates.caption !== undefined) {
+        sheet.getRange(i + 1, 6).setValue(updates.caption);
+      }
+      if (updates.status !== undefined) {
+        sheet.getRange(i + 1, 7).setValue(updates.status);
+      }
+      if (updates.sessionDate !== undefined) {
+        sheet.getRange(i + 1, 9).setValue(updates.sessionDate);
+      }
+      if (updates.featured !== undefined) {
+        // Featured is stored as a note on the status cell for now
+        // We could add a new column if needed
+        const currentNote = sheet.getRange(i + 1, 7).getNote() || '';
+        if (updates.featured) {
+          sheet.getRange(i + 1, 7).setNote('featured');
+        } else {
+          sheet.getRange(i + 1, 7).setNote('');
+        }
+      }
+
+      return createResponse({
+        status: 'success',
+        message: 'Photo updated'
       });
     }
   }
