@@ -5,7 +5,7 @@
 const SHEET_ID = '1q7yUDjuVSwXfL9PJUTny0oy5Nr5jlVKsdyik2-vTL8I';
 const SLOTS_SHEET_NAME = 'available_slots';
 const BOOKINGS_SHEET_NAME = 'bookings';
-const PRODUCTS_SHEET_NAME = 'Products & Treats';
+const PRODUCTS_SHEET_NAME = 'Products';
 const ADMIN_ALLOWLIST_PROPERTY = 'ADMIN_ALLOWLIST';
 const GOOGLE_OAUTH_CLIENT_ID_PROPERTY = 'GOOGLE_OAUTH_CLIENT_ID';
 
@@ -107,13 +107,17 @@ function getAvailableSlots(params) {
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
     if (row[0]) { // If Date exists
+      // Format the time properly
+      const formattedTime = formatTime(row[1]);
+      const formattedDate = formatDate(row[0]);
+
       // Generate a unique ID from date and time
-      const slotId = `slot-${row[0]}-${row[1]}`.replace(/[^a-zA-Z0-9-]/g, '-');
+      const slotId = `slot-${formattedDate}-${formattedTime}`.replace(/[^a-zA-Z0-9-]/g, '-');
 
       slots.push({
         id: slotId,
-        date: formatDate(row[0]), // Column A: Date
-        time: row[1], // Column B: Time
+        date: formattedDate, // Column A: Date
+        time: formattedTime, // Column B: Time
         duration: 30, // Default 30 minutes
         status: row[2] || 'available' // Column C: Status
       });
@@ -150,12 +154,17 @@ function getAllSlots() {
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
     if (row[0]) {
-      const slotId = `slot-${row[0]}-${row[1]}`.replace(/[^a-zA-Z0-9-]/g, '-');
+      // Format the time properly
+      const formattedTime = formatTime(row[1]);
+      const formattedDate = formatDate(row[0]);
+
+      // Generate a unique ID from date and time
+      const slotId = `slot-${formattedDate}-${formattedTime}`.replace(/[^a-zA-Z0-9-]/g, '-');
 
       slots.push({
         id: slotId,
-        date: formatDate(row[0]),
-        time: row[1],
+        date: formattedDate,
+        time: formattedTime,
         duration: 30,
         status: row[2] || 'available'
       });
@@ -301,7 +310,10 @@ function deleteSlot(slotId) {
   const data = sheet.getDataRange().getValues();
 
   for (let i = 1; i < data.length; i++) {
-    const rowSlotId = `slot-${data[i][0]}-${data[i][1]}`.replace(/[^a-zA-Z0-9-]/g, '-');
+    const formattedDate = formatDate(data[i][0]);
+    const formattedTime = formatTime(data[i][1]);
+    const rowSlotId = `slot-${formattedDate}-${formattedTime}`.replace(/[^a-zA-Z0-9-]/g, '-');
+
     if (rowSlotId === slotId) {
       sheet.deleteRow(i + 1);
       return createResponse({
@@ -323,12 +335,41 @@ function saveBooking(booking) {
 
   const bookingId = `booking-${Date.now()}`;
 
+  // Handle multiple sessions (cart functionality)
+  const sessions = booking.sessions || [];
+
+  // If there are no sessions but there's a sessionTime, create a single session
+  if (sessions.length === 0 && booking.sessionTime) {
+    sessions.push({
+      id: booking.slotId,
+      date: booking.sessionTime.split('T')[0],
+      time: booking.sessionTime.split('T')[1],
+      price: booking.pricing?.total || 25
+    });
+  }
+
+  // Validate that all slots are still available before booking
+  for (const session of sessions) {
+    const slotId = session.id || `slot-${session.date}-${session.time}`.replace(/[^a-zA-Z0-9-]/g, '-');
+    const isAvailable = checkSlotAvailability(slotId);
+
+    if (!isAvailable) {
+      return createResponse({
+        status: 'error',
+        message: `Time slot on ${session.date} at ${session.time} is no longer available. Please select another time.`
+      });
+    }
+  }
+
   // Append row matching your sheet structure:
   // Timestamp, First Name, Last Name, Phone, Email, Dog 1 Name, Dog 2 Name,
   // Breed 1, Breed 2, # of Dogs, Slot, Signature
 
   const dogNames = booking.dogNames ? booking.dogNames.split(',') : [''];
   const dogBreeds = booking.dogBreeds ? booking.dogBreeds.split(',') : [''];
+
+  // Format sessions for storage
+  const sessionInfo = sessions.map(s => `${s.date} ${s.time}`).join('; ');
 
   sheet.appendRow([
     new Date().toISOString(), // Timestamp
@@ -341,13 +382,14 @@ function saveBooking(booking) {
     dogBreeds[0] || '', // Breed 1
     dogBreeds[1] || '', // Breed 2
     booking.numDogs,
-    booking.sessionTime, // Slot
+    sessionInfo, // Slot(s)
     booking.waiverAck ? 'Signed' : 'Pending' // Signature status
   ]);
 
-  // Mark slot as booked if slot info provided
-  if (booking.sessionTime) {
-    markSlotBooked(booking.sessionTime);
+  // Mark all slots as booked
+  for (const session of sessions) {
+    const slotId = session.id || `slot-${session.date}-${session.time}`.replace(/[^a-zA-Z0-9-]/g, '-');
+    markSlotBookedById(slotId, bookingId);
   }
 
   return createResponse({
@@ -357,7 +399,59 @@ function saveBooking(booking) {
   });
 }
 
-// Mark slot as booked (find by date/time)
+// Check if a slot is available
+function checkSlotAvailability(slotId) {
+  const sheet = getSheet(SLOTS_SHEET_NAME);
+  const data = sheet.getDataRange().getValues();
+
+  for (let i = 1; i < data.length; i++) {
+    const formattedDate = formatDate(data[i][0]);
+    const formattedTime = formatTime(data[i][1]);
+    const rowSlotId = `slot-${formattedDate}-${formattedTime}`.replace(/[^a-zA-Z0-9-]/g, '-');
+
+    if (rowSlotId === slotId) {
+      const status = (data[i][2] || 'available').toLowerCase();
+      return status === 'available';
+    }
+  }
+
+  return false; // Slot not found
+}
+
+// Mark slot as booked by slot ID
+function markSlotBookedById(slotId, bookingId) {
+  try {
+    const sheet = getSheet(SLOTS_SHEET_NAME);
+    const data = sheet.getDataRange().getValues();
+
+    for (let i = 1; i < data.length; i++) {
+      const formattedDate = formatDate(data[i][0]);
+      const formattedTime = formatTime(data[i][1]);
+      const rowSlotId = `slot-${formattedDate}-${formattedTime}`.replace(/[^a-zA-Z0-9-]/g, '-');
+
+      if (rowSlotId === slotId) {
+        // Check if already booked
+        const currentStatus = (data[i][2] || 'available').toLowerCase();
+        if (currentStatus === 'booked') {
+          Logger.log(`Warning: Slot ${slotId} was already booked`);
+          return false;
+        }
+
+        sheet.getRange(i + 1, 3).setValue('booked'); // Column C: Status
+        Logger.log(`Slot ${slotId} marked as booked for booking ${bookingId}`);
+        return true;
+      }
+    }
+
+    Logger.log(`Warning: Slot ${slotId} not found`);
+  } catch (error) {
+    Logger.log('Error marking slot as booked: ' + error);
+  }
+  return false;
+}
+
+// DEPRECATED: Mark slot as booked (find by date/time)
+// This function is kept for backward compatibility but should use markSlotBookedById instead
 function markSlotBooked(sessionTime) {
   try {
     const sheet = getSheet(SLOTS_SHEET_NAME);
@@ -424,6 +518,34 @@ function formatDate(date) {
     return Utilities.formatDate(date, Session.getScriptTimeZone(), 'yyyy-MM-dd');
   }
   return String(date);
+}
+
+// Helper: Format time consistently
+function formatTime(time) {
+  // If time is already a string in HH:mm format, return it
+  if (typeof time === 'string') {
+    // Check if it's a valid time string
+    if (/^\d{1,2}:\d{2}$/.test(time)) {
+      return time;
+    }
+    return time;
+  }
+
+  // If time is a Date object (Google Sheets sometimes stores time as Date)
+  if (time instanceof Date) {
+    return Utilities.formatDate(time, Session.getScriptTimeZone(), 'HH:mm');
+  }
+
+  // If it's a serial number (Excel-style time)
+  if (typeof time === 'number') {
+    // Convert fraction of day to hours and minutes
+    const totalMinutes = Math.round(time * 24 * 60);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return Utilities.formatString('%02d:%02d', hours, minutes);
+  }
+
+  return String(time);
 }
 
 // Helper: Create JSON response
