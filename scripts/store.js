@@ -336,44 +336,37 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadProducts();
   updateCartUI();
 
-  // ============================================
+   // ============================================
   // ADMIN FUNCTIONALITY
   // ============================================
 
   let isAdminLoggedIn = false;
   let adminUserEmail = null;
+  let currentAdminSession = null;
   let currentEditingProduct = null;
   let googleAuth = null;
 
-  // Check stored admin session
-  const storedAdminSession = localStorage.getItem('doggypaddle_admin_session');
-  if (storedAdminSession) {
-    console.log('Found stored admin session, validating...');
+  async function refreshAdminSession() {
     try {
-      const session = JSON.parse(storedAdminSession);
-      console.log('Session data:', { email: session.email, name: session.name });
-
-      // Validate session is still valid (within 7 days)
-      const sessionAge = Date.now() - session.timestamp;
-      const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
-      console.log(`Session age: ${Math.round(sessionAge / 1000 / 60 / 60)} hours (max: ${maxAge / 1000 / 60 / 60} hours)`);
-
-      if (sessionAge < maxAge) {
-        isAdminLoggedIn = true;
-        adminUserEmail = session.email;
-        console.log('✓ Session valid! Admin auto-logged in as:', session.email);
-      } else {
-        // Session expired, clear it
-        console.warn('Session expired, clearing...');
-        localStorage.removeItem('doggypaddle_admin_session');
+      const response = await fetch('/.netlify/functions/session', { credentials: 'include' });
+      if (!response.ok) {
+        throw new Error('Session missing');
       }
+      const session = await response.json();
+      isAdminLoggedIn = true;
+      adminUserEmail = session.email;
+      currentAdminSession = session;
+      updateAdminButton();
+      return true;
     } catch (error) {
-      console.warn('Invalid admin session:', error);
-      localStorage.removeItem('doggypaddle_admin_session');
+      isAdminLoggedIn = false;
+      adminUserEmail = null;
+      currentAdminSession = null;
+      updateAdminButton();
+      return false;
     }
-  } else {
-    console.log('No stored admin session found');
   }
+  await refreshAdminSession();
 
   // Modal elements
   const adminLoginModal = document.getElementById('admin-login-modal');
@@ -404,20 +397,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Admin Login Button Click
   if (adminLoginBtn) {
-    adminLoginBtn.addEventListener('click', () => {
-      if (isAdminLoggedIn) {
+    adminLoginBtn.addEventListener('click', async () => {
+      const validSession = await refreshAdminSession();
+      if (validSession) {
         console.log('Admin already logged in, opening panel...');
         openAdminPanel();
-      } else {
-        console.log('Admin not logged in, showing login modal...');
-        // Update allowed admins list dynamically
-        const allowedAdmins = window.DoggyPaddleConfig?.GOOGLE_AUTH?.allowedAdmins || [];
-        const adminListElement = document.getElementById('admin-allowed-list');
-        if (adminListElement) {
-          adminListElement.textContent = allowedAdmins.join(', ');
-        }
-        adminLoginModal.style.display = 'flex';
+        return;
       }
+
+      console.log('Admin not logged in, showing login modal...');
+      // Update allowed admins list dynamically
+      const allowedAdmins = window.DoggyPaddleConfig?.GOOGLE_AUTH?.allowedAdmins || [];
+      const adminListElement = document.getElementById('admin-allowed-list');
+      if (adminListElement) {
+        adminListElement.textContent = allowedAdmins.join(', ');
+      }
+      adminLoginModal.style.display = 'flex';
     });
   }
 
@@ -531,123 +526,80 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  // Handle dev login (for development/testing when Google OAuth is not configured)
-  function handleDevLogin() {
+ // Handle dev login (for development/testing when Google OAuth is not configured)
+  async function handleDevLogin() {
     const allowedAdmins = window.DoggyPaddleConfig?.GOOGLE_AUTH?.allowedAdmins || ['Scott@mustwants.com'];
     const devEmail = allowedAdmins[0].toLowerCase(); // Use first allowed admin
 
     console.log('Dev login activated for:', devEmail);
 
-    // Grant admin access
+    const response = await fetch('/.netlify/functions/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ credential: null, devEmail })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Dev login failed: ${errorText || response.status}`);
+    }
+
+    const session = await response.json();
     isAdminLoggedIn = true;
-    adminUserEmail = devEmail;
+    adminUserEmail = session.email;
+    currentAdminSession = session;
 
-    // Store session
-    const session = {
-      email: devEmail,
-      loginTime: new Date().toISOString(),
-      isDev: true
-    };
-    localStorage.setItem('doggypaddle_admin_session', JSON.stringify(session));
-
-    // Close login modal and open admin panel
     adminLoginModal.style.display = 'none';
     openAdminPanel();
 
-    // Show success message
     console.log('✓ Admin access granted (Dev Mode)');
   }
 
   // Handle Google Sign-In callback
-  function handleGoogleSignIn(response) {
+  async function handleGoogleSignIn(response) {
     try {
       console.log('Google Sign-In callback triggered');
 
-      // Decode the JWT token to get user info
-      const payload = parseJwt(response.credential);
-      if (!payload) {
-        throw new Error('Failed to parse JWT token');
+      const loginResponse = await fetch('/.netlify/functions/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ credential: response.credential })
+      });
+
+      if (!loginResponse.ok) {
+        const errorText = await loginResponse.text();
+        throw new Error(`Authentication failed: ${errorText || loginResponse.status}`);
       }
 
-      const userEmail = payload.email.toLowerCase();
-      console.log('User email:', userEmail);
+      const session = await loginResponse.json();
+      isAdminLoggedIn = true;
+      adminUserEmail = session.email;
+      currentAdminSession = session;
 
-      // Check if user is in allowed admins list
-      const allowedAdmins = window.DoggyPaddleConfig?.GOOGLE_AUTH?.allowedAdmins || [];
-      const allowedAdminsLower = allowedAdmins.map(email => email.toLowerCase());
-      console.log('Allowed admins:', allowedAdminsLower);
-
-      if (allowedAdminsLower.includes(userEmail)) {
-        console.log('✓ User authorized! Granting admin access...');
-
-        // Grant admin access
-        isAdminLoggedIn = true;
-        adminUserEmail = userEmail;
-
-        // Store session
-        const session = {
-          email: userEmail,
-          name: payload.name,
-          picture: payload.picture,
-          timestamp: Date.now()
-        };
-        localStorage.setItem('doggypaddle_admin_session', JSON.stringify(session));
-        console.log('Admin session saved to localStorage');
-
-        // Close login modal
-        adminLoginModal.style.display = 'none';
-        console.log('Login modal closed');
-
-        // Update admin button
-        updateAdminButton();
-        console.log('Admin button updated');
-
-        // Show welcome notification
-        showNotification(`Welcome, ${payload.name}!`);
-        console.log('Welcome notification shown');
-
-        // Open admin panel
-        console.log('Opening admin panel...');
-        openAdminPanel();
-        console.log('Admin panel should now be visible');
-      } else {
-        console.warn('✗ Access denied for email:', userEmail);
-        alert(`Access denied. Only authorized Google Workspace accounts can access the admin panel.\n\nYour email: ${userEmail}\n\nAllowed admins: ${allowedAdmins.join(', ')}`);
-        handleAdminLogout();
-      }
+      adminLoginModal.style.display = 'none';
+      updateAdminButton();
+      showNotification(`Welcome, ${session.name || session.email}!`);
+      openAdminPanel();
     } catch (error) {
       console.error('Error handling Google Sign-In:', error);
       alert('Authentication failed. Please try again.\n\nError: ' + error.message);
     }
   }
 
-  // Parse JWT token
-  function parseJwt(token) {
-    try {
-      const base64Url = token.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-      }).join(''));
-      return JSON.parse(jsonPayload);
-    } catch (error) {
-      console.error('Error parsing JWT:', error);
-      return null;
-    }
-  }
-
   // Handle admin logout
-  function handleAdminLogout() {
+  async function handleAdminLogout() {
     console.log('handleAdminLogout() called');
+    try {
+      await fetch('/.netlify/functions/logout', { method: 'POST', credentials: 'include' });
+    } catch (error) {
+      console.warn('Logout request failed:', error);
+    }
+
     isAdminLoggedIn = false;
     adminUserEmail = null;
-    console.log('Admin flags reset');
-
-    localStorage.removeItem('doggypaddle_admin_session');
-    console.log('Admin session removed from localStorage');
-
-    // Also clear old localStorage key if exists
-    localStorage.removeItem('doggypaddle_admin_logged_in');
+    currentAdminSession = null;
 
     updateAdminButton();
     console.log('Admin button updated to login state');
@@ -666,9 +618,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!adminLoginBtn) return;
 
     if (isAdminLoggedIn) {
-      const session = JSON.parse(localStorage.getItem('doggypaddle_admin_session') || '{}');
       adminLoginBtn.innerHTML = `
-        <span>${session.name || 'Admin'}</span>
+        <span>${currentAdminSession?.name || 'Admin'}</span>
         <span style="font-size: 0.85em; opacity: 0.8; margin-left: 0.5rem;">(Admin Panel)</span>
       `;
     } else {
@@ -681,7 +632,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Tab Switching
   adminTabs.forEach(tab => {
-    tab.addEventListener('click', () => {
+    tab.addEventListener('click', async () => {
+      const sessionValid = await refreshAdminSession();
+      if (!sessionValid) return;
+
       const targetTab = tab.dataset.tab;
 
       // Update active tab button
@@ -887,8 +841,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Update admin user info
     const adminUserInfo = document.getElementById('admin-user-info');
     if (adminUserInfo && adminUserEmail) {
-      const session = JSON.parse(localStorage.getItem('doggypaddle_admin_session') || '{}');
-      adminUserInfo.textContent = `Logged in as: ${session.name || adminUserEmail}`;
+      adminUserInfo.textContent = `Logged in as: ${currentAdminSession?.name || adminUserEmail}`;
       console.log('Admin user info updated:', adminUserInfo.textContent);
     }
 
