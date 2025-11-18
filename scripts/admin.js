@@ -443,19 +443,48 @@
   }
 
   // Photos Management
-  function loadPhotos() {
+  async function loadPhotos() {
     const listContainer = document.getElementById('admin-photos-list');
     if (!listContainer) return;
 
-    console.log('Loading photos...', photos.length);
+    // Show loading state
+    listContainer.innerHTML = '<div style="text-align: center; padding: 3rem; color: #666;">Loading photos...</div>';
 
-    if (photos.length === 0) {
-      listContainer.innerHTML = `
-        <div style="text-align: center; padding: 3rem; color: #666;">
-          <p style="font-size: 1.1rem; margin-bottom: 1rem;">No photo submissions found</p>
-          <p style="font-size: 0.9rem;">Photos submitted by customers will appear here for approval</p>
-        </div>
-      `;
+    try {
+      // Fetch photos from backend
+      const API_ENDPOINT = window.DoggyPaddleConfig?.API_ENDPOINT;
+      if (!API_ENDPOINT) {
+        throw new Error('API endpoint not configured');
+      }
+
+      const response = await fetch(`${API_ENDPOINT}?action=getPhotos&admin=true`);
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch photos');
+      }
+
+      const result = await response.json();
+
+      if (result.status !== 'success') {
+        throw new Error(result.message || 'Failed to load photos');
+      }
+
+      photos = result.photos || [];
+
+      console.log('Loading photos...', photos.length);
+
+      if (photos.length === 0) {
+        listContainer.innerHTML = `
+          <div style="text-align: center; padding: 3rem; color: #666;">
+            <p style="font-size: 1.1rem; margin-bottom: 1rem;">No photo submissions found</p>
+            <p style="font-size: 0.9rem;">Photos submitted by customers will appear here for approval</p>
+          </div>
+        `;
+        return;
+      }
+    } catch (error) {
+      console.error('Error loading photos:', error);
+      listContainer.innerHTML = `<div style="text-align: center; padding: 3rem; color: #dc3545;">Error loading photos: ${error.message}</div>`;
       return;
     }
 
@@ -818,19 +847,69 @@
     }
   };
 
-  window.approvePhoto = function(id) {
-    photos = photos.map(p => p.id === id ? { ...p, status: 'approved' } : p);
-    localStorage.setItem('doggypaddle_photos', JSON.stringify(photos));
-    loadPhotos();
-    showNotification('Photo approved!');
+  window.approvePhoto = async function(photoId) {
+    try {
+      const API_ENDPOINT = window.DoggyPaddleConfig?.API_ENDPOINT;
+      if (!API_ENDPOINT) {
+        throw new Error('API endpoint not configured');
+      }
+
+      const response = await fetch(API_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'approvePhoto',
+          photoId: photoId
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.status === 'success') {
+        showNotification('Photo approved!');
+        loadPhotos();
+      } else {
+        throw new Error(result.message || 'Failed to approve photo');
+      }
+    } catch (error) {
+      console.error('Error approving photo:', error);
+      showNotification('Error approving photo: ' + error.message);
+    }
   };
 
-  window.rejectPhoto = function(id) {
-    if (confirm('Are you sure you want to reject this photo?')) {
-      photos = photos.map(p => p.id === id ? { ...p, status: 'rejected' } : p);
-      localStorage.setItem('doggypaddle_photos', JSON.stringify(photos));
-      loadPhotos();
-      showNotification('Photo rejected');
+  window.rejectPhoto = async function(photoId) {
+    if (!confirm('Are you sure you want to reject this photo?')) return;
+
+    try {
+      const API_ENDPOINT = window.DoggyPaddleConfig?.API_ENDPOINT;
+      if (!API_ENDPOINT) {
+        throw new Error('API endpoint not configured');
+      }
+
+      const response = await fetch(API_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'rejectPhoto',
+          photoId: photoId
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.status === 'success') {
+        showNotification('Photo rejected');
+        loadPhotos();
+      } else {
+        throw new Error(result.message || 'Failed to reject photo');
+      }
+    } catch (error) {
+      console.error('Error rejecting photo:', error);
+      showNotification('Error rejecting photo: ' + error.message);
     }
   };
 
