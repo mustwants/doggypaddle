@@ -45,7 +45,10 @@
     setupEventListeners();
 
     // Expose functions globally for the main dashboard
-    window.loadAdminProducts = loadAdminProducts;
+    // Don't overwrite loadAdminProducts if it already exists (admin-dashboard.js provides a better version)
+    if (!window.loadAdminProducts) {
+      window.loadAdminProducts = loadAdminProducts;
+    }
     window.loadTimeSlots = loadTimeSlots;
     window.loadBookings = loadBookings;
     window.loadPhotos = loadPhotos;
@@ -61,7 +64,8 @@
       if (activeTab) {
         const tabName = activeTab.dataset.tab;
         console.log('Loading initial tab:', tabName);
-        if (tabName === 'products') loadAdminProducts();
+        // Use window.loadAdminProducts to call whichever version is available
+        if (tabName === 'products') window.loadAdminProducts();
         else if (tabName === 'timeslots') loadTimeSlots();
         else if (tabName === 'bookings') loadBookings();
         else if (tabName === 'photos') loadPhotos();
