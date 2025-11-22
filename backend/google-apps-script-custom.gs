@@ -6,18 +6,16 @@ const SHEET_ID = '1q7yUDjuVSwXfL9PJUTny0oy5Nr5jlVKsdyik2-vTL8I';
 const SLOTS_SHEET_NAME = 'available_slots';
 const BOOKINGS_SHEET_NAME = 'bookings';
 const PRODUCTS_SHEET_NAME = 'Products';
-const ADMIN_ALLOWLIST_PROPERTY = 'ADMIN_ALLOWLIST';
-const GOOGLE_OAUTH_CLIENT_ID_PROPERTY = 'GOOGLE_OAUTH_CLIENT_ID';
 
 // Handle CORS preflight (OPTIONS) requests
+// Note: When deployed with "Anyone" access, Google Apps Script automatically handles CORS
 function doOptions(e) {
   return ContentService
-    .createTextOutput('')
+    .createTextOutput("") // Empty body
     .setMimeType(ContentService.MimeType.TEXT)
-    .setHeader('Access-Control-Allow-Origin', '*')
+    .setHeader('Access-Control-Allow-Origin', 'https://dogpaddle.club')
     .setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-    .setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-    .setHeader('Access-Control-Max-Age', '86400'); // 24 hours
+    .setHeader('Access-Control-Allow-Headers', 'Content-Type');
 }
 
 // Main entry point for GET requests
@@ -32,7 +30,7 @@ function doGet(e) {
 
   const action = e.parameter.action;
 
-  try {
+try {
     switch(action) {
       case 'getAvailableSlots':
         return getAvailableSlots(e.parameter);
@@ -40,14 +38,10 @@ function doGet(e) {
         return getAllSlots();
       case 'getProducts':
         return getProducts();
-      case 'getAdminAllowlist':
-        return getAdminAllowlistResponse();
       default:
         return createResponse({
           status: 'error',
-          message: 'Invalid action. Valid actions: getAvailableSlots, getAllSlots, getProducts',
-          receivedAction: action || 'none',
-          usage: 'Add ?action=getProducts to the URL'
+          message: 'Invalid action'
         });
     }
   } catch (error) {
@@ -79,14 +73,6 @@ function doPost(e) {
         return addSlot(data.slot);
       case 'deleteSlot':
         return deleteSlot(data.slotId);
-      case 'saveProduct':
-        return saveProduct(data.product);
-      case 'updateProduct':
-        return updateProduct(data.product);
-      case 'deleteProduct':
-        return deleteProduct(data.productId);
-      case 'verifyAdminToken':
-        return verifyAdminToken(data.idToken);
       default:
         return createResponse({
           status: 'error',
@@ -106,22 +92,18 @@ function getAvailableSlots(params) {
   const sheet = getSheet(SLOTS_SHEET_NAME);
   const data = sheet.getDataRange().getValues();
 
-  // Skip header row
+   // Skip header row
   const slots = [];
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
     if (row[0]) { // If Date exists
-      // Format the time properly
-      const formattedTime = formatTime(row[1]);
-      const formattedDate = formatDate(row[0]);
-
       // Generate a unique ID from date and time
-      const slotId = `slot-${formattedDate}-${formattedTime}`.replace(/[^a-zA-Z0-9-]/g, '-');
+      const slotId = `slot-${row[0]}-${row[1]}`.replace(/[^a-zA-Z0-9-]/g, '-');
 
       slots.push({
         id: slotId,
-        date: formattedDate, // Column A: Date
-        time: formattedTime, // Column B: Time
+        date: formatDate(row[0]), // Column A: Date
+        time: row[1], // Column B: Time
         duration: 30, // Default 30 minutes
         status: row[2] || 'available' // Column C: Status
       });
@@ -138,11 +120,10 @@ function getAvailableSlots(params) {
     });
   }
 
- // Only return available slots (case-insensitive, trimming whitespace)
-  const availableSlots = filteredSlots.filter(slot => {
-    const normalizedStatus = (slot.status || 'available').toString().trim().toLowerCase();
-    return normalizedStatus === 'available';
-  });
+  // Only return available slots
+  const availableSlots = filteredSlots.filter(slot =>
+    slot.status.toLowerCase() === 'available'
+  );
 
   return createResponse({
     status: 'success',
@@ -159,17 +140,12 @@ function getAllSlots() {
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
     if (row[0]) {
-      // Format the time properly
-      const formattedTime = formatTime(row[1]);
-      const formattedDate = formatDate(row[0]);
-
-      // Generate a unique ID from date and time
-      const slotId = `slot-${formattedDate}-${formattedTime}`.replace(/[^a-zA-Z0-9-]/g, '-');
+      const slotId = `slot-${row[0]}-${row[1]}`.replace(/[^a-zA-Z0-9-]/g, '-');
 
       slots.push({
         id: slotId,
-        date: formattedDate,
-        time: formattedTime,
+        date: formatDate(row[0]),
+        time: row[1],
         duration: 30,
         status: row[2] || 'available'
       });
@@ -201,8 +177,7 @@ function getProducts() {
         inStock: row[6] !== 'false',
         quantity: row[7] || 0,
         lowStockThreshold: row[8] || 5,
-        createdAt: row[9],
-        purchaseLink: row[10] || '' // Optional purchase link
+        createdAt: row[9]
       });
     }
   }
@@ -210,85 +185,6 @@ function getProducts() {
   return createResponse({
     status: 'success',
     products: products
-  });
-}
-
-// Save new product
-function saveProduct(product) {
-  const sheet = getSheet(PRODUCTS_SHEET_NAME);
-
-  sheet.appendRow([
-    product.id,
-    product.name,
-    product.description,
-    product.price,
-    product.category,
-    product.imageUrl,
-    product.inStock ? 'true' : 'false',
-    product.quantity || 0,
-    product.lowStockThreshold || 5,
-    new Date().toISOString(),
-    product.purchaseLink || ''
-  ]);
-
-  return createResponse({
-    status: 'success',
-    message: 'Product saved successfully'
-  });
-}
-
-// Update existing product
-function updateProduct(product) {
-  const sheet = getSheet(PRODUCTS_SHEET_NAME);
-  const data = sheet.getDataRange().getValues();
-
-  for (let i = 1; i < data.length; i++) {
-    if (data[i][0] === product.id) {
-      sheet.getRange(i + 1, 1, 1, 11).setValues([[
-        product.id,
-        product.name,
-        product.description,
-        product.price,
-        product.category,
-        product.imageUrl,
-        product.inStock ? 'true' : 'false',
-        product.quantity || 0,
-        product.lowStockThreshold || 5,
-        data[i][9], // Keep original createdAt
-        product.purchaseLink || ''
-      ]]);
-
-      return createResponse({
-        status: 'success',
-        message: 'Product updated successfully'
-      });
-    }
-  }
-
-  return createResponse({
-    status: 'error',
-    message: 'Product not found'
-  });
-}
-
-// Delete product
-function deleteProduct(productId) {
-  const sheet = getSheet(PRODUCTS_SHEET_NAME);
-  const data = sheet.getDataRange().getValues();
-
-  for (let i = 1; i < data.length; i++) {
-    if (data[i][0] === productId) {
-      sheet.deleteRow(i + 1);
-      return createResponse({
-        status: 'success',
-        message: 'Product deleted successfully'
-      });
-    }
-  }
-
-  return createResponse({
-    status: 'error',
-    message: 'Product not found'
   });
 }
 
@@ -315,10 +211,7 @@ function deleteSlot(slotId) {
   const data = sheet.getDataRange().getValues();
 
   for (let i = 1; i < data.length; i++) {
-    const formattedDate = formatDate(data[i][0]);
-    const formattedTime = formatTime(data[i][1]);
-    const rowSlotId = `slot-${formattedDate}-${formattedTime}`.replace(/[^a-zA-Z0-9-]/g, '-');
-
+    const rowSlotId = `slot-${data[i][0]}-${data[i][1]}`.replace(/[^a-zA-Z0-9-]/g, '-');
     if (rowSlotId === slotId) {
       sheet.deleteRow(i + 1);
       return createResponse({
@@ -340,41 +233,12 @@ function saveBooking(booking) {
 
   const bookingId = `booking-${Date.now()}`;
 
-  // Handle multiple sessions (cart functionality)
-  const sessions = booking.sessions || [];
-
-  // If there are no sessions but there's a sessionTime, create a single session
-  if (sessions.length === 0 && booking.sessionTime) {
-    sessions.push({
-      id: booking.slotId,
-      date: booking.sessionTime.split('T')[0],
-      time: booking.sessionTime.split('T')[1],
-      price: booking.pricing?.total || 25
-    });
-  }
-
-  // Validate that all slots are still available before booking
-  for (const session of sessions) {
-    const slotId = session.id || `slot-${session.date}-${session.time}`.replace(/[^a-zA-Z0-9-]/g, '-');
-    const isAvailable = checkSlotAvailability(slotId);
-
-    if (!isAvailable) {
-      return createResponse({
-        status: 'error',
-        message: `Time slot on ${session.date} at ${session.time} is no longer available. Please select another time.`
-      });
-    }
-  }
-
   // Append row matching your sheet structure:
   // Timestamp, First Name, Last Name, Phone, Email, Dog 1 Name, Dog 2 Name,
   // Breed 1, Breed 2, # of Dogs, Slot, Signature
 
   const dogNames = booking.dogNames ? booking.dogNames.split(',') : [''];
   const dogBreeds = booking.dogBreeds ? booking.dogBreeds.split(',') : [''];
-
-  // Format sessions for storage
-  const sessionInfo = sessions.map(s => `${s.date} ${s.time}`).join('; ');
 
   sheet.appendRow([
     new Date().toISOString(), // Timestamp
@@ -387,14 +251,13 @@ function saveBooking(booking) {
     dogBreeds[0] || '', // Breed 1
     dogBreeds[1] || '', // Breed 2
     booking.numDogs,
-    sessionInfo, // Slot(s)
+    booking.sessionTime, // Slot
     booking.waiverAck ? 'Signed' : 'Pending' // Signature status
   ]);
 
-  // Mark all slots as booked
-  for (const session of sessions) {
-    const slotId = session.id || `slot-${session.date}-${session.time}`.replace(/[^a-zA-Z0-9-]/g, '-');
-    markSlotBookedById(slotId, bookingId);
+  // Mark slot as booked if slot info provided
+  if (booking.sessionTime) {
+    markSlotBooked(booking.sessionTime);
   }
 
   return createResponse({
@@ -404,59 +267,7 @@ function saveBooking(booking) {
   });
 }
 
-// Check if a slot is available
-function checkSlotAvailability(slotId) {
-  const sheet = getSheet(SLOTS_SHEET_NAME);
-  const data = sheet.getDataRange().getValues();
-
-  for (let i = 1; i < data.length; i++) {
-    const formattedDate = formatDate(data[i][0]);
-    const formattedTime = formatTime(data[i][1]);
-    const rowSlotId = `slot-${formattedDate}-${formattedTime}`.replace(/[^a-zA-Z0-9-]/g, '-');
-
-    if (rowSlotId === slotId) {
-      const status = (data[i][2] || 'available').toLowerCase();
-      return status === 'available';
-    }
-  }
-
-  return false; // Slot not found
-}
-
-// Mark slot as booked by slot ID
-function markSlotBookedById(slotId, bookingId) {
-  try {
-    const sheet = getSheet(SLOTS_SHEET_NAME);
-    const data = sheet.getDataRange().getValues();
-
-    for (let i = 1; i < data.length; i++) {
-      const formattedDate = formatDate(data[i][0]);
-      const formattedTime = formatTime(data[i][1]);
-      const rowSlotId = `slot-${formattedDate}-${formattedTime}`.replace(/[^a-zA-Z0-9-]/g, '-');
-
-      if (rowSlotId === slotId) {
-        // Check if already booked
-        const currentStatus = (data[i][2] || 'available').toLowerCase();
-        if (currentStatus === 'booked') {
-          Logger.log(`Warning: Slot ${slotId} was already booked`);
-          return false;
-        }
-
-        sheet.getRange(i + 1, 3).setValue('booked'); // Column C: Status
-        Logger.log(`Slot ${slotId} marked as booked for booking ${bookingId}`);
-        return true;
-      }
-    }
-
-    Logger.log(`Warning: Slot ${slotId} not found`);
-  } catch (error) {
-    Logger.log('Error marking slot as booked: ' + error);
-  }
-  return false;
-}
-
-// DEPRECATED: Mark slot as booked (find by date/time)
-// This function is kept for backward compatibility but should use markSlotBookedById instead
+// Mark slot as booked (find by date/time)
 function markSlotBooked(sessionTime) {
   try {
     const sheet = getSheet(SLOTS_SHEET_NAME);
@@ -504,9 +315,9 @@ function getSheet(sheetName) {
     } else if (sheetName === PRODUCTS_SHEET_NAME) {
       sheet.appendRow([
         'ID', 'Name', 'Description', 'Price', 'Category',
-        'Image URL', 'In Stock', 'Quantity', 'Low Stock Threshold', 'Created At', 'Purchase Link'
+        'Image URL', 'In Stock', 'Quantity', 'Low Stock Threshold', 'Created At'
       ]);
-      sheet.getRange('A1:K1').setFontWeight('bold').setBackground('#028090').setFontColor('#FFFFFF');
+      sheet.getRange('A1:J1').setFontWeight('bold').setBackground('#028090').setFontColor('#FFFFFF');
     }
 
     // Auto-resize columns
@@ -525,146 +336,25 @@ function formatDate(date) {
   return String(date);
 }
 
-// Helper: Format time consistently
-function formatTime(time) {
-  // If time is already a string in HH:mm format, return it
-  if (typeof time === 'string') {
-    // Check if it's a valid time string
-    if (/^\d{1,2}:\d{2}$/.test(time)) {
-      return time;
-    }
-    return time;
-  }
-
-  // If time is a Date object (Google Sheets sometimes stores time as Date)
-  if (time instanceof Date) {
-    return Utilities.formatDate(time, Session.getScriptTimeZone(), 'HH:mm');
-  }
-
-  // If it's a serial number (Excel-style time)
-  if (typeof time === 'number') {
-    // Convert fraction of day to hours and minutes
-    const totalMinutes = Math.round(time * 24 * 60);
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    return Utilities.formatString('%02d:%02d', hours, minutes);
-  }
-
-  return String(time);
-}
-
 // Helper: Create JSON response with CORS headers
 function createResponse(data) {
   const jsonOutput = JSON.stringify(data);
 
-  return ContentService
-    .createTextOutput(jsonOutput)
-    .setMimeType(ContentService.MimeType.JSON)
-    .setHeader('Access-Control-Allow-Origin', '*')
-    .setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-    .setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-}
+  const response = ContentService.createTextOutput(jsonOutput)
+    .setMimeType(ContentService.MimeType.JSON);
 
-function getScriptProperty(key) {
-  return PropertiesService.getScriptProperties().getProperty(key) || '';
-}
+  // Add CORS headers explicitly
+  const headers = {
+    'Access-Control-Allow-Origin': 'https://dogpaddle.club', // Allow your UI
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+  };
 
-function getAdminAllowlist() {
-  const propertyValue = getScriptProperty(ADMIN_ALLOWLIST_PROPERTY);
-
-  if (propertyValue && propertyValue.trim()) {
-    return propertyValue
-      .split(/[\n,]/)
-      .map(email => email.trim())
-      .filter(Boolean);
-  }
-
-  return ['Scott@mustwants.com'];
-}
-
-function getAdminAllowlistResponse() {
-  return createResponse({
-    status: 'success',
-    allowedAdmins: getAdminAllowlist()
+  Object.entries(headers).forEach(([key, value]) => {
+    response.setHeader(key, value);
   });
-}
 
-function getGoogleClientId() {
-  return getScriptProperty(GOOGLE_OAUTH_CLIENT_ID_PROPERTY);
-}
-
-function verifyIdToken(idToken) {
-  if (!idToken) {
-    throw new Error('Missing ID token');
-  }
-
-  const verificationResponse = UrlFetchApp.fetch(
-    `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`
-  );
-  const tokenInfo = JSON.parse(verificationResponse.getContentText());
-
-  if (tokenInfo.error_description) {
-    throw new Error(tokenInfo.error_description);
-  }
-
-  const audience = getGoogleClientId();
-  if (audience && tokenInfo.aud !== audience) {
-    throw new Error('Token audience does not match configured client ID');
-  }
-
-  const issuer = tokenInfo.iss;
-  if (issuer !== 'https://accounts.google.com' && issuer !== 'accounts.google.com') {
-    throw new Error('Invalid token issuer');
-  }
-
-  const expiry = parseInt(tokenInfo.exp, 10);
-  if (expiry && (Date.now() / 1000) >= expiry) {
-    throw new Error('ID token has expired');
-  }
-
-  if (tokenInfo.email_verified !== 'true' && tokenInfo.email_verified !== true) {
-    throw new Error('Google account email is not verified');
-  }
-
-  return tokenInfo;
-}
-
-function verifyAdminToken(idToken) {
-  try {
-    const tokenInfo = verifyIdToken(idToken);
-    const email = (tokenInfo.email || '').toLowerCase();
-
-    if (!email) {
-      throw new Error('Token does not include an email address');
-    }
-
-    const allowedAdmins = getAdminAllowlist();
-    const allowedLookup = allowedAdmins.map(admin => admin.toLowerCase());
-
-    if (!allowedLookup.includes(email)) {
-      return createResponse({
-        status: 'error',
-        message: 'Access denied: email is not on the admin allowlist'
-      });
-    }
-
-    const adminProfile = {
-      email: tokenInfo.email,
-      name: tokenInfo.name || tokenInfo.email,
-      picture: tokenInfo.picture || ''
-    };
-
-    return createResponse({
-      status: 'success',
-      admin: adminProfile,
-      allowedAdmins
-    });
-  } catch (error) {
-    return createResponse({
-      status: 'error',
-      message: error.toString()
-    });
-  }
+  return response;
 }
 
 // ADMIN HELPER FUNCTIONS - Run these manually from Script Editor
