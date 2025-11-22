@@ -669,6 +669,19 @@ function verifyAdminToken(idToken) {
 
 // ADMIN HELPER FUNCTIONS - Run these manually from Script Editor
 
+// Initialize required sheets with headers
+function initializeSheets() {
+  const slotsSheet = getSheet(SLOTS_SHEET_NAME);
+  const bookingsSheet = getSheet(BOOKINGS_SHEET_NAME);
+  const productsSheet = getSheet(PRODUCTS_SHEET_NAME);
+
+  Logger.log('Initialized sheets:');
+  Logger.log('- ' + slotsSheet.getName());
+  Logger.log('- ' + bookingsSheet.getName());
+  Logger.log('- ' + productsSheet.getName());
+  Logger.log('\nNext: Run testSetup() to verify access and counts.');
+}
+
 // Test function to verify setup
 function testSetup() {
   try {
