@@ -700,7 +700,12 @@
             .signature-img { max-width: 400px; border-bottom: 2px solid #000; }
             ul, ol { margin: 10px 0 10px 30px; }
             li { margin: 5px 0; }
-            @media print { button { display: none; } }
+            .print-footer { text-align: center; color: #555; font-size: 12px; margin-top: 30px; }
+            @media print {
+              button { display: none; }
+              body { margin-bottom: 60px; }
+              .print-footer { position: fixed; bottom: 10px; left: 0; right: 0; }
+            }
           </style>
         </head>
         <body>
@@ -734,7 +739,7 @@
             <p><strong>This is a legally binding electronic signature.</strong></p>
             <p>Document ID: ${waiverData.timestamp.replace(/[:.]/g, '-')}</p>
           </div>
-
+         <div class="print-footer">WebPage, https://DogPaddle.club   Copyright 2025</div>
           <div style="margin-top: 20px; text-align: center;">
             <button onclick="window.print()" style="padding: 10px 30px; font-size: 16px; background: #028090; color: white; border: none; border-radius: 5px; cursor: pointer;">
               Print / Save as PDF
@@ -746,6 +751,12 @@
         </body>
         </html>
       `);
+            printWindow.document.title = 'WebPage';
+      try {
+        printWindow.history.replaceState(null, '', 'https://DogPaddle.club/waiver');
+      } catch (error) {
+        console.warn('Unable to update print window URL', error);
+      }
       printWindow.document.close();
     }
 
