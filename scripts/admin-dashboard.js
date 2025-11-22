@@ -1283,40 +1283,139 @@ async function loadBookings() {
 
   const bookings = await fetchAdminBookings();
 
-  if (!bookings || bookings.length === 0) {
-    bookingsList.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-light);">No bookings found.</p>';
-    return;
-  }
+const hasBookings = Array.isArray(bookings) && bookings.length > 0;
+  const sortedBookings = hasBookings
+    ? [...bookings].sort((a, b) => new Date(b.timestamp || b.sessionTime) - new Date(a.timestamp || a.sessionTime))
+    : [];
 
-  bookings.sort((a, b) => new Date(b.timestamp || b.sessionTime) - new Date(a.timestamp || a.sessionTime));
+  const tableRows = hasBookings
+    ? sortedBookings.map(booking => {
+        const sessionDate = booking.sessionTime ? new Date(booking.sessionTime) : null;
+        const status = (booking.paymentStatus || booking.status || 'pending').toLowerCase();
+        const statusColors = {
+          pending: '#ffc107',
+          confirmed: '#28a745',
+          completed: '#6c757d',
+          cancelled: '#dc3545',
+          subscription: '#17a2b8'
+        };
+        const statusColor = statusColors[status] || '#666';
+        const subscriptionLabel = booking.isSubscription === 'Yes' || booking.isSubscription === true
+          ? '<span class="subscription-tag">Subscription</span>'
+          : '';
 
-  bookingsList.innerHTML = bookings.map(booking => {
-    const sessionDate = booking.sessionTime ? new Date(booking.sessionTime) : null;
-    const status = (booking.paymentStatus || booking.status || 'pending').toLowerCase();
-    const statusColors = {
-      pending: '#ffc107',
-      confirmed: '#28a745',
-      completed: '#6c757d',
-      cancelled: '#dc3545',
-      subscription: '#17a2b8'
-    };
-    const statusColor = statusColors[status] || '#666';
+        return `
+          <tr>
+            <td>
+              <div class="primary-text">${booking.firstName || ''} ${booking.lastName || ''}</div>
+              ${booking.bookingId ? `<div class="sub-text">ID: ${booking.bookingId}</div>` : ''}
+            </td>
+            <td>
+              <div class="sub-text">${booking.email || 'N/A'}</div>
+              <div class="sub-text">${booking.phone || 'N/A'}</div>
+            </td>
+            <td>
+              <div class="sub-text">${booking.dogNames || booking.dogName || 'N/A'}</div>
+              ${booking.dogBreeds ? `<div class="muted-text">${booking.dogBreeds}</div>` : ''}
+              ${booking.numDogs ? `<div class="muted-text">${booking.numDogs} dog(s)</div>` : ''}
+            </td>
+            <td>
+              ${sessionDate ? `<div class="sub-text">${formatDateTime(sessionDate)}</div>` : '<div class="muted-text">Not scheduled</div>'}
+              ${booking.timestamp ? `<div class="muted-text">Booked: ${formatDateTime(new Date(booking.timestamp))}</div>` : ''}
+            </td>
+            <td>
+              <span class="status-pill" style="border-color: ${statusColor}; color: ${statusColor};">${status}</span>
+              ${subscriptionLabel}
+            </td>
+          </tr>
+        `;
+      }).join('')
+    : '<tr class="empty-row"><td colspan="5">No bookings found. New bookings will appear here automatically.</td></tr>';
 
-    return `
-      <div class="admin-product-item">
-        <div class="admin-item-details">
-          <div class="admin-item-name">${booking.firstName} ${booking.lastName}</div>
-          <div class="admin-item-info">📧 ${booking.email} | 📱 ${booking.phone}</div>
-          <div class="admin-item-info">🐕 ${booking.dogNames || booking.dogName || ''}${booking.dogBreeds ? ` (${booking.dogBreeds})` : ''}</div>
-          ${sessionDate ? `<div class="admin-item-info">📅 ${formatDateTime(sessionDate)}</div>` : ''}
-          <div class="admin-item-info">
-            Status: <span style="color: ${statusColor}; font-weight: 600; text-transform: capitalize;">${status}</span>
-            ${booking.isSubscription === 'Yes' || booking.isSubscription === true ? '<span style="margin-left: 0.5rem; color: #17a2b8;">(Subscription)</span>' : ''}
-          </div>
-        </div>
-      </div>
-    `;
-  }).join('');
+  bookingsList.innerHTML = `
+    <style>
+      .admin-table-wrapper {
+        overflow-x: auto;
+      }
+      .admin-bookings-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      .admin-bookings-table th,
+      .admin-bookings-table td {
+        padding: 12px 14px;
+        text-align: left;
+        border-bottom: 1px solid #f1f2f6;
+        vertical-align: top;
+      }
+      .admin-bookings-table th {
+        background: #f8fafc;
+        font-weight: 700;
+        color: #374151;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+        font-size: 0.85rem;
+      }
+      .admin-bookings-table tr:last-child td {
+        border-bottom: none;
+      }
+      .primary-text {
+        font-weight: 600;
+        color: #1f2937;
+      }
+      .sub-text {
+        color: #374151;
+      }
+      .muted-text {
+        color: #6b7280;
+        font-size: 0.9rem;
+      }
+      .status-pill {
+        display: inline-block;
+        padding: 4px 10px;
+        border: 1px solid #d1d5db;
+        border-radius: 9999px;
+        font-weight: 600;
+        text-transform: capitalize;
+        font-size: 0.9rem;
+      }
+      .subscription-tag {
+        display: inline-block;
+        margin-left: 8px;
+        padding: 4px 8px;
+        background: #e0f2fe;
+        color: #0369a1;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.85rem;
+      }
+      .empty-row td {
+        text-align: center;
+        color: #6b7280;
+        padding: 1.25rem;
+      }
+    </style>
+    <div class="admin-table-wrapper">
+      <table class="admin-bookings-table">
+        <thead>
+          <tr>
+            <th>Client</th>
+            <th>Contact</th>
+            <th>Dogs</th>
+            <th>Session</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${tableRows}
+        </tbody>
+      </table>
+    </div>
+  `;
 }
 
 // ============================================
