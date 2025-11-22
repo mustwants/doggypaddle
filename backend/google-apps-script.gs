@@ -47,6 +47,12 @@ const GOOGLE_OAUTH_CLIENT_ID_PROPERTY = 'GOOGLE_OAUTH_CLIENT_ID';
 
 // Handle CORS preflight (OPTIONS) requests
 function doOptions(e) {
+if (!e) {
+    return createResponse({
+      status: 'error',
+      message: 'This endpoint must be called via HTTP. Deploy as a Web App and send an OPTIONS request.'
+    });
+  }
   return ContentService
     .createTextOutput('')
     .setMimeType(ContentService.MimeType.TEXT)
@@ -58,6 +64,12 @@ function doOptions(e) {
 
 // Main entry point for GET requests
 function doGet(e) {
+  if (!e || !e.parameter) {
+    return createResponse({
+      status: 'error',
+      message: 'This endpoint must be called via HTTP GET with an action parameter (e.g., ?action=getAvailableSlots).'
+    });
+  }
   const action = e.parameter.action;
 
   try {
@@ -98,6 +110,12 @@ function doGet(e) {
 
 // Main entry point for POST requests
 function doPost(e) {
+  if (!e || !e.postData) {
+    return createResponse({
+      status: 'error',
+      message: 'This endpoint must be called via HTTP POST with a JSON body containing an action field.'
+    });
+  }
   try {
     const data = JSON.parse(e.postData.contents);
     const action = data.action;
@@ -835,7 +853,13 @@ function deletePhoto(photoId) {
 
 // Helper: Get or create sheet
 function getSheet(sheetName) {
-  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const sheetId = (SHEET_ID || '').trim();
+
+  if (!sheetId || sheetId === '1q7yUDjuVSwXfL9PJUTny0oy5Nr5jlVKsdyik2-vTL8I') {
+    throw new Error('SHEET_ID is not configured. Update SHEET_ID at the top of the script with your Google Sheet ID.');
+  }
+
+  const ss = SpreadsheetApp.openById(sheetId);
   let sheet = ss.getSheetByName(sheetName);
 
   if (!sheet) {
@@ -903,7 +927,12 @@ function getSheet(sheetName) {
 
 // Helper: Create JSON response with CORS headers
 function createResponse(data) {
-  const jsonOutput = JSON.stringify(data);
+  const payload = data === undefined ? {
+    status: 'error',
+    message: 'No response payload provided.'
+  } : data;
+
+  const jsonOutput = JSON.stringify(payload) || '';
 
   return ContentService
     .createTextOutput(jsonOutput)
