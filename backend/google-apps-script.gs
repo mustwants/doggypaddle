@@ -641,7 +641,9 @@ function saveOrder(order) {
 function savePhoto(photo) {
   const sheet = getSheet(PHOTOS_SHEET_NAME);
 
-  const photoId = `photo-${Date.now()}`;
+  const photoId = photo.id || `photo-${Date.now()}`;
+  const status = photo.status || 'pending';
+  const createdAt = photo.createdAt || photo.timestamp || new Date().toISOString();
 
   sheet.appendRow([
     photoId,
@@ -650,10 +652,14 @@ function savePhoto(photo) {
     photo.dogName,
     photo.imageUrl, // URL from image hosting service
     photo.caption || '',
-    'pending', // approval status
-    new Date().toISOString(),
+    status, // approval status
+    createdAt,
     photo.sessionDate || ''
   ]);
+
+  const statusCell = sheet.getRange(sheet.getLastRow(), 7);
+  statusCell.setValue(status);
+  statusCell.setNote(photo.featured ? 'featured' : '');
 
   return createResponse({
     status: 'success',
