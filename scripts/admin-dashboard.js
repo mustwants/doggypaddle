@@ -12,6 +12,9 @@ function escapeHtml(unsafe) {
     .replace(/'/g, "&#039;");
 }
 
+// Let legacy admin.js know that the enhanced dashboard is active
+window.adminDashboardOverride = true;
+
 // Expose initialization function globally so it can be called when loaded dynamically
 window.initAdminDashboard = function() {
   console.log('Initializing admin dashboard enhancements...');
@@ -161,6 +164,34 @@ function initAdminEnhancements() {
 
 let currentEditingProduct = null;
 
+async function fetchProductsFromBackend() {
+  const cached = JSON.parse(localStorage.getItem('doggypaddle_products') || '[]');
+
+  if (!isBackendConfigured) {
+    console.warn('Backend not configured. Using local product cache.');
+    return cached;
+  }
+
+  try {
+    const response = await fetch(`${API_ENDPOINT}?action=getProducts`);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    if (data.status === 'success' && Array.isArray(data.products)) {
+      localStorage.setItem('doggypaddle_products', JSON.stringify(data.products));
+      return data.products;
+    }
+
+    console.error('Unexpected products response:', data);
+    return cached;
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    return cached;
+  }
+}
+
 function initProductManagement() {
   const addProductBtn = document.getElementById('add-product-btn');
   if (!addProductBtn) return;
@@ -280,11 +311,18 @@ function initProductManagement() {
   }, 1000);
 }
 
-function loadAdminProductsList() {
+async function loadAdminProductsList() {
   const productsList = document.getElementById('admin-products-list');
   if (!productsList) return;
 
-  const products = JSON.parse(localStorage.getItem('doggypaddle_products') || '[]');
+  productsList.innerHTML = `
+    <div class="loading" style="padding: 2rem; text-align: center;">
+      <div class="spinner"></div>
+      <p>Loading products from Google Sheets...</p>
+    </div>
+  `;
+
+  const products = await fetchProductsFromBackend();
 
   if (products.length === 0) {
     productsList.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-light);">No products found. Click "Add New Product/Treat" to create one.</p>';
@@ -384,7 +422,7 @@ async function saveProduct() {
       }
     }
 
-    const productData = {
+      const productData = {
       id: currentEditingProduct?.id || `prod-${Date.now()}`,
       name: document.getElementById('product-name').value,
       description: document.getElementById('product-description').value,
@@ -397,14 +435,27 @@ async function saveProduct() {
       lowStockThreshold: parseInt(document.getElementById('product-low-stock').value) || 5
     };
 
+    if (isBackendConfigured) {
+      const action = currentEditingProduct ? 'updateProduct' : 'saveProduct';
+      const response = await fetch(API_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, product: productData })
+      });
+
+      const result = await response.json();
+      if (result.status !== 'success') {
+        throw new Error(result.message || 'Unable to save product');
+      }
+    }
+
+    // Update local cache for fast UI
     if (currentEditingProduct) {
-      // Update existing product
       const index = products.findIndex(p => p.id === currentEditingProduct.id);
       if (index !== -1) {
         products[index] = productData;
       }
     } else {
-      // Add new product
       products.push(productData);
     }
 
@@ -427,8 +478,8 @@ async function saveProduct() {
   }
 }
 
-window.editAdminProduct = function(productId) {
-  const products = JSON.parse(localStorage.getItem('doggypaddle_products') || '[]');
+window.editAdminProduct = async function(productId) {
+  const products = await fetchProductsFromBackend();
   const product = products.find(p => p.id === productId);
 
   if (!product) return;
@@ -479,18 +530,37 @@ window.editAdminProduct = function(productId) {
   }, 100);
 };
 
-window.toggleProductStock = function(productId) {
-  const products = JSON.parse(localStorage.getItem('doggypaddle_products') || '[]');
+window.toggleProductStock = async function(productId) {
+  const products = await fetchProductsFromBackend();
   const product = products.find(p => p.id === productId);
 
   if (!product) return;
 
   product.inStock = !product.inStock;
+
+  if (isBackendConfigured) {
+    try {
+      const response = await fetch(API_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'updateProduct', product })
+      });
+
+      const result = await response.json();
+      if (result.status !== 'success') {
+        throw new Error(result.message || 'Unable to update product');
+      }
+    } catch (error) {
+      console.error('Error updating product status:', error);
+      showNotification('Failed to update product status: ' + error.message, 'error');
+      return;
+    }
+  }
+
   localStorage.setItem('doggypaddle_products', JSON.stringify(products));
 
   loadAdminProductsList();
 
-  // Reload store display
   if (typeof window.reloadStoreProducts === 'function') {
     window.reloadStoreProducts();
   }
@@ -498,16 +568,35 @@ window.toggleProductStock = function(productId) {
   showNotification(`Product ${product.inStock ? 'activated' : 'deactivated'}!`, 'success');
 };
 
-window.deleteAdminProduct = function(productId) {
+window.deleteAdminProduct = async function(productId) {
   if (!confirm('Are you sure you want to delete this product?')) return;
 
   let products = JSON.parse(localStorage.getItem('doggypaddle_products') || '[]');
+
+  if (isBackendConfigured) {
+    try {
+      const response = await fetch(API_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'deleteProduct', productId })
+      });
+
+      const result = await response.json();
+      if (result.status !== 'success') {
+        throw new Error(result.message || 'Unable to delete product');
+      }
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      showNotification('Failed to delete product: ' + error.message, 'error');
+      return;
+    }
+  }
+
   products = products.filter(p => p.id !== productId);
   localStorage.setItem('doggypaddle_products', JSON.stringify(products));
 
   loadAdminProductsList();
 
-  // Reload store display
   if (typeof window.reloadStoreProducts === 'function') {
     window.reloadStoreProducts();
   }
