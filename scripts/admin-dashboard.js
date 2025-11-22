@@ -2683,42 +2683,6 @@ function openAddPhotoModal() {
   });
 }
 
-      const newPhoto = {
-        timestamp: Date.now(),
-        dogName: document.getElementById('add-dog-name').value,
-        customerName: document.getElementById('add-customer-name').value,
-        email: document.getElementById('add-email').value,
-        caption: document.getElementById('add-caption').value,
-        sessionDate: document.getElementById('add-session-date').value,
-        imageUrl: imageUrl,
-        status: document.getElementById('add-status').value,
-        featured: false
-      };
-
-      photos.push(newPhoto);
-      localStorage.setItem('doggypaddle_photos', JSON.stringify(photos));
-      loadPhotos();
-      modal.remove();
-      showNotification('Photo added to gallery!', 'success');
-    } catch (error) {
-      console.error('Error adding photo:', error);
-      alert('Failed to add photo. Please try again.');
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Add Photo';
-    }
-  });
-
-  // Handle cancel
-  document.getElementById('cancel-add-photo').addEventListener('click', () => {
-    modal.remove();
-  });
-
-  // Close on background click
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) modal.remove();
-  });
-}
-
 window.updateBulkActionButtons = function() {
   const checkboxes = document.querySelectorAll('.photo-checkbox:checked');
   const bulkApproveBtn = document.getElementById('bulk-approve-photos');
