@@ -237,7 +237,18 @@ function initBookingAccordions() {
     const steps = Array.from(document.querySelectorAll('.booking-step'));
 
     if (steps.length === 0) return;
+    const scrollToStep = (step) => {
+      if (!step) return;
 
+      const NAV_OFFSET = 100;
+      const rect = step.getBoundingClientRect();
+      const targetTop = window.scrollY + rect.top - NAV_OFFSET;
+
+      window.scrollTo({
+        top: Math.max(targetTop, 0),
+        behavior: 'smooth'
+      });
+    };
     const toggleStep = (step, expand) => {
       const header = step.querySelector('.step-header');
       const content = step.querySelector('.step-content');
