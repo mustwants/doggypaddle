@@ -146,7 +146,8 @@ function initAdminEnhancements() {
   window.loadTimeSlots = loadTimeSlots;
   window.loadBookings = loadBookings;
   window.loadPhotos = loadPhotos;
-    window.loadOrders = loadOrders;
+  window.loadOrders = loadOrders;
+  window.loadRegistrations = loadRegistrations;
   window.loadAdminProducts = loadAdminProductsList;
 
   // REMOVED duplicate tab switching - handled by admin-page.js
@@ -1417,6 +1418,153 @@ const hasBookings = Array.isArray(bookings) && bookings.length > 0;
     </div>
   `;
 }
+
+// ============================================
+// REGISTRATION MANAGEMENT
+// ============================================
+
+async function fetchRegistrations() {
+  const cached = JSON.parse(localStorage.getItem('doggypaddle_registrations') || '[]');
+
+  if (!isBackendConfigured) {
+    console.warn('Backend not configured. Showing cached registrations.');
+    return cached;
+  }
+
+  try {
+    const response = await fetch(`${API_ENDPOINT}?action=getRegistrations`);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    if (data.status === 'success' && Array.isArray(data.registrations)) {
+      localStorage.setItem('doggypaddle_registrations', JSON.stringify(data.registrations));
+      return data.registrations;
+    }
+
+    console.error('Unexpected registrations response:', data);
+    return cached;
+  } catch (error) {
+    console.error('Error fetching registrations:', error);
+    return cached;
+  }
+}
+
+function renderRegistrationRows(registrations) {
+  const statusColors = {
+    pending: '#f0ad4e',
+    approved: '#28a745',
+    denied: '#dc3545',
+    paused: '#6c757d'
+  };
+
+  return registrations.map(reg => {
+    const status = (reg.status || 'pending').toLowerCase();
+    const statusColor = statusColors[status] || '#0f172a';
+    const name = [reg.firstName, reg.lastName].filter(Boolean).join(' ') || 'Unnamed';
+    const created = reg.createdAt ? new Date(reg.createdAt).toLocaleDateString() : '—';
+
+    return `
+      <div class="admin-table-row">
+        <div>
+          <div class="admin-item-name">${escapeHtml(name)}</div>
+          <div class="muted">Submitted ${escapeHtml(created)}</div>
+        </div>
+        <div class="muted">
+          <div>📧 ${escapeHtml(reg.email || '—')}</div>
+          <div>📱 ${escapeHtml(reg.phone || '—')}</div>
+        </div>
+        <div class="muted">${escapeHtml(reg.dogNames || '—')}</div>
+        <div><span class="status-pill" style="background:${statusColor};">${escapeHtml(status)}</span></div>
+        <div class="admin-actions" style="gap: 0.35rem;">
+          <button class="btn btn-primary" onclick="window.setRegistrationStatus('${escapeHtml(reg.id)}','approved')">Approve</button>
+          <button class="btn btn-secondary" onclick="window.setRegistrationStatus('${escapeHtml(reg.id)}','paused')">Pause</button>
+          <button class="btn btn-secondary" onclick="window.setRegistrationStatus('${escapeHtml(reg.id)}','denied')">Deny</button>
+          <button class="btn btn-secondary" onclick="window.setRegistrationStatus('${escapeHtml(reg.id)}','pending')">Reset</button>
+          <button class="btn btn-secondary" style="background:#dc3545;" onclick="window.deleteRegistration('${escapeHtml(reg.id)}')">Delete</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+window.loadRegistrations = async function() {
+  const list = document.getElementById('admin-registrations-list');
+  if (!list) return;
+
+  list.innerHTML = '<div class="admin-table-row loading-row"><div class="spinner small"></div><div>Loading registrations...</div></div>';
+  const registrations = await fetchRegistrations();
+
+  if (!registrations || registrations.length === 0) {
+    list.innerHTML = '<div class="admin-table-row empty">No registrations submitted yet.</div>';
+    return;
+  }
+
+  list.innerHTML = renderRegistrationRows(registrations);
+};
+
+window.setRegistrationStatus = async function(registrationId, status) {
+  const allowed = ['approved', 'denied', 'paused', 'pending'];
+  if (!allowed.includes(status)) return;
+
+  try {
+    if (!isBackendConfigured) {
+      throw new Error('Backend not configured. Unable to update registration status.');
+    }
+
+    const response = await fetch(API_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'updateRegistrationStatus',
+        registrationId,
+        status
+      })
+    });
+
+    const result = await response.json();
+    if (result.status !== 'success') {
+      throw new Error(result.message || 'Failed to update registration');
+    }
+
+    showNotification(`Registration ${status}.`);
+    loadRegistrations();
+  } catch (error) {
+    console.error('Registration update failed:', error);
+    showNotification('Could not update registration: ' + error.message, 'error');
+  }
+};
+
+window.deleteRegistration = async function(registrationId) {
+  if (!confirm('Delete this registration permanently?')) return;
+
+  try {
+    if (!isBackendConfigured) {
+      throw new Error('Backend not configured. Unable to delete registration.');
+    }
+
+    const response = await fetch(API_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'deleteRegistration',
+        registrationId
+      })
+    });
+
+    const result = await response.json();
+    if (result.status !== 'success') {
+      throw new Error(result.message || 'Failed to delete registration');
+    }
+
+    showNotification('Registration deleted.');
+    loadRegistrations();
+  } catch (error) {
+    console.error('Delete registration failed:', error);
+    showNotification('Could not delete registration: ' + error.message, 'error');
+  }
+};
 
 // ============================================
 // ORDERS MANAGEMENT
