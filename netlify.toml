@@ -15,4 +15,4 @@
 [[headers]]
   for = "/*"
   [headers.values]
-    Permissions-Policy = "payment=(self)"
+    Permissions-Policy = "payment=(self 'https://js.stripe.com' 'https://buy.stripe.com')"
