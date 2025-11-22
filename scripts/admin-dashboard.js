@@ -1455,16 +1455,31 @@ async function loadOrders() {
   if (!ordersList) return;
 
   ordersList.innerHTML = `
-    <div class="loading" style="padding: 2rem; text-align: center;">
-      <div class="spinner"></div>
-      <p>Loading orders from Google Sheets...</p>
+    <div class="admin-table">
+      <div class="admin-table-header">
+        <div>Customer</div>
+        <div>Contact</div>
+        <div>Order Date</div>
+        <div>Items</div>
+        <div>Total</div>
+        <div>Status</div>
+      </div>
+      <div class="admin-table-body">
+        <div class="admin-table-row loading-row">
+          <div class="spinner small"></div>
+          <div>Loading orders from Google Sheets...</div>
+        </div>
+      </div>
     </div>
   `;
 
   const orders = await fetchAdminOrders();
+  const tableBody = ordersList.querySelector('.admin-table-body');
+
+  if (!tableBody) return;
 
   if (!orders || orders.length === 0) {
-    ordersList.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-light);">No orders found.</p>';
+    tableBody.innerHTML = '<div class="admin-table-row empty">No orders found.</div>';
     return;
   }
 
@@ -1475,23 +1490,30 @@ async function loadOrders() {
     cancelled: '#dc3545'
   };
 
-  ordersList.innerHTML = orders.map(order => {
+  tableBody.innerHTML = orders.map(order => {
     const orderDate = order.timestamp ? new Date(order.timestamp) : null;
     const items = Array.isArray(order.items)
       ? order.items
       : (() => { try { return JSON.parse(order.items || '[]'); } catch { return []; } })();
     const status = (order.status || 'pending').toLowerCase();
-    const statusColor = statusColors[status] || '#666';
+    const statusColor = statusColors[status] || '#0f172a';
+    const total = Number(order.total || 0).toFixed(2);
 
     return `
-      <div class="admin-product-item">
-        <div class="admin-item-details">
+      <div class="admin-table-row">
+        <div>
           <div class="admin-item-name">${order.customerName || 'Guest'}</div>
-          <div class="admin-item-info">📧 ${order.email || 'n/a'} | 📱 ${order.phone || 'n/a'}</div>
-          ${orderDate ? `<div class="admin-item-info">📅 ${formatDateTime(orderDate)}</div>` : ''}
-          <div class="admin-item-info">Total: $${Number(order.total || 0).toFixed(2)}</div>
-          <div class="admin-item-info">Status: <span style="color: ${statusColor}; font-weight: 600; text-transform: capitalize;">${status}</span></div>
-          ${items.length > 0 ? `<div class="admin-item-info">Items: ${items.map(item => `${item.name || 'Item'} x${item.quantity || 1}`).join(', ')}</div>` : ''}
+          ${order.orderId ? `<div class="muted">Order #${order.orderId}</div>` : ''}
+        </div>
+        <div class="muted">
+          <div>📧 ${order.email || 'n/a'}</div>
+          <div>📱 ${order.phone || 'n/a'}</div>
+        </div>
+        <div class="muted">${orderDate ? formatDateTime(orderDate) : '—'}</div>
+        <div class="muted">${items.length > 0 ? items.map(item => `${item.name || 'Item'} x${item.quantity || 1}`).join(', ') : '—'}</div>
+        <div class="muted">$${total}</div>
+        <div>
+          <span class="status-pill" style="background: ${statusColor};">${status}</span>
         </div>
       </div>
     `;
