@@ -523,6 +523,7 @@
           gap: 1.5rem;
         }
         .photo-card {
+          position: relative;
           border: 1px solid #e0e0e0;
           border-radius: 8px;
           overflow: hidden;
@@ -532,6 +533,23 @@
           height: 200px;
           object-fit: cover;
           background: #f5f5f5;
+        }
+        .photo-select {
+          position: absolute;
+          top: 0.75rem;
+          left: 0.75rem;
+          background: rgba(255, 255, 255, 0.95);
+          border-radius: 6px;
+          padding: 0.35rem;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .photo-select input {
+          width: 18px;
+          height: 18px;
+          cursor: pointer;
         }
         .photo-details {
           padding: 1rem;
@@ -578,6 +596,9 @@
 
       html += `
         <div class="photo-card">
+          <label class="photo-select">
+            <input type="checkbox" class="photo-checkbox" data-photo-id="${escapedId}" aria-label="Select photo">
+          </label>
           <img src="${escapedUrl}" alt="${escapedCaption}" class="photo-image" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2Y1ZjVmNSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4='">
           <div class="photo-details">
             <div class="photo-caption">${escapedCaptionText}</div>
@@ -600,21 +621,99 @@
 
     html += '</div>';
     listContainer.innerHTML = html;
+
+    const photoCheckboxes = listContainer.querySelectorAll('.photo-checkbox');
+    photoCheckboxes.forEach(checkbox => {
+      checkbox.addEventListener('change', updatePhotoSelectionState);
+    });
+
+    updatePhotoSelectionState();
   }
 
   function handleSelectAllPhotos(e) {
-    // TODO: Implement select all functionality
-    showNotification('Select all photos - Coming soon!');
+    const shouldSelectAll = Boolean(e.target.checked);
+    document.querySelectorAll('.photo-checkbox').forEach(checkbox => {
+      checkbox.checked = shouldSelectAll;
+    });
+    updatePhotoSelectionState();
   }
 
-  function handleBulkApprove() {
-    // TODO: Implement bulk approve
-    showNotification('Bulk approve - Coming soon!');
+  function getSelectedPhotoIds() {
+    return Array.from(document.querySelectorAll('.photo-checkbox:checked')).map(cb => cb.dataset.photoId);
   }
 
-  function handleBulkReject() {
-    // TODO: Implement bulk reject
-    showNotification('Bulk reject - Coming soon!');
+  async function handleBulkApprove() {
+    const selectedPhotoIds = getSelectedPhotoIds();
+
+    if (selectedPhotoIds.length === 0) {
+      showNotification('Select at least one photo to approve.', 'warning');
+      return;
+    }
+
+    let successCount = 0;
+
+    for (const photoId of selectedPhotoIds) {
+      const result = await window.approvePhoto(photoId, { skipReload: true, silent: true });
+      if (result?.success) {
+        successCount += 1;
+      }
+    }
+
+    await loadPhotos();
+    showNotification(`Approved ${successCount} photo${successCount === 1 ? '' : 's'}!`, 'success');
+  }
+
+  async function handleBulkReject() {
+    const selectedPhotoIds = getSelectedPhotoIds();
+
+    if (selectedPhotoIds.length === 0) {
+      showNotification('Select at least one photo to reject.', 'warning');
+      return;
+    }
+
+    if (!confirm(`Reject ${selectedPhotoIds.length} photo${selectedPhotoIds.length === 1 ? '' : 's'}?`)) {
+      return;
+    }
+
+    let successCount = 0;
+
+    for (const photoId of selectedPhotoIds) {
+      const result = await window.rejectPhoto(photoId, { skipReload: true, silent: true });
+      if (result?.success) {
+        successCount += 1;
+      }
+    }
+
+    await loadPhotos();
+    showNotification(`Rejected ${successCount} photo${successCount === 1 ? '' : 's'}.`, 'success');
+  }
+
+  function updatePhotoSelectionState() {
+    const checkboxes = document.querySelectorAll('.photo-checkbox');
+    const selectedCheckboxes = document.querySelectorAll('.photo-checkbox:checked');
+    const selectedCount = selectedCheckboxes.length;
+
+    const selectAll = document.getElementById('select-all-photos');
+    if (selectAll) {
+      selectAll.checked = selectedCount > 0 && selectedCount === checkboxes.length;
+      selectAll.indeterminate = selectedCount > 0 && selectedCount < checkboxes.length;
+    }
+
+    const bulkApproveBtn = document.getElementById('bulk-approve-photos');
+    const bulkRejectBtn = document.getElementById('bulk-reject-photos');
+    const selectedCountLabel = document.getElementById('selected-photos-count');
+
+    if (bulkApproveBtn) {
+      bulkApproveBtn.disabled = selectedCount === 0;
+    }
+    if (bulkRejectBtn) {
+      bulkRejectBtn.disabled = selectedCount === 0;
+    }
+    if (selectedCountLabel) {
+      selectedCountLabel.textContent = selectedCount === 0
+        ? ''
+        : `${selectedCount} photo${selectedCount === 1 ? '' : 's'} selected`;
+    }
   }
 
   // Orders Management
@@ -881,7 +980,9 @@
     }
   };
 
-  window.approvePhoto = async function(photoId) {
+ window.approvePhoto = async function(photoId, options = {}) {
+    const { skipReload = false, silent = false } = options;
+   
     try {
       const API_ENDPOINT = window.DoggyPaddleConfig?.API_ENDPOINT;
       if (!API_ENDPOINT) {
@@ -901,21 +1002,27 @@
 
       const result = await response.json();
 
-      if (result.status === 'success') {
-        showNotification('Photo approved!');
-        loadPhotos();
-      } else {
-        throw new Error(result.message || 'Failed to approve photo');
+    if (result.status === 'success') {
+        if (!silent) {
+          showNotification('Photo approved!');
+        }
+        if (!skipReload) await loadPhotos();
+        return { success: true };
       }
+
+      throw new Error(result.message || 'Failed to approve photo');
     } catch (error) {
       console.error('Error approving photo:', error);
       showNotification('Error approving photo: ' + error.message);
+      return { success: false, error };
     }
   };
 
-  window.rejectPhoto = async function(photoId) {
-    if (!confirm('Are you sure you want to reject this photo?')) return;
+  window.rejectPhoto = async function(photoId, options = {}) {
+    const { skipReload = false, silent = false } = options;
 
+    if (!silent && !confirm('Are you sure you want to reject this photo?')) return { success: false };
+    
     try {
       const API_ENDPOINT = window.DoggyPaddleConfig?.API_ENDPOINT;
       if (!API_ENDPOINT) {
@@ -935,15 +1042,19 @@
 
       const result = await response.json();
 
-      if (result.status === 'success') {
-        showNotification('Photo rejected');
-        loadPhotos();
-      } else {
-        throw new Error(result.message || 'Failed to reject photo');
+  if (result.status === 'success') {
+        if (!silent) {
+          showNotification('Photo rejected');
+        }
+        if (!skipReload) await loadPhotos();
+        return { success: true };
       }
+
+      throw new Error(result.message || 'Failed to reject photo');
     } catch (error) {
       console.error('Error rejecting photo:', error);
       showNotification('Error rejecting photo: ' + error.message);
+      return { success: false, error };
     }
   };
 
