@@ -233,27 +233,53 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  function initBookingAccordions() {
+function initBookingAccordions() {
     const steps = Array.from(document.querySelectorAll('.booking-step'));
 
-    steps.forEach((step) => {
+    if (steps.length === 0) return;
+
+    const toggleStep = (step, expand) => {
+      const header = step.querySelector('.step-header');
+      const content = step.querySelector('.step-content');
+
+      if (!header || !content) return;
+
+      if (expand) {
+        step.classList.add('expanded');
+        header.setAttribute('aria-expanded', 'true');
+        content.removeAttribute('hidden');
+      } else {
+        step.classList.remove('expanded');
+        header.setAttribute('aria-expanded', 'false');
+        content.setAttribute('hidden', 'true');
+      }
+    };
+
+    steps.forEach((step, index) => {
       const header = step.querySelector('.step-header');
       if (!header) return;
 
       header.addEventListener('click', () => {
-        const isExpanded = step.classList.contains('expanded');
-
-        steps.forEach((s) => {
-          s.classList.remove('expanded');
-          const h = s.querySelector('.step-header');
-          if (h) h.setAttribute('aria-expanded', 'false');
-        });
-
-        if (!isExpanded) {
-          step.classList.add('expanded');
-          header.setAttribute('aria-expanded', 'true');
+        const shouldExpand = !step.classList.contains('expanded');
+        steps.forEach((s) => toggleStep(s, false));
+        if (shouldExpand) {
+          toggleStep(step, true);
         }
       });
+
+      header.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          header.click();
+        }
+      });
+
+      // Default to expanded for the first step to guide users
+      if (index === 0) {
+        toggleStep(step, true);
+      } else {
+        toggleStep(step, false);
+      }
     });
   }
   function formatTime(timeString) {
