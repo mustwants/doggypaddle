@@ -41,6 +41,7 @@ const PRODUCTS_SHEET_NAME = 'Products';
 const ORDERS_SHEET_NAME = 'Orders';
 const PHOTOS_SHEET_NAME = 'Photos';
 const SUBSCRIPTIONS_SHEET_NAME = 'Subscriptions';
+const REGISTRATIONS_SHEET_NAME = 'Registrations';
 const ADMIN_ALLOWLIST_PROPERTY = 'ADMIN_ALLOWLIST';
 const GOOGLE_OAUTH_CLIENT_ID_PROPERTY = 'GOOGLE_OAUTH_CLIENT_ID';
 
@@ -77,6 +78,8 @@ function doGet(e) {
         return getSubscription(e.parameter.email);
       case 'getSubscriptions':
         return getSubscriptions();
+      case 'getRegistrations':
+        return getRegistrations();
       case 'getAdminAllowlist':
         return getAdminAllowlistResponse();
       default:
@@ -140,6 +143,12 @@ function doPost(e) {
         return useSubscriptionSession(data.email);
       case 'cancelSubscription':
         return cancelSubscription(data.subscriptionId);
+      case 'registerUser':
+        return registerUser(data.registration);
+      case 'updateRegistrationStatus':
+        return updateRegistrationStatus(data.registrationId, data.status, data.notes);
+      case 'deleteRegistration':
+        return deleteRegistration(data.registrationId);
       default:
         return createResponse({
           status: 'error',
@@ -874,6 +883,12 @@ function getSheet(sheetName) {
         'Stripe Subscription ID', 'Created At', 'Cancelled At', 'Priority Booking'
       ]);
       sheet.getRange('A1:Q1').setFontWeight('bold').setBackground('#028090').setFontColor('#FFFFFF');
+    } else if (sheetName === REGISTRATIONS_SHEET_NAME) {
+      sheet.appendRow([
+        'Registration ID', 'First Name', 'Email', 'Phone', 'Status',
+        'Last Name', 'Dog Names', 'Created At', 'Notes'
+      ]);
+      sheet.getRange('A1:I1').setFontWeight('bold').setBackground('#028090').setFontColor('#FFFFFF');
     }
 
     // Auto-resize columns
@@ -1020,6 +1035,7 @@ function saveSubscription(subscription) {
     subscription.firstName,
     subscription.lastName,
     subscription.phone,
+   'pending', // status - requires admin approval
     'active', // status
     4, // sessions per month
     0, // sessions used this month
@@ -1038,6 +1054,136 @@ function saveSubscription(subscription) {
     status: 'success',
     subscriptionId: subscriptionId,
     message: 'Subscription created successfully'
+  });
+}
+
+// Handle customer registrations with pending status
+function registerUser(registration) {
+  if (!registration || !registration.email || !registration.firstName || !registration.lastName || !registration.phone) {
+    return createResponse({
+      status: 'error',
+      message: 'Missing required registration fields'
+    });
+  }
+
+  const normalizedEmail = String(registration.email || '').toLowerCase().trim();
+  const firstName = String(registration.firstName || '').trim();
+  const lastName = String(registration.lastName || '').trim();
+  const phone = String(registration.phone || '').trim();
+  const dogNames = String(registration.dogNames || '').trim();
+  const notes = String(registration.notes || '').trim();
+  const sheet = getSheet(REGISTRATIONS_SHEET_NAME);
+  const data = sheet.getDataRange().getValues();
+
+  // Prevent duplicate registrations by email
+  for (let i = 1; i < data.length; i++) {
+    if ((data[i][2] || '').toLowerCase() === normalizedEmail) {
+      return createResponse({
+        status: 'error',
+        message: 'An account with this email already exists.'
+      });
+    }
+  }
+
+  const registrationId = `reg-${Date.now()}`;
+  const now = new Date().toISOString();
+
+  const status = 'pending';
+  sheet.appendRow([
+    registrationId,
+    firstName,
+    normalizedEmail,
+    phone,
+    status,
+    lastName,
+    dogNames,
+    now,
+    notes
+  ]);
+
+  return createResponse({
+    status: 'success',
+    registrationId,
+    message: 'Registration submitted and pending approval.'
+  });
+}
+
+function getRegistrations() {
+  const sheet = getSheet(REGISTRATIONS_SHEET_NAME);
+  const data = sheet.getDataRange().getValues();
+  const registrations = [];
+
+  for (let i = 1; i < data.length; i++) {
+    registrations.push({
+      id: data[i][0],
+      firstName: data[i][1],
+      email: data[i][2],
+      phone: data[i][3],
+      status: data[i][4],
+      lastName: data[i][5],
+      dogNames: data[i][6],
+      createdAt: data[i][7],
+      notes: data[i][8]
+    });
+  }
+
+  return createResponse({
+    status: 'success',
+    registrations
+  });
+}
+
+function updateRegistrationStatus(registrationId, status, notes) {
+  const allowedStatuses = ['approved', 'denied', 'paused', 'pending'];
+  const normalizedStatus = (status || '').toLowerCase();
+
+  if (!allowedStatuses.includes(normalizedStatus)) {
+    return createResponse({
+      status: 'error',
+      message: 'Invalid registration status'
+    });
+  }
+
+  const sheet = getSheet(REGISTRATIONS_SHEET_NAME);
+  const data = sheet.getDataRange().getValues();
+
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === registrationId) {
+      sheet.getRange(i + 1, 5).setValue(normalizedStatus);
+      if (notes !== undefined) {
+        sheet.getRange(i + 1, 9).setValue(notes);
+      }
+
+      return createResponse({
+        status: 'success',
+        message: `Registration ${normalizedStatus}.`
+      });
+    }
+  }
+
+  return createResponse({
+    status: 'error',
+    message: 'Registration not found'
+  });
+}
+
+function deleteRegistration(registrationId) {
+  const sheet = getSheet(REGISTRATIONS_SHEET_NAME);
+  const data = sheet.getDataRange().getValues();
+
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === registrationId) {
+      sheet.deleteRow(i + 1);
+      return createResponse({
+        status: 'success',
+        message: 'Registration deleted'
+      });
+    }
+  }
+
+  return createResponse({
+    status: 'error',
+    message: 'Registration not found'
   });
 }
 
@@ -1248,6 +1394,7 @@ function initializeSheets() {
   getSheet(ORDERS_SHEET_NAME);
   getSheet(PHOTOS_SHEET_NAME);
   getSheet(SUBSCRIPTIONS_SHEET_NAME);
+  getSheet(REGISTRATIONS_SHEET_NAME);
 
   Logger.log('Sheets initialized successfully!');
 }
@@ -1304,7 +1451,16 @@ function addSampleProducts() {
 // Clear all data (use with caution!)
 function clearAllData() {
   const ss = SpreadsheetApp.openById(SHEET_ID);
-  const sheets = [SLOTS_SHEET_NAME, BOOKINGS_SHEET_NAME, WAIVERS_SHEET_NAME, PRODUCTS_SHEET_NAME, ORDERS_SHEET_NAME, PHOTOS_SHEET_NAME];
+  const sheets = [
+    SLOTS_SHEET_NAME,
+    BOOKINGS_SHEET_NAME,
+    WAIVERS_SHEET_NAME,
+    PRODUCTS_SHEET_NAME,
+    ORDERS_SHEET_NAME,
+    PHOTOS_SHEET_NAME,
+    SUBSCRIPTIONS_SHEET_NAME,
+    REGISTRATIONS_SHEET_NAME
+  ];
 
   sheets.forEach(sheetName => {
     const sheet = ss.getSheetByName(sheetName);
