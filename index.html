@@ -1223,31 +1223,57 @@
               </div>
             </div>
           </div>
-          <!-- Step 4: Download Rules -->
+                    <!-- Step 4: Download Rules -->
           <div class="booking-step" data-step="4">
             <button class="step-header" type="button" aria-expanded="false">
-        </ul>
+              <span class="step-number">STEP 4</span>
+              <div class="step-title">
+                <h3>Review the Pool Rules</h3>
+                <p class="step-subtitle">Read our safety and etiquette guidelines before you arrive.</p>
+              </div>
+              <span class="step-toggle" aria-hidden="true">
+                <span class="chevron"></span>
+              </span>
+            </button>
+            <div class="step-content">
+              <div id="rules-content" class="rules-content">
+                <h3 style="color: var(--secondary);">Pool Safety Basics</h3>
+                <ul style="line-height: 1.8; margin: 1rem 0 2rem 1.5rem;">
+                  <li>No lifeguard on duty—an adult must stay within arm's reach of swimming dogs.</li>
+                  <li>Only booked dogs are allowed in the pool area; keep other pets at home.</li>
+                  <li>Secure dogs on a leash until they enter the pool and when they exit the water.</li>
+                  <li>Remove prong collars, choke chains, and harnesses before dogs enter the pool.</li>
+                  <li>Report any accidents or facility damage immediately so we can sanitize the area.</li>
+                </ul>
 
-        <h3 style="color: var(--secondary);">Owner Responsibilities</h3>
-        <ul style="line-height: 1.8; margin: 1rem 0 2rem 1.5rem;">
-          <li>Provide proof of current vaccinations upon request</li>
-          <li>Disclose any known health conditions, behavioral issues, or physical limitations</li>
-          <li>Supervise dogs at all times during the session</li>
-          <li>Bring necessary items (towels, leash, etc.)</li>
-          <li>Arrive on time for scheduled sessions</li>
-          <li>Provide 24-hour notice for cancellations</li>
-        </ul>
+                <h3 style="color: var(--secondary);">Health & Cleanliness</h3>
+                <ul style="line-height: 1.8; margin: 1rem 0 2rem 1.5rem;">
+                  <li>Dogs must be free of fleas, ticks, and contagious illnesses.</li>
+                  <li>Rinse dogs before swimming if they recently visited the beach to reduce sand in the pool.</li>
+                  <li>Do not allow dogs to drink pool water; bring fresh water for breaks.</li>
+                  <li>If your dog defecates, clear the area and notify staff so disinfecting can occur.</li>
+                </ul>
 
-   <div class="warning-box">
-          <p style="margin: 0;"><strong>⚠️ Important:</strong> Violation of these rules may result in immediate termination of services without refund. By using our facility, you acknowledge that you have read, understood, and agree to follow all rules and guidelines.</p>
-        </div>
-      </div>
+                <h3 style="color: var(--secondary);">Owner Responsibilities</h3>
+                <ul style="line-height: 1.8; margin: 1rem 0 2rem 1.5rem;">
+                  <li>Provide proof of current vaccinations upon request.</li>
+                  <li>Disclose any known health conditions, behavioral issues, or physical limitations.</li>
+                  <li>Supervise dogs at all times during the session.</li>
+                  <li>Bring necessary items (towels, leash, etc.).</li>
+                  <li>Arrive on time for scheduled sessions.</li>
+                  <li>Provide 24-hour notice for cancellations.</li>
+                </ul>
 
-      <div style="padding: 2rem; border-top: 2px solid var(--border); background: #f9f9f9; border-radius: 0 0 12px 12px;">
-        <button onclick="downloadRulesPDF()" class="button button-secondary" style="width: 100%;">📄 Download Rules as PDF</button>
-      </div>
-    </div>
-  </div>
+                <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 1rem; border-radius: 8px; margin-top: 2rem;">
+                  <p style="margin: 0;"><strong>⚠️ Important:</strong> Violation of these rules may result in immediate termination of services without refund. By using our facility, you acknowledge that you have read, understood, and agree to follow all rules and guidelines.</p>
+                </div>
+              </div>
+
+              <div style="padding: 2rem; border-top: 2px solid var(--border); background: #f9f9f9; border-radius: 0 0 12px 12px;">
+                <button onclick="downloadRulesPDF()" class="button button-secondary" style="width: 100%;">📄 Download Rules as PDF</button>
+              </div>
+            </div>
+          </div>
 
   <!-- Scripts -->
   <script src="/scripts/config.js"></script>
@@ -1337,8 +1363,20 @@
 
     function downloadRulesPDF() {
       const rulesContent = document.getElementById('rules-content');
+
+           if (!rulesContent) {
+        console.error('Rules content not found on the page.');
+        alert('We could not load the rules. Please refresh and try again.');
+        return;
+      }
+
       const printWindow = window.open('', '_blank');
 
+      if (!printWindow) {
+        alert('Please allow pop-ups to download the rules.');
+        return;
+      }
+      
       printWindow.document.write(`
         <!DOCTYPE html>
         <html>
@@ -1416,6 +1454,7 @@
       `);
 
       printWindow.document.close();
+            printWindow.focus();
     }
 
     // Close modal on escape key
