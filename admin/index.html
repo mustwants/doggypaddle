@@ -630,6 +630,147 @@
         </div>
       </div>
     </div>
+ </div>
+
+  <!-- Add/Edit Time Slot Modal -->
+  <div id="timeslot-form-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="timeslot-form-title">Add Time Slot</h2>
+        <button class="modal-close" id="close-timeslot-form">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="timeslot-form">
+          <input type="hidden" id="timeslot-id" />
+          <div class="form-row">
+            <div class="form-group">
+              <label for="timeslot-date">Date:</label>
+              <input type="date" id="timeslot-date" class="form-input" required />
+            </div>
+            <div class="form-group">
+              <label for="timeslot-time">Time:</label>
+              <select id="timeslot-time" class="form-input" required>
+                <option value="">Select time...</option>
+                <option value="08:00">0800</option>
+                <option value="08:30">0830</option>
+                <option value="09:00">0900</option>
+                <option value="09:30">0930</option>
+                <option value="10:00">1000</option>
+                <option value="10:30">1030</option>
+                <option value="11:00">1100</option>
+                <option value="11:30">1130</option>
+                <option value="12:00">1200</option>
+                <option value="12:30">1230</option>
+                <option value="13:00">1300</option>
+                <option value="13:30">1330</option>
+                <option value="14:00">1400</option>
+                <option value="14:30">1430</option>
+                <option value="15:00">1500</option>
+                <option value="15:30">1530</option>
+                <option value="16:00">1600</option>
+                <option value="16:30">1630</option>
+                <option value="17:00">1700</option>
+                <option value="17:30">1730</option>
+                <option value="18:00">1800</option>
+                <option value="18:30">1830</option>
+                <option value="19:00">1900</option>
+                <option value="19:30">1930</option>
+                <option value="20:00">2000</option>
+                <option value="20:30">2030</option>
+                <option value="21:00">2100</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="timeslot-duration">Duration (minutes):</label>
+            <select id="timeslot-duration" class="form-input" required>
+              <option value="20">20 minutes</option>
+              <option value="30" selected>30 minutes</option>
+              <option value="45">45 minutes</option>
+              <option value="60">60 minutes</option>
+              <option value="90">90 minutes</option>
+            </select>
+            <small style="color: var(--text-light); font-size: 0.85rem;">Common session lengths</small>
+          </div>
+          <div class="form-group">
+            <label for="timeslot-status">Status:</label>
+            <select id="timeslot-status" class="form-input" required>
+              <option value="available">Available</option>
+              <option value="booked">Booked</option>
+              <option value="blocked">Blocked</option>
+            </select>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save Time Slot</button>
+            <button type="button" class="btn btn-secondary" id="cancel-timeslot-form">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bulk Add Slots Modal -->
+  <div id="bulk-timeslot-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Bulk Add Time Slots</h2>
+        <button class="modal-close" id="close-bulk-timeslot">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="bulk-timeslot-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="bulk-start-date">Start Date:</label>
+              <input type="date" id="bulk-start-date" class="form-input" required />
+            </div>
+            <div class="form-group">
+              <label for="bulk-end-date">End Date:</label>
+              <input type="date" id="bulk-end-date" class="form-input" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Days of Week:</label>
+            <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.5rem;">
+              <label class="checkbox-label"><input type="checkbox" name="bulk-days" value="0" /> Sunday</label>
+              <label class="checkbox-label"><input type="checkbox" name="bulk-days" value="1" checked /> Monday</label>
+              <label class="checkbox-label"><input type="checkbox" name="bulk-days" value="2" checked /> Tuesday</label>
+              <label class="checkbox-label"><input type="checkbox" name="bulk-days" value="3" checked /> Wednesday</label>
+              <label class="checkbox-label"><input type="checkbox" name="bulk-days" value="4" checked /> Thursday</label>
+              <label class="checkbox-label"><input type="checkbox" name="bulk-days" value="5" checked /> Friday</label>
+              <label class="checkbox-label"><input type="checkbox" name="bulk-days" value="6" /> Saturday</label>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="bulk-start-time">Start Time:</label>
+              <input type="time" id="bulk-start-time" class="form-input" value="08:00" required />
+            </div>
+            <div class="form-group">
+              <label for="bulk-end-time">End Time:</label>
+              <input type="time" id="bulk-end-time" class="form-input" value="21:00" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="bulk-duration">Slot Duration (minutes):</label>
+            <select id="bulk-duration" class="form-input" required>
+              <option value="20" selected>20 minutes</option>
+              <option value="30">30 minutes</option>
+              <option value="45">45 minutes</option>
+              <option value="60">60 minutes</option>
+              <option value="90">90 minutes</option>
+            </select>
+            <small style="color: var(--text-light); font-size: 0.85rem;">Swim session duration (10 min buffer added between slots)</small>
+          </div>
+          <div class="info-box" style="background: #e8f4f8; border-left: 4px solid var(--primary); padding: 1rem; margin: 1rem 0;">
+            <p style="margin: 0; font-size: 0.9rem;">Time slots are created at 30-minute intervals (top :00 and bottom :30 of each hour) between the start and end times for the selected days. Each 20-minute swim session includes a 10-minute buffer for client departure to prevent dog interactions.</p>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Generate Slots</button>
+            <button type="button" class="btn btn-secondary" id="cancel-bulk-timeslot">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 
   <!-- Notification -->
@@ -658,6 +799,7 @@
   ></script>
 </body>
 </html>
+
 
 
 
