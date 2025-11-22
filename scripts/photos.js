@@ -145,7 +145,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
           const response = await fetch(API_ENDPOINT, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            // Use a simple content type to avoid a CORS preflight (Google Apps Script
+            // does not handle OPTIONS requests). The backend still receives the JSON
+            // payload via e.postData.contents.
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify({ action: 'savePhoto', photo: photoData })
           });
 
