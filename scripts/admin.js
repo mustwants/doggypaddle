@@ -4,6 +4,12 @@
 (function() {
   'use strict';
 
+   // Skip legacy admin.js initialization when the enhanced dashboard is loaded
+  if (window.adminDashboardOverride) {
+    console.log('Enhanced admin dashboard detected. Skipping legacy admin.js initialization.');
+    return;
+  }
+  
   // Security: HTML escaping function to prevent XSS attacks
   function escapeHtml(unsafe) {
     if (unsafe === null || unsafe === undefined) return '';
