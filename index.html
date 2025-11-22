@@ -772,7 +772,25 @@
     let currentSlide = 0;
     let carouselPhotos = [];
 
-    function loadFeaturedPhotos() {
+    async function loadFeaturedPhotos() {
+      const API_ENDPOINT = window.DoggyPaddleConfig?.API_ENDPOINT;
+      const isBackendConfigured = API_ENDPOINT && !API_ENDPOINT.includes('YOUR_DEPLOYED_WEBAPP_ID');
+
+      try {
+        if (isBackendConfigured) {
+          const response = await fetch(`${API_ENDPOINT}?action=getPhotos&admin=false`);
+          if (!response.ok) {
+            throw new Error(`Photos request failed with status ${response.status}`);
+          }
+
+          const result = await response.json();
+          if (result.status === 'success' && Array.isArray(result.photos)) {
+            localStorage.setItem('doggypaddle_photos', JSON.stringify(result.photos));
+          }
+        }
+      } catch (error) {
+        console.warn('Falling back to cached photos:', error);
+      }
       const photos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
       carouselPhotos = photos.filter(photo => photo.featured && photo.status === 'approved');
 
