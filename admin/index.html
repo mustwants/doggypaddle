@@ -628,11 +628,12 @@
       </div>
     </header>
 
-    <div class="dashboard-content">
+  <div class="dashboard-content">
       <div class="admin-tabs">
         <button class="admin-tab active" data-tab="products">Products & Treats</button>
         <button class="admin-tab" data-tab="timeslots">Time Slots</button>
         <button class="admin-tab" data-tab="bookings">Bookings</button>
+        <button class="admin-tab" data-tab="registrations">Registrations</button>
         <button class="admin-tab" data-tab="photos">Photos</button>
         <button class="admin-tab" data-tab="orders">Orders</button>
       </div>
@@ -673,6 +674,24 @@
           <div class="loading">
             <div class="spinner"></div>
             <p>Loading bookings...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Registrations Tab -->
+      <div id="admin-registrations-tab" class="admin-tab-content">
+        <div class="admin-table">
+          <div class="admin-table-header">
+            <div>Name</div>
+            <div>Contact</div>
+            <div>Dogs</div>
+            <div>Status</div>
+            <div>Actions</div>
+          </div>
+          <div class="admin-table-body" id="admin-registrations-list">
+            <div class="admin-table-row loading-row">
+              <div style="grid-column: 1 / span 5;">Loading registrations...</div>
+            </div>
           </div>
         </div>
       </div>
@@ -879,6 +898,7 @@
   ></script>
 </body>
 </html>
+
 
 
 
