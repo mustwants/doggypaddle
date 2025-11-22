@@ -2446,7 +2446,72 @@ function openAddPhotoModal() {
         });
       }
 
+      const newPhoto = {
+        id: `photo-${Date.now()}`,
+        timestamp: Date.now(),
+        createdAt: new Date().toISOString(),
+        dogName: document.getElementById('add-dog-name').value,
+        customerName: document.getElementById('add-customer-name').value,
+        email: document.getElementById('add-email').value,
+        caption: document.getElementById('add-caption').value,
+        sessionDate: document.getElementById('add-session-date').value,
+        imageUrl: imageUrl,
+        status: document.getElementById('add-status').value,
+        featured: false
+      };
+
+      const API_ENDPOINT = window.DoggyPaddleConfig?.API_ENDPOINT;
+      const isBackendConfigured = API_ENDPOINT && !API_ENDPOINT.includes('YOUR_DEPLOYED_WEBAPP_ID');
+
+      if (isBackendConfigured) {
+        try {
+          const response = await fetch(API_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'savePhoto', photo: newPhoto })
+          });
+
+          const result = await response.json();
+          if (response.ok && result.status === 'success') {
+            if (result.photoId) {
+              newPhoto.id = result.photoId;
+            }
+            await loadPhotos();
+            modal.remove();
+            showNotification('Photo added to gallery!', 'success');
+            return;
+          }
+
+          throw new Error(result.message || 'Photo save failed');
+        } catch (apiError) {
+          console.error('Backend save failed, using local fallback:', apiError);
+        }
+      }
+
       const photos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
+      photos.push(newPhoto);
+      localStorage.setItem('doggypaddle_photos', JSON.stringify(photos));
+      await loadPhotos();
+      modal.remove();
+      showNotification('Photo added locally. Configure the backend to sync with the live gallery.', 'success');
+    } catch (error) {
+      console.error('Error adding photo:', error);
+      alert('Failed to add photo. Please try again.');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Add Photo';
+    }
+  });
+
+  // Handle cancel
+  document.getElementById('cancel-add-photo').addEventListener('click', () => {
+    modal.remove();
+  });
+
+  // Close on background click
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.remove();
+  });
+}
 
       const newPhoto = {
         timestamp: Date.now(),
