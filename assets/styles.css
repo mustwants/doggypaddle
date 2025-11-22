@@ -761,6 +761,93 @@ textarea:focus-visible {
   margin-bottom: 1rem;
 }
 
+.calendar-reminder {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f6fbfb 0%, #ffffff 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.calendar-description {
+  margin: 0 0 1rem 0;
+  color: var(--text-light);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.reminder-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.reminder-card {
+  background: var(--white);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  padding: 1rem;
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  box-shadow: var(--shadow-sm);
+}
+
+.reminder-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(2, 128, 144, 0.12);
+  color: var(--secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  box-shadow: inset 0 0 0 1px rgba(2, 128, 144, 0.15);
+}
+
+.reminder-copy h4 {
+  margin: 0 0 0.35rem 0;
+  color: var(--secondary);
+}
+
+.reminder-copy p {
+  margin: 0;
+  color: var(--text-light);
+}
+
+.reminder-actions {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.reminder-button {
+  width: 100%;
+  text-align: center;
+}
+
+.reminder-actions small {
+  color: var(--text-lighter);
+}
+
+.calendar-instructions,
+.calendar-reminders {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+  color: var(--text-light);
+  line-height: 1.6;
+}
+
+.calendar-reminders li + li,
+.calendar-instructions li + li {
+  margin-top: 0.35rem;
+}
+
 .cart-summary-shell {
   position: sticky;
   top: 1.5rem;
