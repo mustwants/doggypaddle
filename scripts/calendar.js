@@ -76,6 +76,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const data = await response.json();
         if (data.status === 'success' && data.slots) {
           availableSlots = data.slots;
+                   localStorage.setItem('doggypaddle_available_slots', JSON.stringify(availableSlots));
           console.log(`✓ Loaded ${availableSlots.length} slots from Google Sheets`);
           return {
             status: 'success',
@@ -92,8 +93,19 @@ document.addEventListener("DOMContentLoaded", () => {
         };
       }
 
-      console.error('Failed to fetch from backend. HTTP status:', response.status);
+     console.error('Failed to fetch from backend. HTTP status:', response.status);
       availableSlots = [];
+
+      const cachedSlots = JSON.parse(localStorage.getItem('doggypaddle_available_slots') || '[]');
+      if (cachedSlots.length > 0) {
+        availableSlots = cachedSlots;
+        return {
+          status: 'warning',
+          message: 'Using cached availability while the admin calendar is unreachable.',
+          detail: `HTTP status ${response.status} received from the booking backend.`
+        };
+      }
+
       return {
         status: 'error',
         message: 'Unable to reach the admin calendar.',
@@ -101,10 +113,12 @@ document.addEventListener("DOMContentLoaded", () => {
       };
     } catch (error) {
       console.error("Error fetching slots from backend:", error);
-      availableSlots = [];
+      availableSlots = JSON.parse(localStorage.getItem('doggypaddle_available_slots') || '[]');
       return {
-        status: 'error',
-        message: 'Unable to load available slots right now.',
+        status: availableSlots.length > 0 ? 'warning' : 'error',
+        message: availableSlots.length > 0
+          ? 'Using the most recent cached availability while the calendar reloads.'
+          : 'Unable to load available slots right now.',
         detail: error.message
       };
     }
