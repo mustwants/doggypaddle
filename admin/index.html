@@ -878,13 +878,18 @@
   <!-- Modals (loaded dynamically by admin modules) -->
   <div id="modal-container"></div>
 
- <script
+  <script>
+    // Ensure the enhanced admin dashboard is used instead of the legacy module
+    window.adminDashboardOverride = true;
+  </script>
+  <script
     src="/scripts/admin.js"
     defer
     integrity="sha384-0qdzMKa8Fad+VmhltMuRL2hjTW/xxfDUE0qKcgoQz7xdkQZv9Le7UrOeDI+puo3U"
     crossorigin="anonymous"
-  ></script>␊␊
-  <script␊␊
+  ></script>
+
+  <script
     src="/scripts/admin-dashboard.js"
     defer
     integrity="sha384-9qwQrCXzYylLio4d9NvO8fubO+NVQyUVPYZT/6Fholh6Gh8hsAAG00xhczu8jzVe"
@@ -898,6 +903,7 @@
   ></script>
 </body>
 </html>
+
 
 
 
