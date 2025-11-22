@@ -1,7 +1,8 @@
 // scripts/calendar.js - Enhanced Calendar with Cart & Discounts
 
 document.addEventListener("DOMContentLoaded", () => {
-  const calendarPlaceholder = document.getElementById("calendar-placeholder");
+    const calendarPlaceholder = document.getElementById("calendar-placeholder") ||
+                              document.getElementById("calendar");
 
   if (!calendarPlaceholder) {
     console.warn("Calendar placeholder not found");
