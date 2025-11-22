@@ -1,201 +1,262 @@
-# Google Sheets Structure for DoggyPaddle
+# Google Sheets Structure for DoggyPaddle (Custom Script)
 
-## Required Tabs and Columns
+## Overview
 
-Your Google Sheet must have **8 tabs** with the following exact structure:
+Your DoggyPaddle webapp uses a **custom Google Apps Script** that expects **3 specific tabs** with exact column names.
 
-### 1. TimeSlots Tab
-
-| Column | Description |
-|--------|-------------|
-| id | Unique slot identifier (e.g., slot-1234567890) |
-| date | Session date (e.g., 2025-11-22) |
-| time | Session time (e.g., 10:00 AM) |
-| duration | Duration in minutes (default: 20) |
-| status | available, booked, or blocked |
-| createdAt | ISO timestamp when created |
-
-**Example row:**
-```
-slot-1732291200000 | 2025-11-22 | 10:00 AM | 20 | available | 2025-11-22T10:00:00.000Z
-```
+**Your Google Sheet ID:** `1q7yUDjuVSwXfL9PJUTny0oy5Nr5jlVKsdyik2-vTL8I`
 
 ---
 
-### 2. Bookings Tab
+## Required Tabs and Columns
 
-| Column | Description |
-|--------|-------------|
-| bookingId | Unique booking identifier |
-| firstName | Customer first name |
-| lastName | Customer last name |
-| email | Customer email |
-| phone | Customer phone number |
-| dogNames | Names of dogs (comma-separated) |
-| dogBreeds | Breeds of dogs (comma-separated) |
-| numDogs | Number of dogs (1 or 2) |
-| sessionTime | Booked session date/time |
-| ownershipConfirmed | Yes/No |
-| waiverAck | Yes/No |
-| timestamp | ISO timestamp of booking |
-| paymentStatus | pending, paid, subscription |
-| slotId | Reference to TimeSlots tab |
-| isSubscription | Yes/No |
-| subscriptionEmail | Email if subscription booking |
+### 1. available_slots Tab
+
+This tab stores all available booking time slots.
+
+| Column A | Column B | Column C |
+|----------|----------|----------|
+| **Date** | **Time** | **Status** |
+
+**Column Details:**
+- **Date** (Column A): Format `yyyy-MM-dd` (e.g., `2025-11-22`)
+- **Time** (Column B): Format `HH:mm` (e.g., `09:00`, `14:30`)
+- **Status** (Column C): `available`, `booked`, or `blocked`
+
+**Example rows:**
+```
+Date          | Time  | Status
+2025-11-22    | 09:00 | available
+2025-11-22    | 10:00 | available
+2025-11-22    | 11:00 | booked
+2025-11-23    | 14:00 | available
+```
+
+**Header formatting:** Bold, background color #028090 (teal), white text
+
+---
+
+### 2. bookings Tab
+
+This tab stores all customer bookings.
+
+| Column A | Column B | Column C | Column D | Column E | Column F | Column G | Column H | Column I | Column J | Column K | Column L |
+|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|
+| **Timestamp** | **First Name** | **Last Name** | **Phone** | **Email** | **Dog 1 Name** | **Dog 2 Name** | **Breed 1** | **Breed 2** | **# of Dogs** | **Slot** | **Signature** |
+
+**Column Details:**
+- **Timestamp** (A): ISO format (e.g., `2025-11-22T10:00:00.000Z`)
+- **First Name** (B): Customer's first name
+- **Last Name** (C): Customer's last name
+- **Phone** (D): Customer's phone number
+- **Email** (E): Customer's email address
+- **Dog 1 Name** (F): First dog's name
+- **Dog 2 Name** (G): Second dog's name (empty if only 1 dog)
+- **Breed 1** (H): First dog's breed
+- **Breed 2** (I): Second dog's breed (empty if only 1 dog)
+- **# of Dogs** (J): Number `1` or `2`
+- **Slot** (K): Session date/time (e.g., `2025-11-22T10:00`)
+- **Signature** (L): `Signed` or `Pending`
 
 **Example row:**
 ```
-booking-1732291200000 | John | Doe | john@example.com | 555-1234 | Buddy, Max | Golden Retriever, Lab | 2 | 2025-11-22 10:00 AM | Yes | Yes | 2025-11-22T09:30:00.000Z | paid | slot-1732291200000 | No |
+2025-11-22T09:30:00.000Z | John | Doe | 555-1234 | john@example.com | Buddy | Max | Golden Retriever | Labrador | 2 | 2025-11-22T10:00 | Signed
 ```
+
+**Header formatting:** Bold, background color #028090 (teal), white text
 
 ---
 
 ### 3. Products Tab
 
-| Column | Description |
-|--------|-------------|
-| id | Unique product identifier |
-| name | Product name |
-| description | Product description |
-| price | Price in USD (e.g., 12.99) |
-| category | Treats, Accessories, Toys |
-| imageUrl | URL to product image |
-| inStock | true/false |
-| quantity | Current stock quantity |
-| lowStockThreshold | Alert when stock below this |
-| createdAt | ISO timestamp when created |
+This tab stores all store products.
+
+| Column A | Column B | Column C | Column D | Column E | Column F | Column G | Column H | Column I | Column J |
+|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|
+| **ID** | **Name** | **Description** | **Price** | **Category** | **Image URL** | **In Stock** | **Quantity** | **Low Stock Threshold** | **Created At** |
+
+**Column Details:**
+- **ID** (A): Unique product ID (e.g., `prod-1`, `prod-2`)
+- **Name** (B): Product name
+- **Description** (C): Product description
+- **Price** (D): Price as number (e.g., `12.99`)
+- **Category** (E): `Treats`, `Accessories`, `Toys`, etc.
+- **Image URL** (F): URL or path to product image
+- **In Stock** (G): `true` or `false`
+- **Quantity** (H): Current stock quantity (number)
+- **Low Stock Threshold** (I): Alert threshold (number, typically `5` or `10`)
+- **Created At** (J): ISO timestamp
 
 **Example row:**
 ```
 prod-1 | Dog Treats - Peanut Butter | Delicious all-natural treats | 12.99 | Treats | /assets/products/treats1.jpg | true | 50 | 10 | 2025-11-22T10:00:00.000Z
 ```
 
----
-
-### 4. Photos Tab
-
-| Column | Description |
-|--------|-------------|
-| id | Unique photo identifier |
-| customerName | Name of submitter |
-| email | Email of submitter |
-| dogName | Name of dog in photo |
-| imageUrl | URL to hosted image |
-| caption | Photo caption/description |
-| status | pending, approved, or rejected |
-| createdAt | ISO timestamp when submitted |
-| sessionDate | Date of swimming session |
-
-**Note:** Featured photos are marked with a note "featured" on the status cell.
-
-**Example row:**
-```
-photo-1732291200000 | Sarah | sarah@example.com | Remi | https://example.com/remi.jpg | First time swimming! | approved | 2025-11-22T10:00:00.000Z | 2025-11-22
-```
+**Header formatting:** Bold, background color #028090 (teal), white text
 
 ---
 
-### 5. Orders Tab
+## How to Verify Your Sheet
 
-| Column | Description |
-|--------|-------------|
-| orderId | Unique order identifier |
-| customerName | Customer name |
-| email | Customer email |
-| phone | Customer phone |
-| items | JSON array of order items |
-| total | Total price |
-| timestamp | ISO timestamp of order |
-| paymentStatus | pending, paid, shipped |
-| shippingAddress | Address or "Pickup" |
-
-**Example row:**
-```
-order-1732291200000 | John Doe | john@example.com | 555-1234 | [{"id":"prod-1","name":"Treats","qty":2,"price":12.99}] | 25.98 | 2025-11-22T10:00:00.000Z | pending | Pickup
-```
-
----
-
-### 6. Waivers Tab
-
-| Column | Description |
-|--------|-------------|
-| waiverId | Unique waiver identifier |
-| fullName | Signer's full name |
-| date | Date signed |
-| initials1 | Initials for section 1 |
-| initials2 | Initials for section 2 |
-| initials3 | Initials for section 3 |
-| initials4 | Initials for section 4 |
-| initials5 | Initials for section 5 |
-| timestamp | ISO timestamp when signed |
-| ipAddress | IP address of signer |
-| signature | "Signature captured" note |
-
-**Example row:**
-```
-waiver-1732291200000 | John Doe | 2025-11-22 | JD | JD | JD | JD | JD | 2025-11-22T10:00:00.000Z | 192.168.1.1 | Signature captured
-```
-
----
-
-### 7. Subscriptions Tab
-
-| Column | Description |
-|--------|-------------|
-| subscriptionId | Unique subscription identifier |
-| email | Subscriber email |
-| status | active, paused, or cancelled |
-| sessionsRemaining | Number of sessions left |
-| createdAt | ISO timestamp when created |
-
-**Example row:**
-```
-sub-1732291200000 | john@example.com | active | 4 | 2025-11-22T10:00:00.000Z
-```
-
----
-
-### 8. Registrations Tab
-
-| Column | Description |
-|--------|-------------|
-| registrationId | Unique registration identifier |
-| email | User email |
-| name | User full name |
-| phone | User phone number |
-| status | pending, approved, or rejected |
-| createdAt | ISO timestamp when registered |
-
-**Example row:**
-```
-reg-1732291200000 | john@example.com | John Doe | 555-1234 | approved | 2025-11-22T10:00:00.000Z
-```
-
----
-
-## How to Verify Your Sheet Structure
-
-### Option 1: Run the Initialize Function
+### Step 1: Run the Test Function
 
 1. Open your Google Sheet
 2. Go to **Extensions → Apps Script**
-3. In the function dropdown, select **initializeSheets**
-4. Click **Run**
-5. This will automatically create all 8 tabs with proper structure
+3. Find the function dropdown (top toolbar)
+4. Select **`testSetup`** (not `initializeSheets`)
+5. Click **Run** (play button)
+6. Check the **Execution log** (View → Logs or Ctrl+Enter)
 
-### Option 2: Manual Verification
+**Expected output:**
+```
+✓ Spreadsheet access successful
+Spreadsheet name: [Your Sheet Name]
+✓ Slots sheet accessible: available_slots
+✓ Bookings sheet accessible: bookings
+✓ Products sheet accessible: Products
 
-1. Check that your Google Sheet has all 8 tabs listed above
-2. Verify the first row of each tab contains the column headers (in order)
-3. Make sure column names match exactly (case-sensitive)
+Current data counts:
+- Slots: X rows
+- Bookings: X rows
+- Products: X rows
 
-## Next Steps
+✓ ALL TESTS PASSED! Setup is correct.
+```
 
-After verifying the structure:
+### Step 2: Manually Verify Tabs
 
-1. **Fix the "Access Denied" error** by updating your Google Apps Script deployment (see QUICK_START.md)
-2. **Test the API** by visiting: `https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec?action=getProducts`
-3. **Expected response:** JSON with status: "success" and product data
+Open your Google Sheet and confirm:
 
-If you see "Access denied", the deployment permissions need to be set to "Anyone".
+✅ **Tab 1: `available_slots`** (exact name, case-sensitive)
+- Column A header = `Date`
+- Column B header = `Time`
+- Column C header = `Status`
+
+✅ **Tab 2: `bookings`** (exact name, lowercase)
+- Column A header = `Timestamp`
+- Column B header = `First Name`
+- Column C header = `Last Name`
+- ...continues through Column L = `Signature`
+
+✅ **Tab 3: `Products`** (exact name, capital P)
+- Column A header = `ID`
+- Column B header = `Name`
+- ...continues through Column J = `Created At`
+
+---
+
+## Add Sample Data (Optional)
+
+To test with sample slots:
+
+1. In Google Apps Script editor
+2. Select **`addSampleSlots`** from function dropdown
+3. Click **Run**
+4. This will add 42 sample slots (7 days × 6 time slots per day)
+
+---
+
+## Fix the "Access Denied" Error
+
+Your Google Apps Script is currently blocking access. Here's how to fix it:
+
+### Step 1: Deploy as Web App
+
+1. In Google Apps Script editor, click **Deploy → New deployment**
+2. Click the **gear icon** next to "Select type"
+3. Choose **"Web app"**
+4. Configure:
+   - **Description**: `DoggyPaddle API v1`
+   - **Execute as**: `Me` (your email)
+   - **Who has access**: **`Anyone`** ⚠️ **MUST be "Anyone"!**
+5. Click **Deploy**
+6. Authorize if prompted
+7. **Copy the Web App URL** (looks like `https://script.google.com/macros/s/AKfyc...../exec`)
+
+### Step 2: Update Your Website Config
+
+1. Open your repo file: `scripts/config.js`
+2. Find the line with `API_ENDPOINT:`
+3. Replace it with your new Web App URL:
+   ```javascript
+   API_ENDPOINT: 'https://script.google.com/macros/s/YOUR_NEW_DEPLOYMENT_ID/exec'
+   ```
+4. Save and deploy your website
+
+### Step 3: Test the API
+
+Run this command to verify it works:
+
+```bash
+curl "https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec?action=getProducts"
+```
+
+**Success response:**
+```json
+{
+  "status": "success",
+  "products": [...]
+}
+```
+
+**Failure response:**
+```
+Access denied
+```
+
+If you see "Access denied", the deployment is NOT set to "Anyone" access.
+
+---
+
+## Troubleshooting
+
+### ❌ "testSetup is not defined"
+- Make sure you're running the script from `google-apps-script-custom.gs`
+- The custom script has `testSetup()` instead of `initializeSheets()`
+
+### ❌ "Cannot find sheet: available_slots"
+- Your sheet tabs must be named **exactly**: `available_slots`, `bookings`, `Products`
+- Names are case-sensitive!
+
+### ❌ Still getting "Access denied"
+1. Go to **Deploy → Manage deployments**
+2. Check "Who has access" = `Anyone`
+3. If not, create a **NEW deployment** (don't edit the old one)
+4. Use the new URL in your config.js
+
+### ❌ Website shows "Loading products..." forever
+- The API endpoint is not responding or has wrong permissions
+- Check browser console (F12) for error messages
+- Verify the URL in `scripts/config.js` matches your deployment URL exactly
+
+---
+
+## Current Issues to Fix
+
+Based on testing your API endpoint, I found:
+
+🔴 **Your API returns "Access denied"**
+- This means the deployment does NOT have "Anyone" access enabled
+- You must create a new deployment with "Anyone" access
+
+Once fixed, your webapp will be able to:
+- ✅ Load available booking slots
+- ✅ Save customer bookings
+- ✅ Display products from Google Sheets
+- ✅ Update slot status when booked
+
+---
+
+## Summary Checklist
+
+Before your webapp can work:
+
+- [ ] Google Sheet has 3 tabs: `available_slots`, `bookings`, `Products`
+- [ ] Each tab has correct column headers (see above)
+- [ ] Run `testSetup()` function successfully
+- [ ] Deploy script as Web App with **"Anyone"** access
+- [ ] Update `scripts/config.js` with new deployment URL
+- [ ] Test API with curl command (should return JSON, not "Access denied")
+- [ ] Website loads products and time slots without errors
+
+**Once all checked, your webapp will work perfectly!**
