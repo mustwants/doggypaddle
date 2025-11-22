@@ -770,15 +770,16 @@ async function renderCalendarView() {
   await fetchAdminSlots();
   const slots = adminSlots;
 
-  // Define time slots: 8:00 AM to 9:00 PM EST, 20-minute intervals at :00 and :40
+ // Define time slots: 8:00 AM to 9:00 PM EST, 30-minute intervals at :00 and :30
   const timeSlots = [];
   for (let hour = 8; hour <= 21; hour++) {
-    timeSlots.push(`${String(hour).padStart(2, '0')}:00`);
-    if (hour < 21) { // Don't add :40 for 9 PM
-      timeSlots.push(`${String(hour).padStart(2, '0')}:40`);
+    const hourLabel = String(hour).padStart(2, '0');
+    timeSlots.push(`${hourLabel}:00`);
+    if (hour < 21) { // Don't add :30 for 9 PM
+      timeSlots.push(`${hourLabel}:30`);
     }
   }
-
+  
   // Get 7 days starting from currentWeekStart
   const weekDays = [];
   for (let i = 0; i < 7; i++) {
