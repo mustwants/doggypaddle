@@ -230,6 +230,79 @@
       margin-top: 1.5rem;
     }
 
+    .admin-table {
+      width: 100%;
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+    }
+
+    .admin-table-header,
+    .admin-table-row {
+      display: grid;
+      grid-template-columns: 1.6fr 1.4fr 1.2fr 2fr 0.8fr 0.8fr;
+      gap: 1rem;
+      align-items: center;
+      padding: 1rem 1.25rem;
+    }
+
+    .admin-table-header {
+      background: linear-gradient(135deg, rgba(2, 128, 144, 0.1), rgba(2, 195, 154, 0.12));
+      color: #0f172a;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-size: 0.85rem;
+    }
+
+    .admin-table-body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .admin-table-row {
+      border-top: 1px solid #f1f5f9;
+      color: #0f172a;
+      font-size: 0.95rem;
+    }
+
+    .admin-table-row:nth-child(even) {
+      background: #f8fafc;
+    }
+
+    .admin-table-row .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.35rem 0.65rem;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: white;
+    }
+
+    .admin-table-row .muted {
+      color: #64748b;
+      font-size: 0.9rem;
+    }
+
+    .admin-table-row.empty,
+    .admin-table-row.loading-row {
+      grid-template-columns: 1fr;
+      text-align: center;
+      justify-content: center;
+      padding: 1.5rem;
+      color: #64748b;
+      background: #f8fafc;
+    }
+
+    .admin-table-row.loading-row {
+      display: grid;
+      gap: 0.75rem;
+    }
+
     .loading {
       text-align: center;
       padding: 3rem;
@@ -245,6 +318,13 @@
       border-radius: 50%;
       animation: spin 1s linear infinite;
       margin-bottom: 1rem;
+    }
+
+    .spinner.small {
+      width: 24px;
+      height: 24px;
+      border-width: 3px;
+      margin: 0 auto;
     }
 
     @keyframes spin {
@@ -799,6 +879,7 @@
   ></script>
 </body>
 </html>
+
 
 
 
