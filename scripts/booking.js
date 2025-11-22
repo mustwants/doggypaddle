@@ -120,7 +120,7 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
           // Regular booking - redirect to Stripe checkout
           const stripeUrl = window.DoggyPaddleConfig?.STRIPE?.singleSession ||
-                           "https://buy.stripe.com/placeholder";
+                          "https://buy.stripe.com/14AaEW1GV3vIgaK7fE5J60c";
 
           setTimeout(() => {
             window.location.href = stripeUrl;
