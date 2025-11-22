@@ -136,7 +136,7 @@
     .container {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 2rem 1.5rem;
+      padding: 1.75rem 1.25rem;
     }
 
     /* Hero Section */
@@ -144,7 +144,7 @@
       background: linear-gradient(135deg, rgba(2, 128, 144, 0.95) 0%, rgba(17, 75, 95, 0.95) 100%), 
                   url('/assets/Remi1.jpg') center/cover no-repeat;
       color: var(--white);
-      padding: 6rem 1.5rem;
+      padding: 4rem 1.5rem;
       text-align: center;
       margin-bottom: 0;
       position: relative;
@@ -168,7 +168,7 @@
 
     .hero h1 {
       font-size: clamp(2rem, 5vw, 3rem);
-      margin-bottom: 1rem;
+      margin-bottom: 0.75rem;
       font-weight: 700;
       text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
     }
@@ -176,20 +176,27 @@
     .hero p {
       font-size: clamp(1rem, 2.5vw, 1.25rem);
       max-width: 600px;
-      margin: 0 auto 2rem;
+      margin: 0 auto 1.5rem;
       opacity: 0.98;
       text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+    }
+
+    .hero-actions {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 0.75rem;
     }
 
     .hero-cta {
       display: inline-block;
       background: var(--accent);
       color: var(--white);
-      padding: 1rem 2rem;
+      padding: 0.9rem 1.75rem;
       border-radius: 8px;
       text-decoration: none;
       font-weight: 600;
-      font-size: 1.1rem;
+      font-size: 1.05rem;
       transition: var(--transition);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     }
@@ -202,8 +209,8 @@
     /* Gallery Section */
     .gallery-section {
       background: var(--white);
-      padding: 3rem 0;
-      margin-bottom: 2rem;
+      padding: 2.25rem 0;
+      margin-bottom: 1.75rem;
     }
 
     .gallery-grid {
@@ -247,21 +254,21 @@
       }
     }
 
-    /* Pricing Cards */
+  /* Pricing Cards */
     .pricing-section {
-      margin-bottom: 3rem;
+      margin-bottom: 2.25rem;
     }
 
     .pricing-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 1.5rem;
-      margin-top: 2rem;
+      gap: 1.25rem;
+      margin-top: 1.5rem;
     }
 
     .price-card {
       background: var(--white);
-      padding: 2rem;
+      padding: 1.5rem;
       border-radius: var(--radius);
       box-shadow: 0 4px 16px var(--shadow);
       text-align: center;
@@ -330,16 +337,16 @@
     /* Section Styles */
     section {
       background: var(--white);
-      padding: 2.5rem;
+      padding: 2rem;
       border-radius: var(--radius);
-      margin-bottom: 2rem;
+      margin-bottom: 1.75rem;
       box-shadow: 0 2px 12px var(--shadow);
     }
 
     h2 {
       color: var(--secondary);
       font-size: clamp(1.75rem, 4vw, 2.25rem);
-      margin-bottom: 1rem;
+      margin-bottom: 0.75rem;
       font-weight: 700;
     }
 
@@ -481,13 +488,13 @@
       font-size: 0.85rem;
     }
 
-    /* Alert/Info Boxes */
+  /* Alert/Info Boxes */
     .info-box {
       background: #e8f4f8;
       border-left: 4px solid var(--primary);
       padding: 1.25rem;
       border-radius: 8px;
-      margin: 1.5rem 0;
+      margin: 1.25rem 0;
     }
 
     .info-box p {
@@ -499,8 +506,8 @@
       background: var(--secondary);
       color: var(--white);
       text-align: center;
-      padding: 2rem 1.5rem;
-      margin-top: 4rem;
+      padding: 1.5rem 1.25rem;
+      margin-top: 2.5rem;
     }
 
     footer p {
@@ -613,20 +620,22 @@
     </div>
   </nav>
 
-  <!-- Hero Section -->
+ <!-- Hero Section -->
   <div class="hero">
     <div class="hero-content">
       <h1>Private Dog Pool Sessions in St. Augustine</h1>
       <p>Swimming for up to 2 dogs. Responsible owner supervision required. 20-minute sessions with flexible scheduling.</p>
-      <a href="#booking" class="hero-cta">Book Your Session Today</a>
-      <a href="https://dogpaddle.club/store" class="hero-cta">Buy Treats and Toys</a> 
+      <div class="hero-actions">
+        <a href="#booking" class="hero-cta">Book Your Session Today</a>
+        <a href="https://dogpaddle.club/store" class="hero-cta">Buy Treats and Toys</a>
+      </div>
     </div>
   </div>
 
   <!-- Featured Photos Carousel -->
   <div class="gallery-section">
     <div class="container">
-      <h2 style="text-align: center; color: white; margin-bottom: 2rem;">Featured Photos</h2>
+      <h2 style="text-align: center; color: var(--secondary); margin-bottom: 1.5rem;">Featured Photos</h2>
       <div class="carousel-container">
         <button class="carousel-btn prev" id="carousel-prev" aria-label="Previous photo">‹</button>
         <div class="carousel-wrapper">
@@ -1010,11 +1019,11 @@
       </div>
     </section>
 
-    <!-- Complete Your Booking - Step-by-Step Process -->
+  <!-- Complete Your Booking - Step-by-Step Process -->
     <section id="booking">
       <h2>Complete Your Booking</h2>
-      <p style="text-align: center; font-size: 1.1rem; margin-bottom: 3rem;">Follow these simple steps to book your dog's swimming session</p>
-
+      <p style="text-align: center; font-size: 1.1rem; margin-bottom: 2rem;">Follow these simple steps to book your dog's swimming session</p>
+      
     <div class="booking-layout">
         <div class="booking-steps" id="booking-steps">
           <!-- Step 1: Choose Your Sessions -->
@@ -1053,7 +1062,7 @@
               </span>
             </button>
             <div class="step-content">
-              <div class="info-box" style="margin: 1.5rem 0;">
+               <div class="info-box" style="margin: 1.25rem 0;">
                 <p><strong>Important:</strong> Maximum 2 dogs per session. Owner must be present or provide signed waiver for dog sitter.</p>
               </div>
 
