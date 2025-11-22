@@ -194,8 +194,11 @@ function getAvailableSlots(params) {
     });
   }
 
-  // Only return available slots
-  const availableSlots = filteredSlots.filter(slot => slot.status === 'available');
+   // Only return available slots (case-insensitive, trimming whitespace)
+  const availableSlots = filteredSlots.filter(slot => {
+    const normalizedStatus = (slot.status || 'available').toString().trim().toLowerCase();
+    return normalizedStatus === 'available';
+  });
 
   return createResponse({
     status: 'success',
