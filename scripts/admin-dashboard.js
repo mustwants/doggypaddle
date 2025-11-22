@@ -146,6 +146,7 @@ function initAdminEnhancements() {
   window.loadTimeSlots = loadTimeSlots;
   window.loadBookings = loadBookings;
   window.loadPhotos = loadPhotos;
+    window.loadOrders = loadOrders;
   window.loadAdminProducts = loadAdminProductsList;
 
   // REMOVED duplicate tab switching - handled by admin-page.js
@@ -1241,45 +1242,157 @@ function initBookingsManagement() {
   exportBtn.addEventListener('click', exportBookingsToCSV);
 }
 
-function loadBookings() {
+async function fetchAdminBookings() {
+  const cachedBookings = JSON.parse(localStorage.getItem('doggypaddle_bookings') || '[]');
+
+  if (!isBackendConfigured) {
+    console.warn('Backend not configured. Using cached bookings.');
+    return cachedBookings;
+  }
+
+  try {
+    const response = await fetch(`${API_ENDPOINT}?action=getBookings`);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    if (data.status === 'success' && Array.isArray(data.bookings)) {
+      localStorage.setItem('doggypaddle_bookings', JSON.stringify(data.bookings));
+      return data.bookings;
+    }
+
+    console.error('Unexpected bookings response:', data);
+    return cachedBookings;
+  } catch (error) {
+    console.error('Error fetching bookings:', error);
+    return cachedBookings;
+  }
+}
+
+async function loadBookings() {
   const bookingsList = document.getElementById('admin-bookings-list');
   if (!bookingsList) return;
 
-  const bookings = JSON.parse(localStorage.getItem('doggypaddle_bookings') || '[]');
+  bookingsList.innerHTML = `
+    <div class="loading" style="padding: 2rem; text-align: center;">
+      <div class="spinner"></div>
+      <p>Loading bookings from Google Sheets...</p>
+    </div>
+  `;
 
-  if (bookings.length === 0) {
-    bookingsList.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-light);">No bookings yet.</p>';
+  const bookings = await fetchAdminBookings();
+
+  if (!bookings || bookings.length === 0) {
+    bookingsList.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-light);">No bookings found.</p>';
     return;
   }
 
-  // Sort bookings by date (most recent first)
-  bookings.sort((a, b) => new Date(b.sessionTime) - new Date(a.sessionTime));
+  bookings.sort((a, b) => new Date(b.timestamp || b.sessionTime) - new Date(a.timestamp || a.sessionTime));
 
   bookingsList.innerHTML = bookings.map(booking => {
-    const sessionDate = new Date(booking.sessionTime);
+    const sessionDate = booking.sessionTime ? new Date(booking.sessionTime) : null;
+    const status = (booking.paymentStatus || booking.status || 'pending').toLowerCase();
     const statusColors = {
       pending: '#ffc107',
       confirmed: '#28a745',
       completed: '#6c757d',
-      cancelled: '#dc3545'
+      cancelled: '#dc3545',
+      subscription: '#17a2b8'
     };
-    const statusColor = statusColors[booking.status] || '#666';
+    const statusColor = statusColors[status] || '#666';
 
     return `
       <div class="admin-product-item">
         <div class="admin-item-details">
           <div class="admin-item-name">${booking.firstName} ${booking.lastName}</div>
           <div class="admin-item-info">📧 ${booking.email} | 📱 ${booking.phone}</div>
-          <div class="admin-item-info">🐕 ${booking.dogNames} (${booking.dogBreeds})</div>
-          <div class="admin-item-info">📅 ${formatDateTime(sessionDate)}</div>
+          <div class="admin-item-info">🐕 ${booking.dogNames || booking.dogName || ''}${booking.dogBreeds ? ` (${booking.dogBreeds})` : ''}</div>
+          ${sessionDate ? `<div class="admin-item-info">📅 ${formatDateTime(sessionDate)}</div>` : ''}
           <div class="admin-item-info">
-            Status: <span style="color: ${statusColor}; font-weight: 600; text-transform: capitalize;">${booking.status || 'pending'}</span>
+            Status: <span style="color: ${statusColor}; font-weight: 600; text-transform: capitalize;">${status}</span>
+            ${booking.isSubscription === 'Yes' || booking.isSubscription === true ? '<span style="margin-left: 0.5rem; color: #17a2b8;">(Subscription)</span>' : ''}
           </div>
         </div>
-        <div class="admin-item-actions">
-          <button class="admin-btn admin-btn-toggle" onclick="toggleBookingStatus('${booking.timestamp}')">
-            Change Status
-          </button>
+      </div>
+    `;
+  }).join('');
+}
+
+// ============================================
+// ORDERS MANAGEMENT
+// ============================================
+
+async function fetchAdminOrders() {
+  const cachedOrders = JSON.parse(localStorage.getItem('doggypaddle_orders') || '[]');
+
+  if (!isBackendConfigured) {
+    console.warn('Backend not configured. Using cached orders.');
+    return cachedOrders;
+  }
+
+  try {
+    const response = await fetch(`${API_ENDPOINT}?action=getOrders`);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    if (data.status === 'success' && Array.isArray(data.orders)) {
+      localStorage.setItem('doggypaddle_orders', JSON.stringify(data.orders));
+      return data.orders;
+    }
+
+    console.error('Unexpected orders response:', data);
+    return cachedOrders;
+  } catch (error) {
+    console.error('Error fetching orders:', error);
+    return cachedOrders;
+  }
+}
+
+async function loadOrders() {
+  const ordersList = document.getElementById('admin-orders-list');
+  if (!ordersList) return;
+
+  ordersList.innerHTML = `
+    <div class="loading" style="padding: 2rem; text-align: center;">
+      <div class="spinner"></div>
+      <p>Loading orders from Google Sheets...</p>
+    </div>
+  `;
+
+  const orders = await fetchAdminOrders();
+
+  if (!orders || orders.length === 0) {
+    ordersList.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-light);">No orders found.</p>';
+    return;
+  }
+
+  const statusColors = {
+    pending: '#ffc107',
+    paid: '#28a745',
+    shipped: '#17a2b8',
+    cancelled: '#dc3545'
+  };
+
+  ordersList.innerHTML = orders.map(order => {
+    const orderDate = order.timestamp ? new Date(order.timestamp) : null;
+    const items = Array.isArray(order.items)
+      ? order.items
+      : (() => { try { return JSON.parse(order.items || '[]'); } catch { return []; } })();
+    const status = (order.status || 'pending').toLowerCase();
+    const statusColor = statusColors[status] || '#666';
+
+    return `
+      <div class="admin-product-item">
+        <div class="admin-item-details">
+          <div class="admin-item-name">${order.customerName || 'Guest'}</div>
+          <div class="admin-item-info">📧 ${order.email || 'n/a'} | 📱 ${order.phone || 'n/a'}</div>
+          ${orderDate ? `<div class="admin-item-info">📅 ${formatDateTime(orderDate)}</div>` : ''}
+          <div class="admin-item-info">Total: $${Number(order.total || 0).toFixed(2)}</div>
+          <div class="admin-item-info">Status: <span style="color: ${statusColor}; font-weight: 600; text-transform: capitalize;">${status}</span></div>
+          ${items.length > 0 ? `<div class="admin-item-info">Items: ${items.map(item => `${item.name || 'Item'} x${item.quantity || 1}`).join(', ')}</div>` : ''}
         </div>
       </div>
     `;
@@ -1296,7 +1409,7 @@ function exportBookingsToCSV() {
 
   // CSV headers
   const headers = ['First Name', 'Last Name', 'Email', 'Phone', 'Dog Names', 'Breeds', 'Number of Dogs', 'Session Date/Time', 'Status', 'Booking Date'];
-
+  
   // CSV rows
   const rows = bookings.map(booking => [
     booking.firstName,
