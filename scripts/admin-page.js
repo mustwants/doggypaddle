@@ -254,6 +254,8 @@
       window.loadTimeSlots();
     } else if (window.loadBookings && tabName === 'bookings') {
       window.loadBookings();
+          } else if (window.loadRegistrations && tabName === 'registrations') {
+      window.loadRegistrations();
     } else if (window.loadPhotos && tabName === 'photos') {
       window.loadPhotos();
     } else if (window.loadOrders && tabName === 'orders') {
