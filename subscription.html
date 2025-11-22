@@ -219,11 +219,24 @@
       border: 1px solid #f5c6cb;
     }
 
+     .status-note {
+      margin-top: 1rem;
+      padding: 1rem;
+      border-radius: 10px;
+      background: #fef9e7;
+      color: #8a6d3b;
+      border: 1px solid #f7e1b5;
+    }
+
     .alert-info {
       background: #d1ecf1;
       color: #0c5460;
       border: 1px solid #bee5eb;
     }
+
+    .status-badge.pending { background: #f0ad4e; }
+    .status-badge.paused { background: #6c757d; }
+    .status-badge.denied { background: #dc3545; }
 
     @media (max-width: 768px) {
       .container {
@@ -286,15 +299,17 @@
           </div>
         </div>
 
-        <div class="alert alert-info">
+       <div class="alert alert-info">
           <strong>Next Billing Date:</strong> <span id="next-billing">—</span><br>
           <strong>Monthly Price:</strong> $75
         </div>
 
+        <div id="subscription-status-message" class="alert" style="display: none;"></div>
+
         <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 2rem;">
-          <a href="/#booking" class="button">Book a Session</a>
-          <button class="button button-secondary" onclick="viewBillingHistory()">Billing History</button>
-          <button class="button button-danger" onclick="cancelSubscription()">Cancel Subscription</button>
+          <a href="/#booking" class="button" id="subscription-booking-cta">Book a Session</a>
+          <button class="button button-secondary" onclick="viewBillingHistory()" id="billing-history-btn">Billing History</button>
+          <button class="button button-danger" onclick="cancelSubscription()" id="cancel-subscription-btn">Cancel Subscription</button>
         </div>
       </div>
 
@@ -315,6 +330,48 @@
       <div class="header">
         <h1>Join the Dog Swim Club</h1>
         <p>Get unlimited access to the best dog swimming experience</p>
+      </div>
+
+      <div class="subscription-card" style="margin-bottom: 1.5rem;">
+        <h2 style="margin-bottom: 0.75rem;">Create your member profile</h2>
+        <p style="color: var(--text-light);">Tell us about you and your pups. Every registration is marked as pending until an admin approves it.</p>
+
+        <div id="registration-status" class="alert alert-info" style="display: none;"></div>
+
+        <form id="registration-form" class="signup-form" style="margin-top: 1.25rem;">
+          <div class="form-group">
+            <label for="reg-firstName">First Name *</label>
+            <input type="text" id="reg-firstName" name="firstName" required />
+          </div>
+
+          <div class="form-group">
+            <label for="reg-lastName">Last Name *</label>
+            <input type="text" id="reg-lastName" name="lastName" required />
+          </div>
+
+          <div class="form-group">
+            <label for="reg-email">Email *</label>
+            <input type="email" id="reg-email" name="email" required />
+          </div>
+
+          <div class="form-group">
+            <label for="reg-phone">Phone *</label>
+            <input type="tel" id="reg-phone" name="phone" required />
+          </div>
+
+          <div class="form-group">
+            <label for="reg-dogs">Dog Name(s)</label>
+            <input type="text" id="reg-dogs" name="dogNames" placeholder="Remi, Max" />
+          </div>
+
+          <div class="form-group">
+            <label for="reg-notes">Notes (optional)</label>
+            <input type="text" id="reg-notes" name="notes" placeholder="Behavior notes or preferences" />
+          </div>
+
+          <button type="submit" class="button" style="width: 100%;">Submit registration for approval</button>
+          <p class="status-note">After approval, you'll receive an email letting you complete payment and book your sessions.</p>
+        </form>
       </div>
 
       <div class="subscription-card">
@@ -364,6 +421,7 @@
   </main>
 
   <script src="scripts/config.js"></script>
+    <script src="scripts/registration.js"></script>
   <script src="scripts/subscription.js"></script>
 </body>
 </html>
