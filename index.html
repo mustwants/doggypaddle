@@ -1128,7 +1128,7 @@
             <button class="step-header" type="button" aria-expanded="false">
               <span class="step-number">STEP 4</span>
               <div class="step-title">
-                <h3>Download Rules</h3>
+                <h3>Review & Download Rules</h3>
                 <p class="step-subtitle">Before your session, please review our facility rules and safety guidelines to ensure a safe and enjoyable experience for your dog.</p>
               </div>
               <span class="step-toggle" aria-hidden="true">
@@ -1137,7 +1137,7 @@
             </button>
             <div class="step-content">
               <div style="margin-top: 1.5rem;">
-                <a href="/waiver/waiver.html#rules" class="button button-secondary" target="_blank">📋 View & Download Facility Rules</a>
+                <button type="button" onclick="openRulesModal()" class="button button-secondary">📋 View & Download Facility Rules</button>
               </div>
               <div class="info-box" style="margin-top: 1.5rem;">
                 <p><strong>Key Rules to Remember:</strong></p>
@@ -1179,6 +1179,62 @@
     </div>
   </footer>
 
+  <!-- Rules Modal -->
+  <div id="rules-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 10000; padding: 2rem; overflow-y: auto;">
+    <div style="max-width: 900px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
+      <div style="background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; padding: 2rem; border-radius: 12px 12px 0 0;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <h2 style="margin: 0; color: white;">🐕 DoggyPaddle Facility Rules & Safety Guidelines</h2>
+          <button onclick="closeRulesModal()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 1.5rem; display: flex; align-items: center; justify-content: center;">&times;</button>
+        </div>
+      </div>
+
+      <div id="rules-content" style="padding: 2rem; max-height: 60vh; overflow-y: auto;">
+        <h3 style="color: var(--secondary); margin-top: 0;">Pool Safety Rules</h3>
+        <ol style="line-height: 1.8; margin: 1rem 0 2rem 1.5rem;">
+          <li><strong>Arrival and Waiting:</strong> To reduce stress on pets and pet owners, clients and their pets must remain in their vehicle until their scheduled time slot begins. Upon arrival at your time slot, you may bring your dogs to the pool area. You must depart promptly at the end of your session to allow the next pet owner to arrive and settle in, ensuring an enjoyable and stress-free experience for all.</li>
+          <li><strong>Owner Supervision Required:</strong> The dog owner or authorized representative must be present and actively supervising their dog(s) at all times during the swimming session.</li>
+          <li><strong>Maximum Capacity:</strong> No more than two (2) dogs per 20-minute session.</li>
+          <li><strong>Health Requirements:</strong> Dogs must be in good health and current on all vaccinations (including Rabies, Bordetella, Distemper, and Parvovirus).</li>
+          <li><strong>No Humans in Pool:</strong> Owners and handlers must remain outside the pool at all times. Only dogs are permitted in the water.</li>
+          <li><strong>Immediate Removal:</strong> Dogs showing signs of distress, aggression, or illness must be immediately removed from the pool.</li>
+          <li><strong>Waste Management:</strong> Owners must immediately clean up any waste (solid or liquid) produced by their dog(s) on the premises.</li>
+          <li><strong>No Food or Glass:</strong> No food, drinks, or glass containers are permitted in the pool area.</li>
+          <li><strong>Proper Entry/Exit:</strong> Dogs must enter and exit the pool only at designated areas.</li>
+          <li><strong>Time Limits:</strong> Sessions are limited to 20 minutes. Owners must vacate the premises promptly at the end of their scheduled time.</li>
+          <li><strong>Emergency Procedures:</strong> In case of emergency, immediately notify staff and follow all instructions provided.</li>
+        </ol>
+
+        <h3 style="color: var(--secondary);">Dog Eligibility Requirements</h3>
+        <ul style="line-height: 1.8; margin: 1rem 0 2rem 1.5rem;">
+          <li>Dogs must be at least 6 months old</li>
+          <li>Dogs must be free of contagious diseases, parasites, and open wounds</li>
+          <li>Dogs must not be in heat (female dogs)</li>
+          <li>Aggressive dogs or dogs with a history of biting are not permitted</li>
+          <li>Dogs must be capable of swimming or wearing appropriate flotation devices</li>
+        </ul>
+
+        <h3 style="color: var(--secondary);">Owner Responsibilities</h3>
+        <ul style="line-height: 1.8; margin: 1rem 0 2rem 1.5rem;">
+          <li>Provide proof of current vaccinations upon request</li>
+          <li>Disclose any known health conditions, behavioral issues, or physical limitations</li>
+          <li>Supervise dogs at all times during the session</li>
+          <li>Bring necessary items (towels, leash, etc.)</li>
+          <li>Arrive on time for scheduled sessions</li>
+          <li>Provide 24-hour notice for cancellations</li>
+        </ul>
+
+        <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 1rem; border-radius: 8px; margin-top: 2rem;">
+          <p style="margin: 0;"><strong>⚠️ Important:</strong> Violation of these rules may result in immediate termination of services without refund. By using our facility, you acknowledge that you have read, understood, and agree to follow all rules and guidelines.</p>
+        </div>
+      </div>
+
+      <div style="padding: 2rem; border-top: 2px solid var(--border); background: #f9f9f9; border-radius: 0 0 12px 12px;">
+        <button onclick="downloadRulesPDF()" class="button button-secondary" style="width: 100%;">📄 Download Rules as PDF</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Scripts -->
   <script src="/scripts/config.js"></script>
   <script async src="https://js.stripe.com/v3/buy-button.js"></script>
@@ -1190,6 +1246,117 @@
       event.preventDefault();
       window.location.href = '/subscription.html';
     }
+
+    // Rules modal handlers
+    function openRulesModal() {
+      document.getElementById('rules-modal').style.display = 'block';
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeRulesModal() {
+      document.getElementById('rules-modal').style.display = 'none';
+      document.body.style.overflow = '';
+    }
+
+    function downloadRulesPDF() {
+      const rulesContent = document.getElementById('rules-content');
+      const printWindow = window.open('', '_blank');
+
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>DoggyPaddle Facility Rules</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              max-width: 800px;
+              margin: 40px auto;
+              padding: 20px;
+              line-height: 1.6;
+            }
+            h1, h2, h3 { color: #114B5F; }
+            h1 {
+              text-align: center;
+              border-bottom: 3px solid #028090;
+              padding-bottom: 10px;
+              margin-bottom: 30px;
+            }
+            .header {
+              text-align: center;
+              margin-bottom: 30px;
+            }
+            h3 {
+              color: #028090;
+              margin-top: 25px;
+              border-bottom: 2px solid #e0e0e0;
+              padding-bottom: 8px;
+            }
+            ul, ol {
+              margin: 15px 0 20px 30px;
+            }
+            li {
+              margin: 8px 0;
+            }
+            .important-box {
+              background: #fff3cd;
+              border-left: 4px solid #ffc107;
+              padding: 15px;
+              margin: 25px 0;
+              border-radius: 4px;
+            }
+            @media print {
+              button { display: none; }
+              body { margin: 20px; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>🐕 DoggyPaddle Facility Rules & Safety Guidelines</h1>
+            <p><strong>A MustWants Inc Service</strong></p>
+            <p>St. Augustine, St. Johns County, Florida</p>
+            <p style="font-size: 0.9rem; color: #666;">Effective: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+          </div>
+
+          ${rulesContent.innerHTML}
+
+          <div style="margin-top: 40px; padding-top: 20px; border-top: 2px solid #e0e0e0; text-align: center; color: #666;">
+            <p>For questions or concerns, contact us at info@doggypaddle.com</p>
+            <p>&copy; ${new Date().getFullYear()} MustWants Inc. All rights reserved.</p>
+          </div>
+
+          <div style="margin-top: 20px; text-align: center;">
+            <button onclick="window.print()" style="padding: 10px 30px; font-size: 16px; background: #028090; color: white; border: none; border-radius: 5px; cursor: pointer;">
+              Print / Save as PDF
+            </button>
+            <button onclick="window.close()" style="padding: 10px 30px; font-size: 16px; background: #666; color: white; border: none; border-radius: 5px; cursor: pointer; margin-left: 10px;">
+              Close
+            </button>
+          </div>
+        </body>
+        </html>
+      `);
+
+      printWindow.document.close();
+    }
+
+    // Close modal on escape key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        const rulesModal = document.getElementById('rules-modal');
+        if (rulesModal && rulesModal.style.display === 'block') {
+          closeRulesModal();
+        }
+      }
+    });
+
+    // Close modal on outside click
+    document.getElementById('rules-modal')?.addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeRulesModal();
+      }
+    });
   </script>
 </body>
 </html>

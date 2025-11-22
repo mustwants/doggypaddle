@@ -145,42 +145,8 @@ function initAdminEnhancements() {
   window.loadPhotos = loadPhotos;
   window.loadAdminProducts = loadAdminProductsList;
 
-  // Tab switching
-  const adminTabs = document.querySelectorAll('.admin-tab');
-  const adminTabContents = document.querySelectorAll('.admin-tab-content');
-
-  adminTabs.forEach(tab => {
-    tab.addEventListener('click', () => {
-      const tabName = tab.dataset.tab;
-
-      // Update active tab
-      adminTabs.forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-
-      // Update active content
-      adminTabContents.forEach(content => content.classList.remove('active'));
-      const targetContent = document.getElementById(`admin-${tabName}-tab`);
-      if (targetContent) {
-        targetContent.classList.add('active');
-      }
-
-      // Load data for the selected tab
-      switch(tabName) {
-        case 'products':
-          loadAdminProductsList();
-          break;
-        case 'timeslots':
-          loadTimeSlots();
-          break;
-        case 'bookings':
-          loadBookings();
-          break;
-        case 'photos':
-          loadPhotos();
-          break;
-      }
-    });
-  });
+  // REMOVED duplicate tab switching - handled by admin-page.js
+  // This was causing the infinite loop issue
 
   // Initialize all the features
   initProductManagement();
@@ -1336,41 +1302,52 @@ async function loadPhotos() {
   // Show loading state
   photosList.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-light);">Loading photos...</p>';
 
+  let photos = [];
+  let usingLocalStorage = false;
+
   try {
-    // Fetch photos from backend
+    // Try to fetch photos from backend
     const API_ENDPOINT = window.DoggyPaddleConfig?.API_ENDPOINT;
-    if (!API_ENDPOINT) {
-      throw new Error('API endpoint not configured');
+    const isBackendConfigured = API_ENDPOINT && !API_ENDPOINT.includes('YOUR_DEPLOYED_WEBAPP_ID');
+
+    if (isBackendConfigured) {
+      const response = await fetch(`${API_ENDPOINT}?action=getPhotos&admin=true`);
+
+      if (response.ok) {
+        const result = await response.json();
+
+        if (result.status === 'success') {
+          photos = result.photos || [];
+        } else {
+          throw new Error('Backend returned error');
+        }
+      } else {
+        throw new Error('Backend request failed');
+      }
+    } else {
+      throw new Error('Backend not configured');
     }
+  } catch (error) {
+    // Fallback to localStorage
+    console.log('Using localStorage for photos:', error.message);
+    photos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
+    usingLocalStorage = true;
+  }
 
-    const response = await fetch(`${API_ENDPOINT}?action=getPhotos&admin=true`);
+  // Update global cache
+  photosCache = photos;
 
-    if (!response.ok) {
-      throw new Error('Failed to fetch photos');
-    }
+  if (photos.length === 0) {
+    photosList.innerHTML = `<p style="text-align: center; padding: 2rem; color: var(--text-light);">No photos submitted yet. ${usingLocalStorage ? '(Using local storage)' : ''}</p>`;
+    return;
+  }
 
-    const result = await response.json();
-
-    if (result.status !== 'success') {
-      throw new Error(result.message || 'Failed to load photos');
-    }
-
-    const photos = result.photos || [];
-
-    // Update global cache
-    photosCache = photos;
-
-    if (photos.length === 0) {
-      photosList.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-light);">No photos submitted yet.</p>';
-      return;
-    }
-
-    // Sort photos by date (most recent first)
-    photos.sort((a, b) => {
-      const dateA = new Date(a.createdAt || a.timestamp || 0);
-      const dateB = new Date(b.createdAt || b.timestamp || 0);
-      return dateB - dateA;
-    });
+  // Sort photos by date (most recent first)
+  photos.sort((a, b) => {
+    const dateA = new Date(a.createdAt || a.timestamp || 0);
+    const dateB = new Date(b.createdAt || b.timestamp || 0);
+    return dateB - dateA;
+  });
 
     photosList.innerHTML = photos.map(photo => {
       const statusColors = {
@@ -1422,44 +1399,51 @@ async function loadPhotos() {
       `;
     }).join('');
 
-    // Reset select all checkbox
-    const selectAllCheckbox = document.getElementById('select-all-photos');
-    if (selectAllCheckbox) selectAllCheckbox.checked = false;
+  // Reset select all checkbox
+  const selectAllCheckbox = document.getElementById('select-all-photos');
+  if (selectAllCheckbox) selectAllCheckbox.checked = false;
 
-    // Update bulk action buttons
-    updateBulkActionButtons();
-
-  } catch (error) {
-    console.error('Error loading photos:', error);
-    photosList.innerHTML = `<p style="text-align: center; padding: 2rem; color: #dc3545;">Error loading photos: ${error.message}</p>`;
-  }
+  // Update bulk action buttons
+  updateBulkActionButtons();
 }
 
 window.approvePhoto = async function(photoId) {
   try {
     const API_ENDPOINT = window.DoggyPaddleConfig?.API_ENDPOINT;
-    if (!API_ENDPOINT) {
-      throw new Error('API endpoint not configured');
+    const isBackendConfigured = API_ENDPOINT && !API_ENDPOINT.includes('YOUR_DEPLOYED_WEBAPP_ID');
+
+    if (isBackendConfigured) {
+      const response = await fetch(API_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'approvePhoto',
+          photoId: photoId
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.status === 'success') {
+        showNotification('Photo approved and will be displayed in gallery!', 'success');
+        loadPhotos();
+        return;
+      }
     }
 
-    const response = await fetch(API_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        action: 'approvePhoto',
-        photoId: photoId
-      })
-    });
+    // Fallback to localStorage
+    const photos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
+    const photoIndex = photos.findIndex(p => p.id === photoId || p.timestamp === photoId);
 
-    const result = await response.json();
-
-    if (result.status === 'success') {
+    if (photoIndex !== -1) {
+      photos[photoIndex].status = 'approved';
+      localStorage.setItem('doggypaddle_photos', JSON.stringify(photos));
       showNotification('Photo approved and will be displayed in gallery!', 'success');
       loadPhotos();
     } else {
-      throw new Error(result.message || 'Failed to approve photo');
+      throw new Error('Photo not found');
     }
   } catch (error) {
     console.error('Error approving photo:', error);
@@ -1472,28 +1456,40 @@ window.rejectPhoto = async function(photoId) {
 
   try {
     const API_ENDPOINT = window.DoggyPaddleConfig?.API_ENDPOINT;
-    if (!API_ENDPOINT) {
-      throw new Error('API endpoint not configured');
+    const isBackendConfigured = API_ENDPOINT && !API_ENDPOINT.includes('YOUR_DEPLOYED_WEBAPP_ID');
+
+    if (isBackendConfigured) {
+      const response = await fetch(API_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'rejectPhoto',
+          photoId: photoId
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.status === 'success') {
+        showNotification('Photo rejected.', 'success');
+        loadPhotos();
+        return;
+      }
     }
 
-    const response = await fetch(API_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        action: 'rejectPhoto',
-        photoId: photoId
-      })
-    });
+    // Fallback to localStorage
+    const photos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
+    const photoIndex = photos.findIndex(p => p.id === photoId || p.timestamp === photoId);
 
-    const result = await response.json();
-
-    if (result.status === 'success') {
+    if (photoIndex !== -1) {
+      photos[photoIndex].status = 'rejected';
+      localStorage.setItem('doggypaddle_photos', JSON.stringify(photos));
       showNotification('Photo rejected.', 'success');
       loadPhotos();
     } else {
-      throw new Error(result.message || 'Failed to reject photo');
+      throw new Error('Photo not found');
     }
   } catch (error) {
     console.error('Error rejecting photo:', error);
@@ -1504,29 +1500,41 @@ window.rejectPhoto = async function(photoId) {
 window.resetPhotoStatus = async function(photoId) {
   try {
     const API_ENDPOINT = window.DoggyPaddleConfig?.API_ENDPOINT;
-    if (!API_ENDPOINT) {
-      throw new Error('API endpoint not configured');
+    const isBackendConfigured = API_ENDPOINT && !API_ENDPOINT.includes('YOUR_DEPLOYED_WEBAPP_ID');
+
+    if (isBackendConfigured) {
+      const response = await fetch(API_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'updatePhoto',
+          photoId: photoId,
+          updates: { status: 'pending' }
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.status === 'success') {
+        showNotification('Photo status reset to pending.', 'success');
+        loadPhotos();
+        return;
+      }
     }
 
-    const response = await fetch(API_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        action: 'updatePhoto',
-        photoId: photoId,
-        updates: { status: 'pending' }
-      })
-    });
+    // Fallback to localStorage
+    const photos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
+    const photoIndex = photos.findIndex(p => p.id === photoId || p.timestamp === photoId);
 
-    const result = await response.json();
-
-    if (result.status === 'success') {
+    if (photoIndex !== -1) {
+      photos[photoIndex].status = 'pending';
+      localStorage.setItem('doggypaddle_photos', JSON.stringify(photos));
       showNotification('Photo status reset to pending.', 'success');
       loadPhotos();
     } else {
-      throw new Error(result.message || 'Failed to reset photo status');
+      throw new Error('Photo not found');
     }
   } catch (error) {
     console.error('Error resetting photo status:', error);
@@ -1540,28 +1548,39 @@ window.deletePhoto = async function(photoId) {
 
   try {
     const API_ENDPOINT = window.DoggyPaddleConfig?.API_ENDPOINT;
-    if (!API_ENDPOINT) {
-      throw new Error('API endpoint not configured');
+    const isBackendConfigured = API_ENDPOINT && !API_ENDPOINT.includes('YOUR_DEPLOYED_WEBAPP_ID');
+
+    if (isBackendConfigured) {
+      const response = await fetch(API_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'deletePhoto',
+          photoId: photoId
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.status === 'success') {
+        showNotification('Photo deleted permanently.', 'success');
+        loadPhotos();
+        return;
+      }
     }
 
-    const response = await fetch(API_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        action: 'deletePhoto',
-        photoId: photoId
-      })
-    });
+    // Fallback to localStorage
+    const photos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
+    const filteredPhotos = photos.filter(p => p.id !== photoId && p.timestamp !== photoId);
 
-    const result = await response.json();
-
-    if (result.status === 'success') {
+    if (filteredPhotos.length < photos.length) {
+      localStorage.setItem('doggypaddle_photos', JSON.stringify(filteredPhotos));
       showNotification('Photo deleted permanently.', 'success');
       loadPhotos();
     } else {
-      throw new Error(result.message || 'Failed to delete photo');
+      throw new Error('Photo not found');
     }
   } catch (error) {
     console.error('Error deleting photo:', error);
@@ -1575,29 +1594,45 @@ window.toggleFeatured = async function(photoId, currentFeatured) {
 
   try {
     const API_ENDPOINT = window.DoggyPaddleConfig?.API_ENDPOINT;
-    if (!API_ENDPOINT) {
-      throw new Error('API endpoint not configured');
+    const isBackendConfigured = API_ENDPOINT && !API_ENDPOINT.includes('YOUR_DEPLOYED_WEBAPP_ID');
+
+    if (isBackendConfigured) {
+      const response = await fetch(API_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'updatePhoto',
+          photoId: photoId,
+          updates: { featured: newFeatured }
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.status === 'success') {
+        showNotification(newFeatured ? 'Photo marked as featured! It will appear on the home page.' : 'Photo removed from featured.', 'success');
+        loadPhotos();
+        return;
+      }
     }
 
-    const response = await fetch(API_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        action: 'updatePhoto',
-        photoId: photoId,
-        updates: { featured: newFeatured }
-      })
-    });
+    // Fallback to localStorage
+    const photos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
+    const photoIndex = photos.findIndex(p => p.id === photoId || p.timestamp === photoId);
 
-    const result = await response.json();
-
-    if (result.status === 'success') {
+    if (photoIndex !== -1) {
+      photos[photoIndex].featured = newFeatured;
+      // Ensure photo has an ID
+      if (!photos[photoIndex].id) {
+        photos[photoIndex].id = photos[photoIndex].timestamp || `photo-${Date.now()}`;
+      }
+      localStorage.setItem('doggypaddle_photos', JSON.stringify(photos));
       showNotification(newFeatured ? 'Photo marked as featured! It will appear on the home page.' : 'Photo removed from featured.', 'success');
       loadPhotos();
     } else {
-      throw new Error(result.message || 'Failed to toggle featured status');
+      throw new Error('Photo not found');
     }
   } catch (error) {
     console.error('Error toggling featured status:', error);
