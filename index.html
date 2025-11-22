@@ -792,8 +792,12 @@
         console.warn('Falling back to cached photos:', error);
       }
       const photos = JSON.parse(localStorage.getItem('doggypaddle_photos') || '[]');
-      carouselPhotos = photos.filter(photo => photo.featured && photo.status === 'approved');
+      const approvedPhotos = photos.filter(photo => photo.status === 'approved');
+      const featuredPhotos = approvedPhotos.filter(photo => photo.featured);
 
+      // Prefer featured photos when marked, otherwise show all approved submissions
+      carouselPhotos = featuredPhotos.length > 0 ? featuredPhotos : approvedPhotos;
+      
       // Fallback to placeholder images if no featured photos
       if (carouselPhotos.length === 0) {
         carouselPhotos = [
