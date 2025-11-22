@@ -10,10 +10,14 @@ const ADMIN_ALLOWLIST_PROPERTY = 'ADMIN_ALLOWLIST';
 const GOOGLE_OAUTH_CLIENT_ID_PROPERTY = 'GOOGLE_OAUTH_CLIENT_ID';
 
 // Handle CORS preflight (OPTIONS) requests
-// Note: When deployed with "Anyone" access, Google Apps Script automatically handles CORS
 function doOptions(e) {
-  return ContentService.createTextOutput('')
-    .setMimeType(ContentService.MimeType.TEXT);
+  return ContentService
+    .createTextOutput('')
+    .setMimeType(ContentService.MimeType.TEXT)
+    .setHeader('Access-Control-Allow-Origin', '*')
+    .setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+    .setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+    .setHeader('Access-Control-Max-Age', '86400'); // 24 hours
 }
 
 // Main entry point for GET requests
@@ -548,14 +552,16 @@ function formatTime(time) {
   return String(time);
 }
 
-// Helper: Create JSON response
-// Note: When deployed with "Anyone" access, Google Apps Script automatically handles CORS
+// Helper: Create JSON response with CORS headers
 function createResponse(data) {
   const jsonOutput = JSON.stringify(data);
 
- return ContentService
+  return ContentService
     .createTextOutput(jsonOutput)
-    .setMimeType(ContentService.MimeType.JSON);
+    .setMimeType(ContentService.MimeType.JSON)
+    .setHeader('Access-Control-Allow-Origin', '*')
+    .setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+    .setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 }
 
 function getScriptProperty(key) {
