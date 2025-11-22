@@ -1116,13 +1116,28 @@
                 </div>
               </form>
 
-              <div style="margin-top: 2rem; padding: 1.5rem; background: #f5f5f5; border-radius: 8px; text-align: center;">
-                <p style="margin-bottom: 1rem;"><strong>Or pay directly using Stripe:</strong></p>
-                <stripe-buy-button
-                  buy-button-id="buy_btn_1SRg5JAWz02AuqyyQNxXtKgW"
-                  publishable-key="pk_live_51Jw6McAWz02Auqyy2ssxTNAhxp3vNGmAfUv4gbUA6NzT8jJb5FefT3lfqObiQwK5ClTRfkzzd3YQaFvZhWIIFsHX00biYat54r"
-                ></stripe-buy-button>
-              </div>
+ <div style="margin-top: 2rem; padding: 1.5rem; background: #f5f5f5; border-radius: 8px; text-align: center;">
+                  <p style="margin-bottom: 1rem;"><strong>Or pay directly using Stripe:</strong></p>
+                  <div style="display: flex; flex-direction: column; gap: 0.75rem; align-items: center;">
+                    <stripe-buy-button
+                      id="stripe-buy-button"
+                      buy-button-id="buy_btn_1SRg5JAWz02AuqyyQNxXtKgW"
+                      publishable-key="pk_live_51Jw6McAWz02Auqyy2ssxTNAhxp3vNGmAfUv4gbUA6NzT8jJb5FefT3lfqObiQwK5ClTRfkzzd3YQaFvZhWIIFsHX00biYat54r"
+                    ></stripe-buy-button>
+                    <div
+                      id="stripe-buy-fallback"
+                      style="display: none; width: 100%; text-align: left; background: #fff3cd; border-left: 4px solid #f0ad4e; padding: 1rem; border-radius: 8px;"
+                    >
+                      <p style="margin: 0 0 0.5rem 0; color: #5c4000;">
+                        Stripe checkout is available, but the embedded buy button is blocked because this page cannot use the browser's
+                        payment API in the current context. You can still complete your purchase using the secure checkout link below.
+                      </p>
+                      <a class="button button-secondary" href="https://buy.stripe.com/14AaEW1GV3vIgaK7fE5J60c" style="width: 100%; text-align: center;">
+                        Open Stripe Checkout
+                      </a>
+                    </div>
+                  </div>
+                </div>
             </div>
           </div>
 
@@ -1148,92 +1163,7 @@
           <!-- Step 4: Download Rules -->
           <div class="booking-step" data-step="4">
             <button class="step-header" type="button" aria-expanded="false">
-              <span class="step-number">STEP 4</span>
-              <div class="step-title">
-                <h3>Review & Download Rules</h3>
-                <p class="step-subtitle">Before your session, please review our facility rules and safety guidelines to ensure a safe and enjoyable experience for your dog.</p>
-              </div>
-              <span class="step-toggle" aria-hidden="true">
-                <span class="chevron"></span>
-              </span>
-            </button>
-            <div class="step-content">
-              <div style="margin-top: 1.5rem;">
-                <button type="button" onclick="openRulesModal()" class="button button-secondary">📋 View & Download Facility Rules</button>
-              </div>
-              <div class="info-box" style="margin-top: 1.5rem;">
-                <p><strong>Key Rules to Remember:</strong></p>
-                <ul style="margin: 0.5rem 0 0 1.5rem; text-align: left;">
-                  <li>Remain in your car until your scheduled time slot</li>
-                  <li>Owner supervision required at all times</li>
-                  <li>Maximum 2 dogs per session</li>
-                  <li>Dogs must be current on vaccinations</li>
-                  <li>No humans in the pool</li>
-                  <li>Clean up waste immediately</li>
-                  <li>Depart promptly at end of session</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <aside id="cart-summary-mount" class="cart-summary-shell" aria-live="polite" aria-label="Selected sessions summary"></aside>
-      </div>
-    </section>
-  </main>
-
-
-  <!-- Footer -->
-  <footer>
-    <p><strong>DoggyPaddle</strong> - A MustWants Inc Service</p>
-    <p>St. Augustine, St. Johns County, Florida</p>
-    <div class="footer-links">
-      <a href="https://vetmover.com" target="_blank" rel="noopener">VetMover.com</a>
-      <a href="https://militarygrad.com" target="_blank" rel="noopener">MilitaryGrad.com</a>
-      <a href="mailto:info@doggypaddle.com">Contact Us</a>
-      <a href="/waiver/waiver.html">View Waiver</a>
-    </div>
-    <p>&copy; 2025 MustWants Inc. All rights reserved.</p>
-    <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.2);">
-      <a href="/admin" style="cursor: pointer; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 0.6rem 1.5rem; border-radius: 6px; font-weight: 600; transition: all 0.3s ease; text-decoration: none; display: inline-block;">
-        🔐 Admin Login
-      </a>
-    </div>
-  </footer>
-
-  <!-- Rules Modal -->
-  <div id="rules-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 10000; padding: 2rem; overflow-y: auto;">
-    <div style="max-width: 900px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
-      <div style="background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; padding: 2rem; border-radius: 12px 12px 0 0;">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <h2 style="margin: 0; color: white;">🐕 DoggyPaddle Facility Rules & Safety Guidelines</h2>
-          <button onclick="closeRulesModal()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 1.5rem; display: flex; align-items: center; justify-content: center;">&times;</button>
-        </div>
-      </div>
-
-      <div id="rules-content" style="padding: 2rem; max-height: 60vh; overflow-y: auto;">
-        <h3 style="color: var(--secondary); margin-top: 0;">Pool Safety Rules</h3>
-        <ol style="line-height: 1.8; margin: 1rem 0 2rem 1.5rem;">
-          <li><strong>Arrival and Waiting:</strong> To reduce stress on pets and pet owners, clients and their pets must remain in their vehicle until their scheduled time slot begins. Upon arrival at your time slot, you may bring your dogs to the pool area. You must depart promptly at the end of your session to allow the next pet owner to arrive and settle in, ensuring an enjoyable and stress-free experience for all.</li>
-          <li><strong>Owner Supervision Required:</strong> The dog owner or authorized representative must be present and actively supervising their dog(s) at all times during the swimming session.</li>
-          <li><strong>Maximum Capacity:</strong> No more than two (2) dogs per 20-minute session.</li>
-          <li><strong>Health Requirements:</strong> Dogs must be in good health and current on all vaccinations (including Rabies, Bordetella, Distemper, and Parvovirus).</li>
-          <li><strong>No Humans in Pool:</strong> Owners and handlers must remain outside the pool at all times. Only dogs are permitted in the water.</li>
-          <li><strong>Immediate Removal:</strong> Dogs showing signs of distress, aggression, or illness must be immediately removed from the pool.</li>
-          <li><strong>Waste Management:</strong> Owners must immediately clean up any waste (solid or liquid) produced by their dog(s) on the premises.</li>
-          <li><strong>No Food or Glass:</strong> No food, drinks, or glass containers are permitted in the pool area.</li>
-          <li><strong>Proper Entry/Exit:</strong> Dogs must enter and exit the pool only at designated areas.</li>
-          <li><strong>Time Limits:</strong> Sessions are limited to 20 minutes. Owners must vacate the premises promptly at the end of their scheduled time.</li>
-          <li><strong>Emergency Procedures:</strong> In case of emergency, immediately notify staff and follow all instructions provided.</li>
-        </ol>
-
-        <h3 style="color: var(--secondary);">Dog Eligibility Requirements</h3>
-        <ul style="line-height: 1.8; margin: 1rem 0 2rem 1.5rem;">
-          <li>Dogs must be at least 6 months old</li>
-          <li>Dogs must be free of contagious diseases, parasites, and open wounds</li>
-          <li>Dogs must not be in heat (female dogs)</li>
-          <li>Aggressive dogs or dogs with a history of biting are not permitted</li>
-          <li>Dogs must be capable of swimming or wearing appropriate flotation devices</li>
+@@ -1237,51 +1252,114 @@
         </ul>
 
         <h3 style="color: var(--secondary);">Owner Responsibilities</h3>
@@ -1259,7 +1189,70 @@
 
   <!-- Scripts -->
   <script src="/scripts/config.js"></script>
-  <script async src="https://js.stripe.com/v3/buy-button.js"></script>
+  <script>
+    (function initializeStripeBuyButton() {
+      const buyButton = document.getElementById('stripe-buy-button');
+      const fallbackNotice = document.getElementById('stripe-buy-fallback');
+      const isSecure = window.isSecureContext || ['localhost', '127.0.0.1'].includes(window.location.hostname);
+
+      function isPaymentAllowed() {
+        const policy = document.permissionsPolicy || document.featurePolicy;
+        if (!policy) {
+          return true;
+        }
+
+        if (typeof policy.allowsFeature === 'function') {
+          try {
+            return policy.allowsFeature('payment');
+          } catch (error) {
+            console.warn('Unable to evaluate permissions policy for payment feature:', error);
+            return true;
+          }
+        }
+
+        if (typeof policy.allowedFeatures === 'function') {
+          try {
+            const features = policy.allowedFeatures();
+            return Array.isArray(features) ? features.includes('payment') : true;
+          } catch (error) {
+            console.warn('Unable to read allowed features from permissions policy:', error);
+            return true;
+          }
+        }
+
+        return true;
+      }
+
+      if (!buyButton) {
+        return;
+      }
+
+      const paymentFeatureAllowed = isPaymentAllowed();
+
+      if (isSecure && paymentFeatureAllowed) {
+        const stripeScript = document.createElement('script');
+        stripeScript.src = 'https://js.stripe.com/v3/buy-button.js';
+        stripeScript.async = true;
+        stripeScript.onload = () => {
+          console.info('Stripe buy button initialized without permissions policy violations.');
+        };
+        stripeScript.onerror = () => {
+          console.error('Stripe buy button script failed to load.');
+          buyButton.style.display = 'none';
+          if (fallbackNotice) {
+            fallbackNotice.style.display = 'block';
+          }
+        };
+        document.body.appendChild(stripeScript);
+      } else {
+        console.warn('Stripe buy button skipped because payment APIs are blocked or the page is not served from a secure context.');
+        buyButton.style.display = 'none';
+        if (fallbackNotice) {
+          fallbackNotice.style.display = 'block';
+        }
+      }
+    })();
+  </script>
   <script src="/scripts/booking.js"></script>
   <script src="/scripts/calendar.js"></script>
   <script>
