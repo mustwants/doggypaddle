@@ -43,12 +43,12 @@ function showSubscriptionView(subscription) {
   document.getElementById('subscription-view').style.display = 'block';
   document.getElementById('signup-view').style.display = 'none';
 
-  // Update subscription details
+// Update subscription details
   document.getElementById('subscriber-name').textContent = `Welcome back, ${subscription.firstName}!`;
   document.getElementById('subscriber-email').textContent = subscription.email;
   document.getElementById('sessions-remaining').textContent = subscription.sessionsRemaining;
   document.getElementById('sessions-used').textContent = subscription.sessionsUsedThisMonth;
-  document.getElementById('status-badge').textContent = subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1);
+  updateStatusBadge(subscription.status);
 
   // Format next billing date
   const nextBillingDate = new Date(subscription.nextBillingDate);
@@ -60,6 +60,59 @@ function showSubscriptionView(subscription) {
 
   // Store subscription info for booking
   localStorage.setItem('doggypaddle_subscription', JSON.stringify(subscription));
+  toggleSubscriptionCtas(subscription.status);
+}
+
+function updateStatusBadge(status) {
+  const badge = document.getElementById('status-badge');
+  const messageBox = document.getElementById('subscription-status-message');
+  const normalized = (status || 'pending').toLowerCase();
+  const label = normalized.charAt(0).toUpperCase() + normalized.slice(1);
+
+  badge.textContent = label;
+  badge.className = `status-badge ${normalized}`;
+
+  messageBox.style.display = 'none';
+  messageBox.className = 'alert';
+
+  if (normalized === 'pending') {
+    messageBox.textContent = 'Your membership is pending approval. You will receive an email once an admin approves your registration.';
+    messageBox.classList.add('alert-info');
+    messageBox.style.display = 'block';
+  } else if (normalized === 'paused') {
+    messageBox.textContent = 'Your membership is paused. Contact support to reactivate.';
+    messageBox.classList.add('alert-info');
+    messageBox.style.display = 'block';
+  } else if (normalized === 'denied') {
+    messageBox.textContent = 'Your membership was denied. Please reach out for assistance or update your registration details.';
+    messageBox.classList.add('alert-error');
+    messageBox.style.display = 'block';
+  }
+}
+
+function toggleSubscriptionCtas(status) {
+  const bookingCta = document.getElementById('subscription-booking-cta');
+  const billingBtn = document.getElementById('billing-history-btn');
+  const cancelBtn = document.getElementById('cancel-subscription-btn');
+  const normalized = (status || '').toLowerCase();
+
+  const isActive = normalized === 'active';
+
+  [bookingCta, billingBtn, cancelBtn].forEach(element => {
+    if (!element) return;
+    element.classList.toggle('disabled', !isActive);
+    element.setAttribute('aria-disabled', String(!isActive));
+    if (!isActive) {
+      element.addEventListener('click', preventInactiveClick);
+    } else {
+      element.removeEventListener('click', preventInactiveClick);
+    }
+  });
+}
+
+function preventInactiveClick(event) {
+  event.preventDefault();
+  alert('Your membership must be active before you can use this action.');
 }
 
 // Show signup view
