@@ -1154,12 +1154,53 @@
               </span>
             </button>
             <div class="step-content">
-              <div style="margin-top: 1.5rem;">
-                <a href="/assets/session-reminder.ics" download class="button button-secondary">📅 Download Calendar Reminder</a>
+     <div class="calendar-reminder">
+                <p class="calendar-description">
+                  Finish checkout, then add a reminder so you and your dog arrive on time. Choose the option that works best for your calendar.
+                </p>
+                <div class="reminder-grid">
+                  <div class="reminder-card">
+                    <div class="reminder-icon" aria-hidden="true">📥</div>
+                    <div class="reminder-copy">
+                      <h4>Download a universal calendar file</h4>
+                      <p>Use this .ics file with Apple Calendar, Outlook, Yahoo, and most mobile calendar apps.</p>
+                      <div class="reminder-actions">
+                        <a href="/assets/session-reminder.ics" download class="button button-secondary reminder-button">📅 Download .ics reminder</a>
+                        <small>Includes session name, location, and a 30-minute duration by default.</small>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="reminder-card">
+                    <div class="reminder-icon" aria-hidden="true">🗓️</div>
+                    <div class="reminder-copy">
+                      <h4>Add to Google Calendar</h4>
+                      <p>Import the downloaded file to see your swim session on Google Calendar with alerts.</p>
+                      <ol class="calendar-instructions">
+                        <li>Download the .ics file above.</li>
+                        <li>
+                          Open <a href="https://calendar.google.com/calendar/u/0/r/settings/export" target="_blank" rel="noopener">Google Calendar's import tool</a> and choose the file.
+                        </li>
+                        <li>Select your calendar and click <strong>Import</strong> to save the event.</li>
+                      </ol>
+                    </div>
+                  </div>
+
+                  <div class="reminder-card">
+                    <div class="reminder-icon" aria-hidden="true">⏰</div>
+                    <div class="reminder-copy">
+                      <h4>Set helpful alerts</h4>
+                      <ul class="calendar-reminders">
+                        <li>Add a 24-hour reminder to prep towels, leash, and vaccination records.</li>
+                        <li>Set a 60-minute alert to account for travel time to the pool.</li>
+                        <li>Share the event with anyone joining so everyone arrives together.</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-
           <!-- Step 4: Download Rules -->
           <div class="booking-step" data-step="4">
             <button class="step-header" type="button" aria-expanded="false">
