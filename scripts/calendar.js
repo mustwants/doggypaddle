@@ -44,6 +44,42 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const DAYS_OF_WEEK = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+function normalizeDateString(dateInput) {
+    if (!dateInput) return '';
+
+    if (typeof dateInput === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
+      return dateInput;
+    }
+
+    const parsedDate = new Date(dateInput);
+    return Number.isNaN(parsedDate.getTime())
+      ? ''
+      : parsedDate.toISOString().slice(0, 10);
+  }
+
+  function normalizeTimeValue(timeInput) {
+    if (!timeInput) return '';
+    if (typeof timeInput === 'string') return timeInput;
+
+    const parsedTime = new Date(timeInput);
+    return Number.isNaN(parsedTime.getTime()) ? '' : parsedTime.toISOString();
+  }
+
+  function normalizeSlots(slots = []) {
+    return slots
+      .map(slot => {
+        const normalizedDate = normalizeDateString(slot.date);
+        if (!normalizedDate) return null;
+
+        return {
+          ...slot,
+          date: normalizedDate,
+          time: normalizeTimeValue(slot.time)
+        };
+      })
+      .filter(Boolean);
+  }
+
   // Fetch available slots from server
   async function fetchAvailableSlots() {
     // REQUIRED: Backend must be configured - NO mock data or localStorage fallback
@@ -76,7 +112,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (response.ok) {
         const data = await response.json();
         if (data.status === 'success' && data.slots) {
-          availableSlots = data.slots;
+          availableSlots = normalizeSlots(data.slots);
                    localStorage.setItem('doggypaddle_available_slots', JSON.stringify(availableSlots));
           console.log(`✓ Loaded ${availableSlots.length} slots from Google Sheets`);
           return {
@@ -99,7 +135,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const cachedSlots = JSON.parse(localStorage.getItem('doggypaddle_available_slots') || '[]');
       if (cachedSlots.length > 0) {
-        availableSlots = cachedSlots;
+        availableSlots = normalizeSlots(cachedSlots);
         return {
           status: 'warning',
           message: 'Using cached availability while the admin calendar is unreachable.',
@@ -114,7 +150,7 @@ document.addEventListener("DOMContentLoaded", () => {
       };
     } catch (error) {
       console.error("Error fetching slots from backend:", error);
-      availableSlots = JSON.parse(localStorage.getItem('doggypaddle_available_slots') || '[]');
+      availableSlots = normalizeSlots(JSON.parse(localStorage.getItem('doggypaddle_available_slots') || '[]'));
       return {
         status: availableSlots.length > 0 ? 'warning' : 'error',
         message: availableSlots.length > 0
@@ -168,9 +204,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function getSlotsForDate(dateString) {
     // Filter out slots already in cart
+    const normalizedDate = normalizeDateString(dateString);
     const cartSlotIds = cart.map(item => item.id);
     return availableSlots.filter(slot =>
-      slot.date === dateString && !cartSlotIds.includes(slot.id)
+      normalizeDateString(slot.date) === normalizedDate && !cartSlotIds.includes(slot.id)
     );
   }
 
