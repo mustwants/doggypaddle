@@ -64,6 +64,10 @@ function doGet(e) {
         return getAllSlots();
       case 'getProducts':
         return getProducts();
+      case 'getBookings':
+        return getBookings();
+      case 'getOrders':
+        return getOrders();
       case 'getPhotos':
         return getPhotos(e.parameter);
       case 'getSubscription':
@@ -460,6 +464,71 @@ function getProducts() {
   return createResponse({
     status: 'success',
     products: products
+  });
+}
+
+// Get all bookings for admin dashboard
+function getBookings() {
+  const sheet = getSheet(BOOKINGS_SHEET_NAME);
+  const data = sheet.getDataRange().getValues();
+
+  const bookings = [];
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    if (row[0]) {
+      bookings.push({
+        bookingId: row[0],
+        firstName: row[1],
+        lastName: row[2],
+        email: row[3],
+        phone: row[4],
+        dogNames: row[5],
+        dogBreeds: row[6],
+        numDogs: row[7],
+        sessionTime: row[8],
+        ownershipConfirmed: row[9] === 'Yes',
+        waiverAck: row[10] === 'Yes',
+        timestamp: row[11],
+        paymentStatus: row[12],
+        slotId: row[13],
+        isSubscription: row[14],
+        subscriptionEmail: row[15]
+      });
+    }
+  }
+
+  return createResponse({
+    status: 'success',
+    bookings: bookings
+  });
+}
+
+// Get orders for admin dashboard
+function getOrders() {
+  const sheet = getSheet(ORDERS_SHEET_NAME);
+  const data = sheet.getDataRange().getValues();
+
+  const orders = [];
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    if (row[0]) {
+      orders.push({
+        orderId: row[0],
+        customerName: row[1],
+        email: row[2],
+        phone: row[3],
+        items: row[4],
+        total: row[5],
+        timestamp: row[6],
+        status: row[7],
+        shippingAddress: row[8]
+      });
+    }
+  }
+
+  return createResponse({
+    status: 'success',
+    orders: orders
   });
 }
 
