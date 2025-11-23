@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta
     http-equiv="Permissions-Policy"
-    content="payment=(self \"https://js.stripe.com\" \"https://buy.stripe.com\")"
+    content="payment=(self &quot;https://js.stripe.com&quot; &quot;https://buy.stripe.com&quot;)"
   />
   <title>PupSwim - Private Dog Pool Sessions in St. Augustine, FL</title>
   <meta name="description" content="Book private 20-minute swim sessions for your dog at PupSwim in St. Augustine, FL. $25 per session or $100 for 5 sessions. Gift cards available." />
@@ -1428,46 +1428,82 @@
       const buyButton = document.getElementById('stripe-buy-button');
       const fallbackNotice = document.getElementById('stripe-buy-fallback');
       const isSecure = window.isSecureContext || ['localhost', '127.0.0.1'].includes(window.location.hostname);
+      const stripeFrameAllowValue = "payment 'self' https://js.stripe.com https://buy.stripe.com";
 
-      function isPaymentAllowed() {
+      function getPaymentPermission() {
         const policy = document.permissionsPolicy || document.featurePolicy;
         if (!policy) {
-          return true;
+          return { allowed: isSecure, reason: 'policy-api-unavailable' };
         }
 
         if (typeof policy.allowsFeature === 'function') {
           try {
-            return policy.allowsFeature('payment');
+            return { allowed: policy.allowsFeature('payment'), reason: 'allowsFeature' };
           } catch (error) {
             console.warn('Unable to evaluate permissions policy for payment feature:', error);
-            return true;
+            return { allowed: false, reason: 'allowsFeature-error' };
           }
         }
 
         if (typeof policy.allowedFeatures === 'function') {
           try {
             const features = policy.allowedFeatures();
-            return Array.isArray(features) ? features.includes('payment') : true;
+            return {
+              allowed: Array.isArray(features) ? features.includes('payment') : isSecure,
+              reason: 'allowedFeatures'
+            };
           } catch (error) {
             console.warn('Unable to read allowed features from permissions policy:', error);
-            return true;
+            return { allowed: false, reason: 'allowedFeatures-error' };
           }
         }
 
-        return true;
+        return { allowed: isSecure, reason: 'policy-api-unknown' };
       }
 
       if (!buyButton) {
         return;
       }
 
-      const paymentFeatureAllowed = isPaymentAllowed();
+      const paymentPermission = getPaymentPermission();
+      const paymentFeatureAllowed = isSecure && paymentPermission.allowed;
+
+      function enforceStripeIframePermissions() {
+        const applyAllowValue = (iframe) => {
+          if (!iframe || !iframe.src || !iframe.src.includes('stripe.com')) return;
+
+          const currentAllow = iframe.getAttribute('allow') || '';
+          if (!currentAllow.includes('payment')) {
+            iframe.setAttribute('allow', stripeFrameAllowValue);
+          }
+        };
+
+        document.querySelectorAll('iframe[src*="stripe.com"]').forEach(applyAllowValue);
+
+        const observer = new MutationObserver((mutations) => {
+          mutations.forEach(({ addedNodes }) => {
+            addedNodes.forEach((node) => {
+              if (node.tagName === 'IFRAME') {
+                applyAllowValue(node);
+                return;
+              }
+
+              if (node.querySelectorAll) {
+                node.querySelectorAll('iframe').forEach(applyAllowValue);
+              }
+            });
+          });
+        });
+
+        observer.observe(document.body, { childList: true, subtree: true });
+      }
 
       if (isSecure && paymentFeatureAllowed) {
         const stripeScript = document.createElement('script');
         stripeScript.src = 'https://js.stripe.com/v3/buy-button.js';
         stripeScript.async = true;
         stripeScript.onload = () => {
+          enforceStripeIframePermissions();
           console.info('Stripe buy button initialized without permissions policy violations.');
         };
         stripeScript.onerror = () => {
@@ -1479,10 +1515,15 @@
         };
         document.body.appendChild(stripeScript);
       } else {
-        console.warn('Stripe buy button skipped because payment APIs are blocked or the page is not served from a secure context.');
+        const warningReason = !isSecure
+          ? 'Payment APIs require a secure context (HTTPS or localhost).'
+          : 'Permissions policy for payment is blocking embedded checkout.';
+
+        console.warn('Stripe buy button skipped because payment APIs are blocked or the page is not served from a secure context.', paymentPermission.reason);
         buyButton.style.display = 'none';
         if (fallbackNotice) {
           fallbackNotice.style.display = 'block';
+          fallbackNotice.setAttribute('data-permission-reason', warningReason);
         }
       }
     })();
