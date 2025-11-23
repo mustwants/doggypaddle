@@ -96,6 +96,25 @@ If you ever need to update the Google Apps Script code:
 
 ## Troubleshooting
 
+### "Invalid action" Error When Uploading Photos
+
+If you see an "Invalid action" error when trying to upload a photo, this means your Google Apps Script deployment is outdated and doesn't have the latest code:
+
+**Solution**:
+1. Open your Google Sheet: https://docs.google.com/spreadsheets/d/1q7yUDjuVSwXfL9PJUTny0oy5Nr5jlVKsdyik2-vTL8I/
+2. Go to **Extensions > Apps Script**
+3. **Verify the code matches** the latest version in `/backend/google-apps-script.gs`
+   - If not, copy and paste the latest code
+4. **Save the changes** (Ctrl+S / Cmd+S)
+5. Click **Deploy > New deployment** (NOT "Manage deployments")
+6. Select type: **Web app**
+7. Set "Who has access" to **"Anyone"**
+8. Click **"Deploy"**
+9. Copy the new Web App URL
+10. If using Netlify Functions, the URL is already configured in `netlify/functions/gas-proxy.js`
+
+⚠️ **Important**: You MUST create a NEW deployment each time you update the script. Simply saving the code is not enough - the deployment must be updated.
+
 ### CORS Errors Still Appearing
 
 If you're still seeing CORS errors after setup:

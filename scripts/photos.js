@@ -194,19 +194,43 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       // Step 4: Save to backend
       submitBtn.textContent = 'Submitting photo...';
+      const requestBody = { action: 'savePhoto', photo: photoData };
+      console.log('Sending photo upload request:', { action: requestBody.action, photoId: photoData.id });
+
       const response = await fetch(API_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'savePhoto', photo: photoData })
+        body: JSON.stringify(requestBody)
       });
 
       if (!response.ok) {
         const errorText = await response.text().catch(() => 'Unknown error');
+        console.error('Upload failed with status:', response.status, errorText);
         throw new Error(`Server error (${response.status}): ${errorText}`);
       }
 
       const result = await response.json();
+      console.log('Backend response:', result);
+
       if (result.status !== 'success') {
+        console.error('Backend returned error:', result);
+
+        // Special handling for "Invalid action" - indicates backend needs redeployment
+        if (result.message === 'Invalid action') {
+          throw new Error(
+            'Backend deployment is outdated. The Google Apps Script needs to be redeployed with the latest code.\n\n' +
+            'To fix this:\n' +
+            '1. Open your Google Sheet: https://docs.google.com/spreadsheets/d/1q7yUDjuVSwXfL9PJUTny0oy5Nr5jlVKsdyik2-vTL8I/\n' +
+            '2. Go to Extensions > Apps Script\n' +
+            '3. Ensure the code matches /backend/google-apps-script.gs\n' +
+            '4. Click Deploy > New deployment (NOT "Manage deployments")\n' +
+            '5. Select type: Web app\n' +
+            '6. Set "Who has access" to "Anyone"\n' +
+            '7. Click "Deploy"\n\n' +
+            'Note: You must create a NEW deployment each time you update the script.'
+          );
+        }
+
         throw new Error(result.message || 'Submission failed');
       }
 
@@ -229,7 +253,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       // Show user-friendly error message
       let errorMessage = 'Failed to upload photo.\n\n';
-      if (error.message.includes('Backend not configured')) {
+      if (error.message.includes('Backend deployment is outdated')) {
+        errorMessage += error.message; // Full deployment instructions
+      } else if (error.message.includes('Backend not configured')) {
         errorMessage += 'The backend is not set up yet. Please contact the administrator.';
       } else if (error.message.includes('too large')) {
         errorMessage += error.message;
