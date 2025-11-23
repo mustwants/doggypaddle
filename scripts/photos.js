@@ -1,4 +1,8 @@
 // DoggyPaddle Photos Upload JavaScript
+//
+// NOTE: If you see "content_script.js" errors in the browser console, these are
+// from browser extensions (password managers, form autofill, etc.) and are NOT
+// errors from this application. They can be safely ignored.
 
 document.addEventListener('DOMContentLoaded', async () => {
   const uploadArea = document.getElementById('upload-area');
@@ -224,15 +228,24 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.error('Upload error:', error);
 
       // Show user-friendly error message
-      let errorMessage = 'Failed to upload photo. ';
+      let errorMessage = 'Failed to upload photo.\n\n';
       if (error.message.includes('Backend not configured')) {
         errorMessage += 'The backend is not set up yet. Please contact the administrator.';
       } else if (error.message.includes('too large')) {
         errorMessage += error.message;
-      } else if (error.message.includes('Server error')) {
-        errorMessage += 'There was a server error. Please try again later.';
+      } else if (error.message.includes('Server error') || error.message.includes('502')) {
+        errorMessage += 'There was a server error. This could be due to:\n';
+        errorMessage += '• The image being too large\n';
+        errorMessage += '• Network connectivity issues\n';
+        errorMessage += '• Google Sheets API limits\n\n';
+        errorMessage += 'Please try:\n';
+        errorMessage += '1. Using a smaller or lower resolution photo\n';
+        errorMessage += '2. Checking your internet connection\n';
+        errorMessage += '3. Waiting a few minutes and trying again';
+      } else if (error.message.includes('fetch')) {
+        errorMessage += 'Network error. Please check your internet connection and try again.';
       } else {
-        errorMessage += 'Please check your internet connection and try again.';
+        errorMessage += `${error.message}\n\nPlease try again or contact support if the problem persists.`;
       }
 
       alert(errorMessage);
@@ -268,10 +281,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Render gallery
   function renderGallery(photos) {
     // Filter to only show approved photos (reject rejected and pending ones)
-    const approvedPhotos = photos.filter(photo => photo.status === 'approved');
+    let approvedPhotos = photos.filter(photo => photo.status === 'approved');
+
+    // If viewing Featured tab, further filter to only featured photos
+    if (currentTab === 'featured') {
+      approvedPhotos = approvedPhotos.filter(photo => photo.featured === true || photo.featured === 'true');
+    }
 
     if (approvedPhotos.length === 0) {
-      galleryGrid.innerHTML = '<div class="loading">No photos yet. Be the first to share!</div>';
+      const message = currentTab === 'featured'
+        ? 'No featured photos yet.'
+        : 'No photos yet. Be the first to share!';
+      galleryGrid.innerHTML = `<div class="loading">${message}</div>`;
       return;
     }
 
@@ -284,6 +305,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     galleryGrid.innerHTML = approvedPhotos.map(photo => `
       <div class="gallery-item">
+        ${photo.featured ? '<div class="featured-badge">Featured</div>' : ''}
         <img src="${photo.imageUrl}" alt="${photo.dogName}" class="gallery-image"
              onerror="this.src='/assets/logo.png'" />
         <div class="gallery-caption">

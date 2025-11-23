@@ -207,6 +207,30 @@
       content: "📅";
     }
 
+    .featured-badge {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+      color: #333;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-weight: 700;
+      font-size: 0.875rem;
+      box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .featured-badge::before {
+      content: "⭐";
+    }
+
+    .gallery-item {
+      position: relative;
+    }
+
     .loading {
       text-align: center;
       padding: 3rem;
@@ -354,10 +378,6 @@
     </div>
   </footer>
 
-  <script
-    src="/scripts/photos.js"
-    integrity="sha384-2RYIBJoskikT8s5MyMDtwbw9J9vRlJ0W3KbdzqcjwOV84qWzFIQGOPJXGyWw1/Qn"
-    crossorigin="anonymous"
-  ></script>
+  <script src="/scripts/photos.js"></script>
 </body>
 </html>
