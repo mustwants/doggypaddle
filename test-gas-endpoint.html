@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Google Apps Script Endpoint</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+    }
+    .test-section {
+      margin: 20px 0;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+    button {
+      background: #028090;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    button:hover {
+      background: #026873;
+    }
+    pre {
+      background: #f5f5f5;
+      padding: 15px;
+      border-radius: 6px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .success { color: #28a745; }
+    .error { color: #dc3545; }
+  </style>
+</head>
+<body>
+  <h1>🧪 Google Apps Script Endpoint Tester</h1>
+
+  <div class="test-section">
+    <h2>Test 1: Direct GET Request</h2>
+    <p>Tests if the Google Apps Script responds to GET requests (bypassing Netlify proxy)</p>
+    <button onclick="testDirectGet()">Run Test 1</button>
+    <pre id="result1">Click button to test...</pre>
+  </div>
+
+  <div class="test-section">
+    <h2>Test 2: Direct POST Request</h2>
+    <p>Tests if the Google Apps Script responds to POST requests with photo data (bypassing Netlify proxy)</p>
+    <button onclick="testDirectPost()">Run Test 2</button>
+    <pre id="result2">Click button to test...</pre>
+  </div>
+
+  <div class="test-section">
+    <h2>Test 3: Via Netlify Proxy (GET)</h2>
+    <p>Tests if the Netlify proxy function works with GET requests</p>
+    <button onclick="testProxyGet()">Run Test 3</button>
+    <pre id="result3">Click button to test...</pre>
+  </div>
+
+  <div class="test-section">
+    <h2>Test 4: Via Netlify Proxy (POST)</h2>
+    <p>Tests if the Netlify proxy function works with POST requests</p>
+    <button onclick="testProxyPost()">Run Test 4</button>
+    <pre id="result4">Click button to test...</pre>
+  </div>
+
+  <script>
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbz8spCI4G3t_gicwPhS_uc2AJ1-059ODLCKNOl1j2r9a_cz16QGmAVaiR-AJlqxWiY5ug/exec';
+    const PROXY_URL = '/.netlify/functions/gas-proxy';
+
+    async function testDirectGet() {
+      const resultEl = document.getElementById('result1');
+      resultEl.innerHTML = '⏳ Testing...';
+
+      try {
+        const response = await fetch(`${GAS_URL}?action=getPhotos&admin=false`, {
+          method: 'GET',
+        });
+
+        const text = await response.text();
+        let parsed;
+        try {
+          parsed = JSON.parse(text);
+        } catch {
+          parsed = text.substring(0, 500); // Show first 500 chars if not JSON
+        }
+
+        resultEl.innerHTML = `<span class="${response.ok ? 'success' : 'error'}">Status: ${response.status}</span>\n\n${JSON.stringify(parsed, null, 2)}`;
+      } catch (error) {
+        resultEl.innerHTML = `<span class="error">ERROR:</span>\n${error.toString()}`;
+      }
+    }
+
+    async function testDirectPost() {
+      const resultEl = document.getElementById('result2');
+      resultEl.innerHTML = '⏳ Testing...';
+
+      const testPhoto = {
+        action: 'savePhoto',
+        photo: {
+          id: `test-photo-${Date.now()}`,
+          customerName: 'Test User',
+          email: 'test@example.com',
+          dogName: 'Test Dog',
+          sessionDate: '2025-01-01',
+          caption: 'Test photo submission',
+          imageUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+          status: 'pending',
+          timestamp: new Date().toISOString()
+        }
+      };
+
+      try {
+        const response = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(testPhoto)
+        });
+
+        const text = await response.text();
+        let parsed;
+        try {
+          parsed = JSON.parse(text);
+        } catch {
+          parsed = text.substring(0, 500); // Show first 500 chars if not JSON
+        }
+
+        resultEl.innerHTML = `<span class="${response.ok ? 'success' : 'error'}">Status: ${response.status}</span>\n\n${JSON.stringify(parsed, null, 2)}`;
+      } catch (error) {
+        resultEl.innerHTML = `<span class="error">ERROR:</span>\n${error.toString()}`;
+      }
+    }
+
+    async function testProxyGet() {
+      const resultEl = document.getElementById('result3');
+      resultEl.innerHTML = '⏳ Testing...';
+
+      try {
+        const response = await fetch(`${PROXY_URL}?action=getPhotos&admin=false`, {
+          method: 'GET',
+        });
+
+        const text = await response.text();
+        let parsed;
+        try {
+          parsed = JSON.parse(text);
+        } catch {
+          parsed = text.substring(0, 500);
+        }
+
+        resultEl.innerHTML = `<span class="${response.ok ? 'success' : 'error'}">Status: ${response.status}</span>\n\n${JSON.stringify(parsed, null, 2)}`;
+      } catch (error) {
+        resultEl.innerHTML = `<span class="error">ERROR:</span>\n${error.toString()}`;
+      }
+    }
+
+    async function testProxyPost() {
+      const resultEl = document.getElementById('result4');
+      resultEl.innerHTML = '⏳ Testing...';
+
+      const testPhoto = {
+        action: 'savePhoto',
+        photo: {
+          id: `test-photo-${Date.now()}`,
+          customerName: 'Test User',
+          email: 'test@example.com',
+          dogName: 'Test Dog',
+          sessionDate: '2025-01-01',
+          caption: 'Test photo via proxy',
+          imageUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+          status: 'pending',
+          timestamp: new Date().toISOString()
+        }
+      };
+
+      try {
+        const response = await fetch(PROXY_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(testPhoto)
+        });
+
+        const text = await response.text();
+        let parsed;
+        try {
+          parsed = JSON.parse(text);
+        } catch {
+          parsed = text.substring(0, 500);
+        }
+
+        resultEl.innerHTML = `<span class="${response.ok ? 'success' : 'error'}">Status: ${response.status}</span>\n\n${JSON.stringify(parsed, null, 2)}`;
+      } catch (error) {
+        resultEl.innerHTML = `<span class="error">ERROR:</span>\n${error.toString()}`;
+      }
+    }
+  </script>
+</body>
+</html>
