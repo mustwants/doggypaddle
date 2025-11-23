@@ -897,10 +897,12 @@
       const approvedPhotos = photos.filter(photo => photo.status === 'approved');
       const featuredPhotos = approvedPhotos.filter(photo => photo.featured);
 
-      // Prefer featured photos when marked, otherwise show all approved submissions
-      carouselPhotos = featuredPhotos.length > 0 ? featuredPhotos : approvedPhotos;
-      
+      // Only show FEATURED photos in carousel (admin-controlled)
+      // This gives admin full control over homepage content
+      carouselPhotos = featuredPhotos;
+
       // Fallback to placeholder images if no featured photos
+      // Placeholder images showcase what the carousel will look like
       if (carouselPhotos.length === 0) {
         carouselPhotos = [
           {
@@ -941,6 +943,14 @@
       renderCarousel();
     }
 
+    // Simple HTML escape function for XSS protection
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
     function renderCarousel() {
       const track = document.getElementById('carousel-track');
       const dotsContainer = document.getElementById('carousel-dots');
@@ -950,19 +960,26 @@
         return;
       }
 
-      // Render carousel items
-      track.innerHTML = carouselPhotos.map(photo => `
-        <div class="carousel-item">
-          <img src="${photo.imageUrl}"
-               alt="${photo.dogName} - ${photo.caption || ''}"
-               onerror="this.src='/assets/logo.png'" />
-          <div class="carousel-caption">
-            <h3>${photo.dogName}</h3>
-            <p>${photo.caption || ''}</p>
-            ${photo.customerName ? `<p style="font-size: 0.9rem; margin-top: 0.5rem;">📸 by ${photo.customerName}</p>` : ''}
+      // Render carousel items with XSS protection
+      track.innerHTML = carouselPhotos.map(photo => {
+        const escapedDogName = escapeHtml(photo.dogName);
+        const escapedCaption = escapeHtml(photo.caption || '');
+        const escapedCustomerName = escapeHtml(photo.customerName || '');
+        const escapedImageUrl = escapeHtml(photo.imageUrl);
+
+        return `
+          <div class="carousel-item">
+            <img src="${escapedImageUrl}"
+                 alt="${escapedDogName} - ${escapedCaption}"
+                 onerror="this.src='/assets/logo.png'" />
+            <div class="carousel-caption">
+              <h3>${escapedDogName}</h3>
+              ${escapedCaption ? `<p>${escapedCaption}</p>` : ''}
+              ${escapedCustomerName ? `<p style="font-size: 0.9rem; margin-top: 0.5rem;">📸 by ${escapedCustomerName}</p>` : ''}
+            </div>
           </div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
 
       // Render dots
       dotsContainer.innerHTML = carouselPhotos.map((_, index) => `

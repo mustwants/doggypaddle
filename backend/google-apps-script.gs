@@ -771,7 +771,10 @@ function savePhoto(photo) {
   const photoId = photo.id || `photo-${Date.now()}`;
   const status = photo.status || 'pending';
   const createdAt = photo.createdAt || photo.timestamp || new Date().toISOString();
+  const featured = photo.featured || false;
 
+  // Column mapping: [0]=id, [1]=customerName, [2]=email, [3]=dogName,
+  // [4]=imageUrl, [5]=caption, [6]=status, [7]=createdAt, [8]=sessionDate, [9]=featured
   sheet.appendRow([
     photoId,
     photo.customerName,
@@ -781,12 +784,9 @@ function savePhoto(photo) {
     photo.caption || '',
     status, // approval status
     createdAt,
-    photo.sessionDate || ''
+    photo.sessionDate || '',
+    featured // featured flag (boolean)
   ]);
-
-  const statusCell = sheet.getRange(sheet.getLastRow(), 7);
-  statusCell.setValue(status);
-  statusCell.setNote(photo.featured ? 'featured' : '');
 
   return createResponse({
     status: 'success',
@@ -804,10 +804,8 @@ function getPhotos(params) {
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
     if (row[0]) {
-      // Check if photo is featured (stored as note on status cell)
-      const statusNote = sheet.getRange(i + 1, 7).getNote() || '';
-      const isFeatured = statusNote === 'featured';
-
+      // Column mapping: [0]=id, [1]=customerName, [2]=email, [3]=dogName,
+      // [4]=imageUrl, [5]=caption, [6]=status, [7]=createdAt, [8]=sessionDate, [9]=featured
       const photo = {
         id: row[0],
         customerName: row[1],
@@ -818,7 +816,7 @@ function getPhotos(params) {
         status: row[6],
         createdAt: row[7],
         sessionDate: row[8],
-        featured: isFeatured
+        featured: row[9] === true || row[9] === 'TRUE' || row[9] === 'true' || row[9] === 1
       };
 
       // If admin request, return all; otherwise only approved
@@ -884,7 +882,7 @@ function updatePhoto(photoId, updates) {
   for (let i = 1; i < data.length; i++) {
     if (data[i][0] === photoId) {
       // Column mapping: [0]=id, [1]=customerName, [2]=email, [3]=dogName,
-      // [4]=imageUrl, [5]=caption, [6]=status, [7]=createdAt, [8]=sessionDate
+      // [4]=imageUrl, [5]=caption, [6]=status, [7]=createdAt, [8]=sessionDate, [9]=featured
       if (updates.customerName !== undefined) {
         sheet.getRange(i + 1, 2).setValue(updates.customerName);
       }
@@ -904,14 +902,8 @@ function updatePhoto(photoId, updates) {
         sheet.getRange(i + 1, 9).setValue(updates.sessionDate);
       }
       if (updates.featured !== undefined) {
-        // Featured is stored as a note on the status cell for now
-        // We could add a new column if needed
-        const currentNote = sheet.getRange(i + 1, 7).getNote() || '';
-        if (updates.featured) {
-          sheet.getRange(i + 1, 7).setNote('featured');
-        } else {
-          sheet.getRange(i + 1, 7).setNote('');
-        }
+        // Featured is now stored in column 10 (index 9)
+        sheet.getRange(i + 1, 10).setValue(updates.featured);
       }
 
       return createResponse({
@@ -996,9 +988,9 @@ function getSheet(sheetName) {
     } else if (sheetName === PHOTOS_SHEET_NAME) {
       sheet.appendRow([
         'Photo ID', 'Customer Name', 'Email', 'Dog Name', 'Image URL',
-        'Caption', 'Status', 'Created At', 'Session Date'
+        'Caption', 'Status', 'Created At', 'Session Date', 'Featured'
       ]);
-      sheet.getRange('A1:I1').setFontWeight('bold').setBackground('#028090').setFontColor('#FFFFFF');
+      sheet.getRange('A1:J1').setFontWeight('bold').setBackground('#028090').setFontColor('#FFFFFF');
     } else if (sheetName === SUBSCRIPTIONS_SHEET_NAME) {
       sheet.appendRow([
         'Subscription ID', 'Email', 'First Name', 'Last Name', 'Phone',
