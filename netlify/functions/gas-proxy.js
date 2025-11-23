@@ -1,3 +1,16 @@
+// ⚠️ IMPORTANT: Update this URL after deploying google-apps-script.gs
+//
+// DEPLOYMENT STEPS:
+// 1. Open your Google Sheet: https://docs.google.com/spreadsheets/d/1q7yUDjuVSwXfL9PJUTny0oy5Nr5jlVKsdyik2-vTL8I/
+// 2. Go to Extensions > Apps Script
+// 3. Replace the code with contents from /backend/google-apps-script.gs
+// 4. Deploy > New deployment > Web app
+// 5. Set "Who has access" to "Anyone"
+// 6. Copy the Web App URL
+// 7. Either:
+//    a) Set GAS_API_ENDPOINT environment variable in Netlify dashboard, OR
+//    b) Update DEFAULT_UPSTREAM below with the new URL
+//
 const DEFAULT_UPSTREAM = 'https://script.google.com/macros/s/AKfycbz8spCI4G3t_gicwPhS_uc2AJ1-059ODLCKNOl1j2r9a_cz16QGmAVaiR-AJlqxWiY5ug/exec';
 
 function buildCorsHeaders(originHeader) {

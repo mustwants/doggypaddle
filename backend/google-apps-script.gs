@@ -33,9 +33,12 @@
 // - Check that your config.js has the correct Web App URL
 
 // CONFIGURATION - Replace with your actual Sheet ID
-const SHEET_ID = 'YOUR_GOOGLE_SHEET_ID_HERE';
-const SLOTS_SHEET_NAME = 'TimeSlots';
-const BOOKINGS_SHEET_NAME = 'Bookings';
+// ✓ CONFIGURED: Using actual Google Sheet ID
+const SHEET_ID = '1q7yUDjuVSwXfL9PJUTny0oy5Nr5jlVKsdyik2-vTL8I';
+
+// Sheet names - supports both legacy and new naming conventions
+const SLOTS_SHEET_NAME = 'available_slots'; // Legacy: 'TimeSlots'
+const BOOKINGS_SHEET_NAME = 'bookings'; // Legacy: 'Bookings'
 const WAIVERS_SHEET_NAME = 'Waivers';
 const PRODUCTS_SHEET_NAME = 'Products';
 const ORDERS_SHEET_NAME = 'Orders';
@@ -185,19 +188,37 @@ function doPost(e) {
 function getAvailableSlots(params) {
   const sheet = getSheet(SLOTS_SHEET_NAME);
   const data = sheet.getDataRange().getValues();
+  const headers = data[0] || [];
+
+  // Detect sheet format: new format has 'ID' column, legacy has 'Date' as first column
+  const hasIdColumn = headers[0] && headers[0].toString().toLowerCase().includes('id');
 
   // Skip header row
   const slots = [];
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
-    if (row[0]) { // If ID exists
+    if (!row[0]) continue; // Skip empty rows
+
+    if (hasIdColumn) {
+      // New format: ID, Date, Time, Duration, Status, Created At, Booking ID
       slots.push({
         id: row[0],
         date: row[1],
         time: row[2],
-        duration: row[3],
+        duration: row[3] || 20,
         status: row[4] || 'available',
         createdAt: row[5]
+      });
+    } else {
+      // Legacy format: Date, Time, Status (no ID column)
+      const slotId = `slot-${row[0]}-${row[1]}`.replace(/[^a-zA-Z0-9-]/g, '-');
+      slots.push({
+        id: slotId,
+        date: formatDateValue(row[0]),
+        time: row[1],
+        duration: 30, // Default for legacy format
+        status: row[2] || 'available',
+        createdAt: null
       });
     }
   }
@@ -228,18 +249,36 @@ function getAvailableSlots(params) {
 function getAllSlots() {
   const sheet = getSheet(SLOTS_SHEET_NAME);
   const data = sheet.getDataRange().getValues();
+  const headers = data[0] || [];
+
+  // Detect sheet format: new format has 'ID' column, legacy has 'Date' as first column
+  const hasIdColumn = headers[0] && headers[0].toString().toLowerCase().includes('id');
 
   const slots = [];
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
-    if (row[0]) {
+    if (!row[0]) continue; // Skip empty rows
+
+    if (hasIdColumn) {
+      // New format: ID, Date, Time, Duration, Status, Created At, Booking ID
       slots.push({
         id: row[0],
         date: row[1],
         time: row[2],
-        duration: row[3],
+        duration: row[3] || 20,
         status: row[4] || 'available',
         createdAt: row[5]
+      });
+    } else {
+      // Legacy format: Date, Time, Status (no ID column)
+      const slotId = `slot-${row[0]}-${row[1]}`.replace(/[^a-zA-Z0-9-]/g, '-');
+      slots.push({
+        id: slotId,
+        date: formatDateValue(row[0]),
+        time: row[1],
+        duration: 30, // Default for legacy format
+        status: row[2] || 'available',
+        createdAt: null
       });
     }
   }
@@ -283,16 +322,26 @@ function saveSlots(slots) {
 // Add a single slot
 function addSlot(slot) {
   const sheet = getSheet(SLOTS_SHEET_NAME);
-
-  // Check for duplicates and time conflicts
   const data = sheet.getDataRange().getValues();
+  const headers = data[0] || [];
+  const hasIdColumn = headers[0] && headers[0].toString().toLowerCase().includes('id');
+
+  // Determine which column index to use for date and time
+  const dateCol = hasIdColumn ? 1 : 0;
+  const timeCol = hasIdColumn ? 2 : 1;
+  const statusCol = hasIdColumn ? 4 : 2;
+
   const newSlotDate = new Date(slot.date + ' ' + slot.time);
   const newSlotDuration = slot.duration || 20;
   const newSlotEndTime = new Date(newSlotDate.getTime() + newSlotDuration * 60000);
 
+  // Check for duplicates and time conflicts
   for (let i = 1; i < data.length; i++) {
+    const rowDate = formatDateValue(data[i][dateCol]);
+    const rowTime = data[i][timeCol];
+
     // Check exact duplicate
-    if (data[i][1] === slot.date && data[i][2] === slot.time) {
+    if (rowDate === slot.date && rowTime === slot.time) {
       return createResponse({
         status: 'error',
         message: 'Slot already exists for this date and time'
@@ -300,9 +349,9 @@ function addSlot(slot) {
     }
 
     // Check time overlap on the same date
-    if (data[i][1] === slot.date) {
-      const existingSlotTime = new Date(data[i][1] + ' ' + data[i][2]);
-      const existingSlotDuration = data[i][3] || 20;
+    if (rowDate === slot.date) {
+      const existingSlotTime = new Date(rowDate + ' ' + rowTime);
+      const existingSlotDuration = hasIdColumn ? (data[i][3] || 20) : 30;
       const existingSlotEndTime = new Date(existingSlotTime.getTime() + existingSlotDuration * 60000);
 
       // Check if times overlap
@@ -311,21 +360,32 @@ function addSlot(slot) {
           (newSlotDate <= existingSlotTime && newSlotEndTime >= existingSlotEndTime)) {
         return createResponse({
           status: 'error',
-          message: `Time slot conflicts with existing slot at ${data[i][2]}`
+          message: `Time slot conflicts with existing slot at ${rowTime}`
         });
       }
     }
   }
 
-  // Add new row
-  sheet.appendRow([
-    slot.id || `slot-${Date.now()}`,
-    slot.date,
-    slot.time,
-    slot.duration || 20,
-    slot.status || 'available',
-    new Date().toISOString()
-  ]);
+  // Add new row based on format
+  if (hasIdColumn) {
+    // New format: ID, Date, Time, Duration, Status, Created At, Booking ID
+    sheet.appendRow([
+      slot.id || `slot-${Date.now()}`,
+      slot.date,
+      slot.time,
+      slot.duration || 20,
+      slot.status || 'available',
+      new Date().toISOString(),
+      ''
+    ]);
+  } else {
+    // Legacy format: Date, Time, Status
+    sheet.appendRow([
+      slot.date,
+      slot.time,
+      slot.status || 'available'
+    ]);
+  }
 
   return createResponse({
     status: 'success',
@@ -337,9 +397,22 @@ function addSlot(slot) {
 function deleteSlot(slotId) {
   const sheet = getSheet(SLOTS_SHEET_NAME);
   const data = sheet.getDataRange().getValues();
+  const headers = data[0] || [];
+  const hasIdColumn = headers[0] && headers[0].toString().toLowerCase().includes('id');
 
   for (let i = 1; i < data.length; i++) {
-    if (data[i][0] === slotId) {
+    let matchFound = false;
+
+    if (hasIdColumn) {
+      // New format: match by ID column
+      matchFound = (data[i][0] === slotId);
+    } else {
+      // Legacy format: reconstruct ID from date and time
+      const reconstructedId = `slot-${data[i][0]}-${data[i][1]}`.replace(/[^a-zA-Z0-9-]/g, '-');
+      matchFound = (reconstructedId === slotId);
+    }
+
+    if (matchFound) {
       sheet.deleteRow(i + 1);
       return createResponse({
         status: 'success',
@@ -358,11 +431,29 @@ function deleteSlot(slotId) {
 function markSlotBooked(slotId, bookingId) {
   const sheet = getSheet(SLOTS_SHEET_NAME);
   const data = sheet.getDataRange().getValues();
+  const headers = data[0] || [];
+  const hasIdColumn = headers[0] && headers[0].toString().toLowerCase().includes('id');
+
+  const statusCol = hasIdColumn ? 5 : 3; // Column number (1-indexed)
+  const statusIdx = hasIdColumn ? 4 : 2; // Array index (0-indexed)
 
   for (let i = 1; i < data.length; i++) {
-    if (data[i][0] === slotId) {
+    let matchFound = false;
+
+    if (hasIdColumn) {
+      // New format: match by ID column
+      matchFound = (data[i][0] === slotId);
+    } else {
+      // Legacy format: reconstruct ID from date and time
+      const reconstructedId = `slot-${data[i][0]}-${data[i][1]}`.replace(/[^a-zA-Z0-9-]/g, '-');
+      matchFound = (reconstructedId === slotId);
+    }
+
+    if (matchFound) {
+      const currentStatus = (data[i][statusIdx] || 'available').toString().trim().toLowerCase();
+
       // Check if slot is already booked
-      if (data[i][4] === 'booked') {
+      if (currentStatus === 'booked') {
         return createResponse({
           status: 'error',
           message: 'This time slot has already been booked. Please select another time.'
@@ -370,15 +461,21 @@ function markSlotBooked(slotId, bookingId) {
       }
 
       // Check if slot is blocked
-      if (data[i][4] === 'blocked') {
+      if (currentStatus === 'blocked') {
         return createResponse({
           status: 'error',
           message: 'This time slot is not available. Please select another time.'
         });
       }
 
-      sheet.getRange(i + 1, 5).setValue('booked');
-      sheet.getRange(i + 1, 7).setValue(bookingId); // Add booking reference
+      // Update status to booked
+      sheet.getRange(i + 1, statusCol).setValue('booked');
+
+      // Add booking reference if using new format
+      if (hasIdColumn && bookingId) {
+        sheet.getRange(i + 1, 7).setValue(bookingId); // Booking ID column
+      }
+
       return createResponse({
         status: 'success',
         message: 'Slot marked as booked'
@@ -855,7 +952,7 @@ function deletePhoto(photoId) {
 function getSheet(sheetName) {
   const sheetId = (SHEET_ID || '').trim();
 
-  if (!sheetId || sheetId === '1q7yUDjuVSwXfL9PJUTny0oy5Nr5jlVKsdyik2-vTL8I') {
+  if (!sheetId || sheetId === 'YOUR_GOOGLE_SHEET_ID_HERE') {
     throw new Error('SHEET_ID is not configured. Update SHEET_ID at the top of the script with your Google Sheet ID.');
   }
 
@@ -946,6 +1043,16 @@ function createResponse(data) {
 // Kept for backward compatibility but now just calls createResponse
 function createCORSResponse(data) {
   return createResponse(data);
+}
+
+// Helper: Format date value consistently (handles both Date objects and strings)
+function formatDateValue(dateValue) {
+  if (!dateValue) return '';
+  if (typeof dateValue === 'string') return dateValue;
+  if (dateValue instanceof Date) {
+    return Utilities.formatDate(dateValue, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  }
+  return String(dateValue);
 }
 
 function getScriptProperty(key) {
@@ -1067,8 +1174,7 @@ function saveSubscription(subscription) {
     subscription.firstName,
     subscription.lastName,
     subscription.phone,
-   'pending', // status - requires admin approval
-    'active', // status
+    subscription.status || 'active', // status
     4, // sessions per month
     0, // sessions used this month
     4, // sessions remaining
