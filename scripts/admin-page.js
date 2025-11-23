@@ -5,7 +5,32 @@
   let adminUserEmail = null;
   let modulesInitialized = false;
   let modalsLoaded = false;
+async function waitForAdminEnhancements() {
+    const start = Date.now();
+    const timeout = 5000;
+    const pollInterval = 100;
 
+    return new Promise((resolve, reject) => {
+      const checkReady = () => {
+        const productsReady = typeof window.loadAdminProducts === 'function';
+        const slotsReady = typeof window.loadTimeSlots === 'function';
+
+        if (productsReady && slotsReady) {
+          resolve();
+          return;
+        }
+
+        if (Date.now() - start >= timeout) {
+          reject(new Error('Admin enhancements failed to initialize'));
+          return;
+        }
+
+        setTimeout(checkReady, pollInterval);
+      };
+
+      checkReady();
+    });
+  }
   function checkAdminSession() {
     try {
       const sessionData = localStorage.getItem('doggypaddle_admin_session');
@@ -263,21 +288,34 @@
     }
   }
 
-  function initializeAdminModules() {
-    if (!modulesInitialized && typeof window.initAdminDashboard === 'function') {
-      window.initAdminDashboard();
-      modulesInitialized = true;
-    }
+    function initializeAdminModules() {
+      if (!modulesInitialized && typeof window.initAdminDashboard === 'function') {
+        window.initAdminDashboard();
+        modulesInitialized = true;
+      }
 
-    if (!modalsLoaded) {
-      loadModalTemplates();
-      modalsLoaded = true;
-    }
+      if (!modalsLoaded) {
+        loadModalTemplates();
+        modalsLoaded = true;
+      }
 
-    setTimeout(() => {
-      loadTabData('products');
-    }, 100);
-  }
+      waitForAdminEnhancements()
+        .then(() => {
+          loadTabData('products');
+        })
+        .catch(error => {
+          console.error('Admin modules did not finish loading:', error);
+          const productsList = document.getElementById('admin-products-list');
+          if (productsList) {
+            productsList.innerHTML = `
+              <div style="padding: 1.5rem; text-align: center; color: #721c24; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px;">
+                <p style="font-weight: 700; margin-bottom: 0.25rem;">Admin dashboard failed to start</p>
+                <p style="margin: 0; font-size: 0.95rem;">Refresh the page to retry loading products and time slots.</p>
+              </div>
+            `;
+          }
+        });
+    }
 
   function loadModalTemplates() {
     fetch('/store/index.html')
@@ -303,4 +341,4 @@
       initGoogleSignIn();
     }
   });
-})();
+
