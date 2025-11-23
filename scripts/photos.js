@@ -20,6 +20,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Check if backend is configured
   const isBackendConfigured = API_ENDPOINT && !API_ENDPOINT.includes('YOUR_DEPLOYED_WEBAPP_ID');
 
+    async function fileToDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+  
   // Upload area click
   uploadArea.addEventListener('click', () => {
     fileInput.click();
@@ -91,16 +100,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     submitBtn.disabled = true;
     submitBtn.textContent = 'Uploading...';
 
-    try {
+  try {
       // Get form data
       const formData = new FormData(photoForm);
       const photoData = {
+        id: `photo-${Date.now()}`,
         customerName: formData.get('customerName'),
         email: formData.get('email'),
         dogName: formData.get('dogName'),
         sessionDate: formData.get('sessionDate'),
         caption: formData.get('caption'),
         imageUrl: '', // Will be filled after upload
+        status: 'pending',
         timestamp: new Date().toISOString()
       };
 
@@ -128,61 +139,54 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
       */
 
-      // For demo purposes, use base64 (not recommended for production)
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        photoData.imageUrl = e.target.result;
+     // Convert to data URL for storage (keeps implementation compatible with GAS backend)
+      photoData.imageUrl = await fileToDataUrl(selectedFile);
 
-        // Check if backend is configured
-        if (!isBackendConfigured) {
-          throw new Error(
-            "Backend not configured. Please set up the Google Apps Script backend to enable photo uploads. " +
-            "See /backend/README.md for setup instructions."
-          );
-        }
+      // Check if backend is configured
+      if (!isBackendConfigured) {
+        throw new Error(
+          "Backend not configured. Please set up the Google Apps Script backend to enable photo uploads. " +
+          "See /backend/README.md for setup instructions."
+        );
+      }
 
-        // Save to backend
-        try {
-          const response = await fetch(API_ENDPOINT, {
-            method: 'POST',
-            // Use a simple content type to avoid a CORS preflight (Google Apps Script
-            // does not handle OPTIONS requests). The backend still receives the JSON
-            // payload via e.postData.contents.
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ action: 'savePhoto', photo: photoData })
-          });
+      // Save to backend
+      try {
+        const response = await fetch(API_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'savePhoto', photo: photoData })
+        });
 
-          if (response.ok) {
-            const result = await response.json();
-            if (result.status === 'success') {
-              // Show success message
-              successMessage.style.display = 'block';
-              photoForm.reset();
-              previewContainer.style.display = 'none';
-              selectedFile = null;
+        if (response.ok) {
+          const result = await response.json();
+          if (result.status === 'success') {
+            // Show success message
+            successMessage.style.display = 'block';
+            photoForm.reset();
+            previewContainer.style.display = 'none';
+            selectedFile = null;
 
-              // Scroll to success message
-              successMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Scroll to success message
+            successMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-              // Reload gallery after 2 seconds
-              setTimeout(() => {
-                loadGallery();
-              }, 2000);
-            } else {
-              throw new Error(result.message || 'Submission failed');
-            }
+            // Reload gallery after 2 seconds
+            setTimeout(() => {
+              loadGallery();
+            }, 2000);
           } else {
-            throw new Error('Server error');
+            throw new Error(result.message || 'Submission failed');
           }
-        } catch (error) {
-          console.error('Photo submission error:', error);
-          alert('Failed to submit photo. Please try again.');
-        } finally {
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Submit Photo for Review';
+        } else {
+          throw new Error('Server error');
         }
-      };
-      reader.readAsDataURL(selectedFile);
+      } catch (error) {
+        console.error('Photo submission error:', error);
+        alert('Failed to submit photo. Please try again.');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Photo for Review';
+      }
 
     } catch (error) {
       console.error('Upload error:', error);
