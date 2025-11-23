@@ -4,8 +4,51 @@
   window.isAdminLoggedIn = false;
   let adminUserEmail = null;
   let modulesInitialized = false;
-  let modalsLoaded = false;
-async function waitForAdminEnhancements() {
+ let allowedAdmins = [];
+
+  const API_ENDPOINT = window.DoggyPaddleConfig?.API_ENDPOINT ||
+                       'https://script.google.com/macros/s/YOUR_DEPLOYED_WEBAPP_ID/exec';
+  const isBackendConfigured = API_ENDPOINT && !API_ENDPOINT.includes('YOUR_DEPLOYED_WEBAPP_ID');
+
+  async function loadAdminAllowlist() {
+    const adminListElement = document.getElementById('admin-allowed-list');
+
+    if (!isBackendConfigured) {
+      allowedAdmins = window.DoggyPaddleConfig?.GOOGLE_AUTH?.allowedAdmins || [];
+      if (adminListElement) {
+        adminListElement.textContent = allowedAdmins.join(', ');
+      }
+      return allowedAdmins;
+    }
+
+    try {
+      const response = await fetch(`${API_ENDPOINT}?action=getAdminAllowlist`);
+
+      if (!response.ok) {
+        throw new Error(`Failed to load allowlist (HTTP ${response.status})`);
+      }
+
+      const data = await response.json();
+
+      if (data.status === 'success' && Array.isArray(data.allowedAdmins)) {
+        allowedAdmins = data.allowedAdmins;
+        if (adminListElement) {
+          adminListElement.textContent = allowedAdmins.join(', ');
+        }
+      } else {
+        throw new Error(data.message || 'Backend did not return an allowlist');
+      }
+    } catch (error) {
+      console.error('Error loading admin allowlist:', error);
+      if (adminListElement) {
+        adminListElement.textContent = 'Unable to load allowlist';
+      }
+    }
+
+    return allowedAdmins;
+  }
+
+  async function waitForAdminEnhancements() {
     const start = Date.now();
     const timeout = 5000;
     const pollInterval = 100;
@@ -31,6 +74,7 @@ async function waitForAdminEnhancements() {
       checkReady();
     });
   }
+
   function checkAdminSession() {
     try {
       const sessionData = localStorage.getItem('doggypaddle_admin_session');
@@ -43,8 +87,10 @@ async function waitForAdminEnhancements() {
         return false;
       }
 
-      const allowedAdmins = window.DoggyPaddleConfig?.GOOGLE_AUTH?.allowedAdmins || [];
-      const allowedAdminsLower = allowedAdmins.map(email => email.toLowerCase());
+      const allowlist = allowedAdmins.length > 0
+        ? allowedAdmins
+        : (window.DoggyPaddleConfig?.GOOGLE_AUTH?.allowedAdmins || []);
+      const allowedAdminsLower = allowlist.map(email => email.toLowerCase());
 
       if (!allowedAdminsLower.includes(session.email.toLowerCase())) {
         localStorage.removeItem('doggypaddle_admin_session');
@@ -66,12 +112,6 @@ async function waitForAdminEnhancements() {
   function initGoogleSignIn() {
     const clientId = window.DoggyPaddleConfig?.GOOGLE_AUTH?.clientId;
     const googleBtnContainer = document.getElementById('google-signin-button');
-    const allowedAdmins = window.DoggyPaddleConfig?.GOOGLE_AUTH?.allowedAdmins || [];
-
-    const adminListElement = document.getElementById('admin-allowed-list');
-    if (adminListElement) {
-      adminListElement.textContent = allowedAdmins.join(', ');
-    }
 
     if (!clientId || clientId === 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com') {
       console.warn('Google OAuth not configured. Using development login mode.');
@@ -121,8 +161,10 @@ async function waitForAdminEnhancements() {
   }
 
   function handleDevLogin() {
-    const allowedAdmins = window.DoggyPaddleConfig?.GOOGLE_AUTH?.allowedAdmins || ['Scott@mustwants.com'];
-    const devEmail = allowedAdmins[0].toLowerCase();
+    const devAllowlist = allowedAdmins.length > 0
+      ? allowedAdmins
+      : (window.DoggyPaddleConfig?.GOOGLE_AUTH?.allowedAdmins || ['Scott@mustwants.com']);
+    const devEmail = devAllowlist[0].toLowerCase();
 
     console.log('Dev login activated for:', devEmail);
 
@@ -143,22 +185,23 @@ async function waitForAdminEnhancements() {
   }
 
   function handleGoogleSignIn(response) {
+    const allowlist = allowedAdmins.length > 0
+      ? allowedAdmins
+      : (window.DoggyPaddleConfig?.GOOGLE_AUTH?.allowedAdmins || []);
+
     try {
-      console.log('Google Sign-In callback triggered');
-      const payload = parseJwt(response.credential);
-      if (!payload) {
-        throw new Error('Failed to parse JWT token');
-      }
+      if (!isBackendConfigured) {
+        const payload = parseJwt(response.credential);
+        if (!payload) {
+          throw new Error('Failed to parse JWT token');
+        }
 
-      const userEmail = payload.email.toLowerCase();
-      console.log('User email:', userEmail);
+        const allowedAdminsLower = allowlist.map(email => email.toLowerCase());
+        const userEmail = payload.email.toLowerCase();
 
-      const allowedAdmins = window.DoggyPaddleConfig?.GOOGLE_AUTH?.allowedAdmins || [];
-      const allowedAdminsLower = allowedAdmins.map(email => email.toLowerCase());
-      console.log('Allowed admins:', allowedAdminsLower);
-
-      if (allowedAdminsLower.includes(userEmail)) {
-        console.log('✓ User authorized! Granting admin access...');
+        if (!allowedAdminsLower.includes(userEmail)) {
+          throw new Error(`Access denied. Only authorized Google Workspace accounts can access the admin panel.\n\nYour email: ${userEmail}\n\nAllowed admins: ${allowlist.join(', ')}`);
+        }
 
         window.isAdminLoggedIn = true;
         adminUserEmail = userEmail;
@@ -173,14 +216,64 @@ async function waitForAdminEnhancements() {
 
         showNotification(`Welcome, ${payload.name}!`);
         showDashboard();
-      } else {
-        console.warn('✗ Access denied for email:', userEmail);
-        alert(`Access denied. Only authorized Google Workspace accounts can access the admin panel.\n\nYour email: ${userEmail}\n\nAllowed admins: ${allowedAdmins.join(', ')}`);
+        return;
       }
+
+      verifyAdminIdToken(response.credential)
+        .then(adminProfile => {
+          window.isAdminLoggedIn = true;
+          adminUserEmail = adminProfile.email.toLowerCase();
+
+          const session = {
+            ...adminProfile,
+            timestamp: Date.now()
+          };
+          localStorage.setItem('doggypaddle_admin_session', JSON.stringify(session));
+
+          showNotification(`Welcome, ${adminProfile.name}!`);
+          showDashboard();
+        })
+        .catch(error => {
+          console.warn('Admin verification failed:', error);
+          alert(error.message || 'Authentication failed. Please try again.');
+        });
     } catch (error) {
       console.error('Error handling Google Sign-In:', error);
       alert('Authentication failed. Please try again.\n\nError: ' + error.message);
     }
+  }
+
+  async function verifyAdminIdToken(idToken) {
+    const response = await fetch(API_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        action: 'verifyAdminToken',
+        idToken
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Backend verification failed with status ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    if (result.status !== 'success' || !result.admin) {
+      throw new Error(result.message || 'Admin verification failed');
+    }
+
+    if (Array.isArray(result.allowedAdmins)) {
+      allowedAdmins = result.allowedAdmins;
+      const adminListElement = document.getElementById('admin-allowed-list');
+      if (adminListElement) {
+        adminListElement.textContent = allowedAdmins.join(', ');
+      }
+    }
+
+    return result.admin;
   }
 
   function parseJwt(token) {
@@ -336,7 +429,8 @@ async function waitForAdminEnhancements() {
       .catch(err => console.error('Error loading modals:', err));
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', async () => {
+    await loadAdminAllowlist();
     if (!checkAdminSession()) {
       initGoogleSignIn();
     }
