@@ -615,6 +615,9 @@ let currentWeekStart = null;
 let selectedSlots = new Set();
 let calendarViewMode = 'calendar'; // 'calendar' or 'list'
 let adminSlots = []; // Slots fetched from Google Sheets backend
+let isDraggingSelection = false;
+let selectionDragMode = null;
+let calendarMouseUpListenerAttached = false;
 
 // Get API endpoint from config
 const API_ENDPOINT = window.DoggyPaddleConfig?.API_ENDPOINT || '';
@@ -730,9 +733,9 @@ function loadTimeSlots() {
 // Fetch slots from Google Sheets backend
 async function fetchAdminSlots() {
   if (!isBackendConfigured) {
-    console.error('❌ Backend not configured. Cannot fetch timeslots.');
-    showNotification('Backend not configured. Please check API_ENDPOINT in config.js', 'error');
-    return [];
+    const cachedSlots = JSON.parse(localStorage.getItem('doggypaddle_timeslots') || '[]');
+    adminSlots = cachedSlots;
+    return cachedSlots;
   }
 
   try {
@@ -804,16 +807,16 @@ async function renderCalendarView() {
       </div>
 
       <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; align-items: center;">
-        <button onclick="clearSelection()" class="btn btn-secondary" style="padding: 0.5rem 1rem;" ${selectedSlots.size === 0 ? 'disabled' : ''}>
+        <button id="clear-selection-btn" onclick="clearSelection()" class="btn btn-secondary" style="padding: 0.5rem 1rem;" ${selectedSlots.size === 0 ? 'disabled' : ''}>
           Clear Selection (${selectedSlots.size})
         </button>
-        <button onclick="bulkDeleteSelected()" class="btn" style="padding: 0.5rem 1rem; background: #dc3545; color: white;" ${selectedSlots.size === 0 ? 'disabled' : ''}>
+        <button id="delete-selected-btn" onclick="bulkDeleteSelected()" class="btn" style="padding: 0.5rem 1rem; background: #dc3545; color: white;" ${selectedSlots.size === 0 ? 'disabled' : ''}>
           Delete Selected (${selectedSlots.size})
         </button>
-        <button onclick="bulkToggleStatus('available')" class="btn" style="padding: 0.5rem 1rem; background: #28a745; color: white;" ${selectedSlots.size === 0 ? 'disabled' : ''}>
+        <button id="mark-available-btn" onclick="bulkToggleStatus('available')" class="btn" style="padding: 0.5rem 1rem; background: #28a745; color: white;" ${selectedSlots.size === 0 ? 'disabled' : ''}>
           Mark Available
         </button>
-        <button onclick="bulkToggleStatus('blocked')" class="btn" style="padding: 0.5rem 1rem; background: #ffc107; color: #000;" ${selectedSlots.size === 0 ? 'disabled' : ''}>
+        <button id="mark-blocked-btn" onclick="bulkToggleStatus('blocked')" class="btn" style="padding: 0.5rem 1rem; background: #ffc107; color: #000;" ${selectedSlots.size === 0 ? 'disabled' : ''}>
           Mark Blocked
         </button>
       </div>
@@ -880,12 +883,12 @@ async function renderCalendarView() {
 
           return `
             <div
-              class="calendar-slot"
+              class="calendar-slot${isSelected ? ' selected' : ''}"
               data-date="${dateStr}"
               data-time="${time}"
               data-has-slot="${!!slot}"
               data-slot-id="${slot ? slot.id : ''}"
-              onclick="toggleSlot('${dateStr}', '${time}')"
+              data-status="${slot ? slot.status : 'empty'}"
               style="
                 background: ${bgColor};
                 padding: 0.5rem;
@@ -900,9 +903,8 @@ async function renderCalendarView() {
                 font-size: 0.85rem;
                 font-weight: 600;
                 color: ${textColor};
+                user-select: none;
               "
-              onmouseover="this.style.opacity='0.8'"
-              onmouseout="this.style.opacity='1'"
             >
               ${text}
             </div>
@@ -939,26 +941,106 @@ async function renderCalendarView() {
   `;
 
   timeslotsList.innerHTML = html;
+
+  attachCalendarEventHandlers();
+  updateSelectionToolbar();
 }
 
 // Toggle slot selection
-window.toggleSlot = function(date, time) {
+window.toggleSlot = function(date, time, event) {
   const slotKey = `${date}|${time}`;
+  const target = event?.currentTarget || document.querySelector(`.calendar-slot[data-date="${date}"][data-time="${time}"]`);
+  toggleSlotSelection(slotKey, target);
+};
 
-  if (selectedSlots.has(slotKey)) {
-    selectedSlots.delete(slotKey);
-  } else {
+function toggleSlotSelection(slotKey, target, forceSelect = null, skipNextClick = false) {
+  const shouldSelect = forceSelect === null ? !selectedSlots.has(slotKey) : forceSelect;
+
+  if (shouldSelect) {
     selectedSlots.add(slotKey);
+  } else {
+    selectedSlots.delete(slotKey);
   }
 
-  renderCalendarView();
+  applySelectionStyle(target, shouldSelect);
+  updateSelectionToolbar();
+
+  if (skipNextClick && target) {
+    target.dataset.skipClickOnce = 'true';
+  }
+}
+
+function applySelectionStyle(target, isSelected) {
+  if (!target) return;
+  if (isSelected) {
+    target.classList.add('selected');
+  } else {
+    target.classList.remove('selected');
+  }
+}
+
+function updateSelectionToolbar() {
+  const selectedCount = selectedSlots.size;
+  const clearBtn = document.getElementById('clear-selection-btn');
+  const deleteBtn = document.getElementById('delete-selected-btn');
+  const availableBtn = document.getElementById('mark-available-btn');
+  const blockedBtn = document.getElementById('mark-blocked-btn');
+
+  if (clearBtn) {
+    clearBtn.textContent = `Clear Selection (${selectedCount})`;
+    clearBtn.disabled = selectedCount === 0;
+  }
+  if (deleteBtn) {
+    deleteBtn.textContent = `Delete Selected (${selectedCount})`;
+    deleteBtn.disabled = selectedCount === 0;
+  }
+  [availableBtn, blockedBtn].forEach(btn => {
+    if (btn) btn.disabled = selectedCount === 0;
+  });
+}
+
+function attachCalendarEventHandlers() {
+  const slots = document.querySelectorAll('.calendar-slot');
+
+  if (!calendarMouseUpListenerAttached) {
+    document.addEventListener('mouseup', () => {
+      isDraggingSelection = false;
+      selectionDragMode = null;
+    });
+    calendarMouseUpListenerAttached = true;
+  }
+
+  slots.forEach(slot => {
+    const slotKey = `${slot.dataset.date}|${slot.dataset.time}`;
+
+    slot.addEventListener('mousedown', event => {
+      selectionDragMode = selectedSlots.has(slotKey) ? 'remove' : 'add';
+      isDraggingSelection = true;
+      toggleSlotSelection(slotKey, slot, selectionDragMode === 'add', true);
+      event.preventDefault();
+    });
+
+    slot.addEventListener('mouseenter', () => {
+      if (!isDraggingSelection || !selectionDragMode) return;
+      toggleSlotSelection(slotKey, slot, selectionDragMode === 'add');
+    });
+
+    slot.addEventListener('click', event => {
+      if (slot.dataset.skipClickOnce === 'true') {
+        slot.dataset.skipClickOnce = 'false';
+        return;
+      }
+      window.toggleSlot(slot.dataset.date, slot.dataset.time, event);
+    });
+  });
 }
 
 // Clear selection
 window.clearSelection = function() {
   selectedSlots.clear();
-  renderCalendarView();
-}
+  document.querySelectorAll('.calendar-slot.selected').forEach(slot => slot.classList.remove('selected'));
+  updateSelectionToolbar();
+};
 
 // Navigate week
 window.navigateWeek = function(direction) {
@@ -970,84 +1052,78 @@ window.navigateWeek = function(direction) {
 }
 
 // Bulk delete selected slots
-window.bulkDeleteSelected = function() {
+window.bulkDeleteSelected = async function() {
   if (selectedSlots.size === 0) return;
 
   if (!confirm(`Are you sure you want to delete ${selectedSlots.size} time slot(s)?`)) return;
 
-  const slots = JSON.parse(localStorage.getItem('doggypaddle_timeslots') || '[]');
-  const selectedArray = Array.from(selectedSlots).map(key => {
-    const [date, time] = key.split('|');
-    return { date, time };
-  });
+  await fetchAdminSlots();
 
-  // Filter out slots that match selected date/time combinations
-  const filtered = slots.filter(slot => {
-    return !selectedArray.some(sel => sel.date === slot.date && sel.time === slot.time);
-  });
+  const selectedArray = getSelectedSlotPairs();
+  const selectedKeySet = new Set(selectedArray.map(sel => `${sel.date}|${sel.time}`));
+  const filtered = adminSlots.filter(slot => !selectedKeySet.has(`${slot.date}|${slot.time}`));
+  const removedCount = adminSlots.length - filtered.length;
 
-  localStorage.setItem('doggypaddle_timeslots', JSON.stringify(filtered));
-  selectedSlots.clear();
-  renderCalendarView();
-  showNotification(`Deleted ${slots.length - filtered.length} time slot(s)`, 'success');
-}
+  if (removedCount === 0) {
+    showNotification('No existing slots matched your selection to delete.', 'info');
+    return;
+  }
+
+  try {
+    await persistSlots(filtered);
+    selectedArray.forEach(sel => selectedSlots.delete(`${sel.date}|${sel.time}`));
+    await renderCalendarView();
+    showNotification(`Deleted ${removedCount} time slot(s)`, 'success');
+  } catch (error) {
+    console.error('Error deleting slots:', error);
+    showNotification('Failed to delete selected slots: ' + error.message, 'error');
+  }
+};
 
 // Bulk toggle status for selected slots
-window.bulkToggleStatus = function(newStatus) {
+window.bulkToggleStatus = async function(newStatus) {
   if (selectedSlots.size === 0) return;
 
-  const slots = JSON.parse(localStorage.getItem('doggypaddle_timeslots') || '[]');
-  const selectedArray = Array.from(selectedSlots).map(key => {
-    const [date, time] = key.split('|');
-    return { date, time };
-  });
+  await fetchAdminSlots();
 
+  const selectedArray = getSelectedSlotPairs();
   let modified = 0;
   let created = 0;
+  const updatedSlots = [...adminSlots];
 
   selectedArray.forEach(sel => {
-    const existingSlot = slots.find(s => s.date === sel.date && s.time === sel.time);
+    const existingSlot = updatedSlots.find(s => s.date === sel.date && s.time === sel.time);
 
     if (existingSlot) {
-      // Update existing slot
-      existingSlot.status = newStatus;
-      modified++;
+      if (existingSlot.status !== newStatus) {
+        existingSlot.status = newStatus;
+        modified++;
+      }
     } else {
-      // Create new slot
-      slots.push({
-        id: `slot-${Date.now()}-${created}`,
+      updatedSlots.push({
+        id: `slot-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         date: sel.date,
         time: sel.time,
         duration: 20, // 20-minute slots
-        status: newStatus
+        status: newStatus,
+        createdAt: new Date().toISOString()
       });
       created++;
     }
   });
 
-  localStorage.setItem('doggypaddle_timeslots', JSON.stringify(slots));
-  selectedSlots.clear();
-  renderCalendarView();
-
-  const message = created > 0
-    ? `Created ${created} new slot(s) and updated ${modified} existing slot(s)`
-    : `Updated ${modified} slot(s)`;
-  showNotification(message, 'success');
-}
-
-window.cleanupInvalidTimeSlots = function() {
-  if (!confirm('This will permanently delete all time slots with invalid time formats. Continue?')) {
-    return;
+  try {
+    await persistSlots(updatedSlots);
+    await renderCalendarView();
+    const message = created > 0
+      ? `Created ${created} new slot(s) and updated ${modified} existing slot(s)`
+      : `Updated ${modified} slot(s)`;
+    showNotification(message, 'success');
+  } catch (error) {
+    console.error('Error updating slots:', error);
+    showNotification('Failed to update selected slots: ' + error.message, 'error');
   }
-
-  const slots = JSON.parse(localStorage.getItem('doggypaddle_timeslots') || '[]');
-  const validSlots = slots.filter(slot => validateTimeFormat(slot.time));
-  const removedCount = slots.length - validSlots.length;
-
-  localStorage.setItem('doggypaddle_timeslots', JSON.stringify(validSlots));
-  loadTimeSlots();
-  showNotification(`Removed ${removedCount} invalid time slot${removedCount > 1 ? 's' : ''}`, 'success');
-}
+};
 
 async function saveTimeSlot() {
   const date = document.getElementById('timeslot-date').value;
