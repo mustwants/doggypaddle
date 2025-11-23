@@ -1,4 +1,11 @@
 // Google Apps Script - DoggyPaddle Backend (Custom for existing sheet)
+//
+// ⚠️ DEPRECATED: This file is being phased out. Use google-apps-script.gs instead.
+//
+// The main google-apps-script.gs file now supports BOTH legacy and new sheet formats,
+// so this custom version is no longer needed. The main script includes all the
+// functionality from this file plus additional features (photos, subscriptions, etc.)
+//
 // Deploy this as a Web App with "Anyone" access
 //
 // CONFIGURATION - Your Sheet ID
