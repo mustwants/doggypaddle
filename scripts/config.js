@@ -21,7 +21,12 @@ const CONFIG = {
   // The URL should look like: https://script.google.com/macros/s/AKfycbw...LONG_ID.../exec
   //
   // ✓ CONFIGURED: Web App URL from Google Apps Script deployment
-  API_ENDPOINT: 'https://script.google.com/macros/s/AKfycbz8spCI4G3t_gicwPhS_uc2AJ1-059ODLCKNOl1j2r9a_cz16QGmAVaiR-AJlqxWiY5ug/exec',
+  //
+  // API calls now proxy through a Netlify Function to avoid browser CORS
+  // errors while still forwarding requests to the Google Apps Script backend.
+  // The function uses GAS_API_ENDPOINT (falling back to the URL below) as the
+  // upstream target.
+  API_ENDPOINT: '/.netlify/functions/gas-proxy',
 
   // Google OAuth Configuration
   // To get your Client ID:
