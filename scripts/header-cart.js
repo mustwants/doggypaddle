@@ -71,31 +71,8 @@
   }
 
   function openStoreCart() {
-    // Check if we have a unified cart modal
-    const unifiedCartModal = document.getElementById('unified-cart-modal');
-    if (unifiedCartModal) {
-      showUnifiedCart();
-      return;
-    }
-
-    // Check for store cart sidebar
-    const cartSidebar = document.getElementById('cart-sidebar');
-    if (cartSidebar) {
-      cartSidebar.classList.add('open');
-      cartSidebar.setAttribute('aria-hidden', 'false');
-      return;
-    }
-
-    // Check for booking cart sidebar
-    const bookingCartSidebar = document.getElementById('booking-cart-sidebar');
-    if (bookingCartSidebar) {
-      bookingCartSidebar.classList.add('open');
-      return;
-    }
-
-    // Fallback: navigate to store page
-    localStorage.setItem('doggypaddle_open_cart', 'true');
-    window.location.href = '/store#cart';
+    // Always show unified cart modal to display both sessions and products
+    showUnifiedCart();
   }
 
   function showUnifiedCart() {
