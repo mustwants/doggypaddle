@@ -694,6 +694,14 @@
         <li><a href="/#pricing">Book Session</a></li>
         <li><a href="/store">Store</a></li>
         <li><a href="/photos">Share Photos</a></li>
+                <li>
+          <button id="header-cart-button" class="nav-cart-button" type="button">
+            <span aria-hidden="true">🛒</span>
+            <span class="nav-cart-label">Cart</span>
+            <span id="header-cart-amount" class="nav-cart-amount">$0.00</span>
+            <span id="header-cart-count" class="nav-cart-count" aria-label="Items in cart">0</span>
+          </button>
+        </li>
         <li><a href="/waiver/waiver.html" class="btn-waiver">Waiver</a></li>
       </ul>
     </div>
@@ -1099,12 +1107,12 @@
       </a>
     </div>
   </footer>
-
-  <script src="/scripts/store.js"></script>
+<script src="/scripts/store.js"></script>
+  <script src="/scripts/header-cart.js"></script>
   <script
     src="/scripts/admin-dashboard.js"
     defer
-   integrity="sha384-6MoN80NYoYFWikYl/CcgSUXWkI+zxQl07eNebvYrYdhkw4uwTWflZgM1wlrludR5"
+    integrity="sha384-6MoN80NYoYFWikYl/CcgSUXWkI+zxQl07eNebvYrYdhkw4uwTWflZgM1wlrludR5"
     crossorigin="anonymous"
   ></script>
 </body>
