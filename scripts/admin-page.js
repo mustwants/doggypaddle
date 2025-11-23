@@ -4,7 +4,8 @@
   window.isAdminLoggedIn = false;
   let adminUserEmail = null;
   let modulesInitialized = false;
- let allowedAdmins = [];
+  let modalsLoaded = false;
+  let allowedAdmins = [];
 
   const API_ENDPOINT = window.DoggyPaddleConfig?.API_ENDPOINT ||
                        'https://script.google.com/macros/s/YOUR_DEPLOYED_WEBAPP_ID/exec';
