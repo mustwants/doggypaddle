@@ -71,95 +71,66 @@
   }
 
   function openStoreCart() {
-    // Always show unified cart modal to display both sessions and products
+    // Always show unified cart sidebar to display both sessions and products
     showUnifiedCart();
   }
 
   function showUnifiedCart() {
-    const modal = document.getElementById('unified-cart-modal');
-    if (!modal) {
-      createUnifiedCartModal();
+    const sidebar = document.getElementById('unified-cart-sidebar');
+    if (!sidebar) {
+      createUnifiedCartSidebar();
     }
 
     renderUnifiedCart();
-    const unifiedModal = document.getElementById('unified-cart-modal');
-    if (unifiedModal) {
-      unifiedModal.style.display = 'flex';
-      setTimeout(() => unifiedModal.classList.add('show'), 10);
+    const unifiedSidebar = document.getElementById('unified-cart-sidebar');
+    if (unifiedSidebar) {
+      unifiedSidebar.classList.add('open');
     }
   }
 
-  function createUnifiedCartModal() {
-    const modal = document.createElement('div');
-    modal.id = 'unified-cart-modal';
-    modal.className = 'unified-cart-modal';
-    modal.innerHTML = `
-      <div class="unified-modal-overlay"></div>
-      <div class="unified-modal-content">
-        <div class="unified-cart-header">
-          <h2>Shopping Cart</h2>
-          <button class="unified-cart-close" id="close-unified-cart">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M18 6L6 18M6 6l12 12"/>
-            </svg>
-          </button>
+  function createUnifiedCartSidebar() {
+    const sidebar = document.createElement('div');
+    sidebar.id = 'unified-cart-sidebar';
+    sidebar.className = 'unified-cart-sidebar';
+    sidebar.innerHTML = `
+      <div class="unified-cart-header">
+        <h2>Shopping Cart</h2>
+        <button class="unified-cart-close" id="close-unified-cart">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="unified-cart-body" id="unified-cart-items"></div>
+      <div class="unified-cart-footer">
+        <div class="unified-cart-total">
+          <span>Total:</span>
+          <span id="unified-cart-total">$0.00</span>
         </div>
-        <div class="unified-cart-body" id="unified-cart-items"></div>
-        <div class="unified-cart-footer">
-          <div class="unified-cart-total">
-            <span>Total:</span>
-            <span id="unified-cart-total">$0.00</span>
-          </div>
-          <button class="unified-checkout-btn" id="unified-checkout-btn">Proceed to Checkout</button>
-        </div>
+        <button class="unified-checkout-btn" id="unified-checkout-btn">Proceed to Checkout</button>
       </div>
     `;
 
-    document.body.appendChild(modal);
+    document.body.appendChild(sidebar);
 
     // Add styles
     const style = document.createElement('style');
     style.textContent = `
-      .unified-cart-modal {
+      .unified-cart-sidebar {
         position: fixed;
+        right: -450px;
         top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        z-index: 10000;
-        display: none;
-        align-items: center;
-        justify-content: center;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-      }
-      .unified-cart-modal.show {
-        opacity: 1;
-      }
-      .unified-modal-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.7);
-        backdrop-filter: blur(8px);
-      }
-      .unified-modal-content {
-        position: relative;
+        width: 450px;
+        height: 100vh;
         background: white;
-        border-radius: 16px;
-        width: 90%;
-        max-width: 600px;
-        max-height: 85vh;
+        box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3);
+        transition: right 0.3s ease;
+        z-index: 10000;
         display: flex;
         flex-direction: column;
-        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.4);
-        transform: scale(0.9);
-        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
       }
-      .unified-cart-modal.show .unified-modal-content {
-        transform: scale(1);
+      .unified-cart-sidebar.open {
+        right: 0;
       }
       .unified-cart-header {
         padding: 1.5rem;
@@ -284,19 +255,14 @@
     document.head.appendChild(style);
 
     // Add event listeners
-    const closeBtn = modal.querySelector('#close-unified-cart');
-    const overlay = modal.querySelector('.unified-modal-overlay');
-    const checkoutBtn = modal.querySelector('#unified-checkout-btn');
+    const closeBtn = sidebar.querySelector('#close-unified-cart');
+    const checkoutBtn = sidebar.querySelector('#unified-checkout-btn');
 
-    const closeModal = () => {
-      modal.classList.remove('show');
-      setTimeout(() => {
-        modal.style.display = 'none';
-      }, 300);
+    const closeSidebar = () => {
+      sidebar.classList.remove('open');
     };
 
-    closeBtn.addEventListener('click', closeModal);
-    overlay.addEventListener('click', closeModal);
+    closeBtn.addEventListener('click', closeSidebar);
     checkoutBtn.addEventListener('click', handleUnifiedCheckout);
   }
 
