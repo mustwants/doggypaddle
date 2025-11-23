@@ -765,6 +765,34 @@ async function fetchAdminSlots() {
   }
 }
 
+// Persist slots to backend (or localStorage when backend is unavailable)
+async function persistSlots(slots) {
+  adminSlots = Array.isArray(slots) ? [...slots] : [];
+  localStorage.setItem('doggypaddle_timeslots', JSON.stringify(adminSlots));
+
+  if (!isBackendConfigured) {
+    console.warn('Backend not configured. Saved timeslots to localStorage only.');
+    return { status: 'local-only' };
+  }
+
+  const response = await fetch(API_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'saveSlots', slots: adminSlots })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to save slots (HTTP ${response.status})`);
+  }
+
+  const data = await response.json();
+  if (data.status !== 'success') {
+    throw new Error(data.message || 'Backend rejected slot save request');
+  }
+
+  return data;
+}
+
 async function renderCalendarView() {
   const timeslotsList = document.getElementById('admin-timeslots-list');
   if (!timeslotsList) return;
