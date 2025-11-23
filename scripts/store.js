@@ -175,6 +175,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Save cart to localStorage
   function saveCart() {
     localStorage.setItem('doggypaddle_cart', JSON.stringify(cart));
+      window.dispatchEvent(new CustomEvent('storeCartUpdated', { detail: { cart } }));
   }
 
   // Update cart UI
@@ -198,6 +199,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     renderCartItems();
+        window.dispatchEvent(new CustomEvent('storeCartUpdated', { detail: { cart } }));
   }
 
   // Render cart items
@@ -363,6 +365,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Initialize
   await loadProducts();
   updateCartUI();
+
+    const shouldOpenCart = localStorage.getItem('doggypaddle_open_cart') === 'true';
+  if (shouldOpenCart && cartSidebar) {
+    cartSidebar.classList.add('open');
+    cartSidebar.setAttribute('aria-hidden', 'false');
+    localStorage.removeItem('doggypaddle_open_cart');
+  }
+
 
   // ============================================
   // ADMIN FUNCTIONALITY
