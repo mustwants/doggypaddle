@@ -363,15 +363,7 @@ function normalizeDateString(dateInput) {
           <h3>Select Time Slots</h3>
           <p class="modal-date">${formattedDate}</p>
         </div>
-        <div class="time-slots-grid">
-          ${slots.map(slot => `
-            <button class="time-slot-btn" data-slot='${JSON.stringify(slot)}'>
-              <div class="slot-time">${formatTime(slot.time)}</div>
-              <div class="slot-duration">${slot.duration} min</div>
-              <div class="slot-price">$${PRICE_PER_SLOT}</div>
-            </button>
-          `).join("")}
-        </div>
+        <div class="time-slots-grid"></div>
       </div>
     `;
 
@@ -398,53 +390,51 @@ function normalizeDateString(dateInput) {
     };
     document.addEventListener("keydown", escHandler);
 
-    // Time slot selection
-    modal.querySelectorAll(".time-slot-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const slot = JSON.parse(btn.dataset.slot);
-        addToCart(slot);
-        showNotification(`Added ${formatDateLong(slot.date)} at ${formatTime(slot.time)}`);
+    const renderSlotButtons = () => {
+      const updatedSlots = getSlotsForDate(dateString);
+      const updatedGrid = modal.querySelector('.time-slots-grid');
 
-        // Re-render the modal with updated available slots
-        const updatedSlots = getSlotsForDate(dateString);
-        if (updatedSlots.length === 0) {
-          closeModal();
+      if (!updatedGrid) {
+        return;
+      }
+
+      if (updatedSlots.length === 0) {
+        closeModal();
+        renderCalendar();
+        return;
+      }
+
+      updatedGrid.innerHTML = updatedSlots.map(slot => `
+        <button class="time-slot-btn" data-slot='${JSON.stringify(slot)}'>
+          <div class="slot-time">${formatTime(slot.time)}</div>
+          <div class="slot-duration">${slot.duration} min</div>
+          <div class="slot-price">$${PRICE_PER_SLOT}</div>
+        </button>
+      `).join("");
+
+      updatedGrid.querySelectorAll(".time-slot-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const slot = JSON.parse(btn.dataset.slot);
+          addToCart(slot);
+          showNotification(`Added ${formatDateLong(slot.date)} at ${formatTime(slot.time)}`);
           renderCalendar();
-        } else {
-          const updatedGrid = modal.querySelector('.time-slots-grid');
-          updatedGrid.innerHTML = updatedSlots.map(slot => `
-            <button class="time-slot-btn" data-slot='${JSON.stringify(slot)}'>
-              <div class="slot-time">${formatTime(slot.time)}</div>
-              <div class="slot-duration">${slot.duration} min</div>
-              <div class="slot-price">$${PRICE_PER_SLOT}</div>
-            </button>
-          `).join("");
-
-          // Re-attach event listeners
-          updatedGrid.querySelectorAll(".time-slot-btn").forEach(newBtn => {
-            newBtn.addEventListener("click", () => {
-              const newSlot = JSON.parse(newBtn.dataset.slot);
-              addToCart(newSlot);
-              showNotification(`Added ${formatDateLong(newSlot.date)} at ${formatTime(newSlot.time)}`);
-
-              const finalSlots = getSlotsForDate(dateString);
-              if (finalSlots.length === 0) {
-                closeModal();
-                renderCalendar();
-              } else {
-                location.reload(); // Simple refresh to update
-              }
-            });
-          });
-        }
+          renderSlotButtons();
+        });
       });
-    });
+    };
+
+    renderSlotButtons();
 
     setTimeout(() => modal.classList.add("show"), 10);
   }
 
   // Cart functions
   function addToCart(slot) {
+    const exists = cart.some(item => item.id === slot.id);
+    if (exists) {
+      return;
+    }
+
     cart.push({
       id: slot.id,
       date: slot.date,
