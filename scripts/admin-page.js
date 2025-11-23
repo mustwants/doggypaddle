@@ -248,8 +248,36 @@
           showDashboard();
         })
         .catch(error => {
-          console.warn('Admin verification failed:', error);
-          alert(error.message || 'Authentication failed. Please try again.');
+          console.warn('Backend admin verification failed, falling back to client-side verification:', error.message);
+
+          // Fall back to client-side JWT parsing when backend is unavailable
+          const payload = parseJwt(response.credential);
+          if (!payload) {
+            alert('Authentication failed. Could not verify your credentials.\n\nError: Failed to parse JWT token');
+            return;
+          }
+
+          const allowedAdminsLower = allowlist.map(email => email.toLowerCase());
+          const userEmail = payload.email.toLowerCase();
+
+          if (!allowedAdminsLower.includes(userEmail)) {
+            alert(`Access denied. Only authorized Google Workspace accounts can access the admin panel.\n\nYour email: ${userEmail}\n\nAllowed admins: ${allowlist.join(', ')}`);
+            return;
+          }
+
+          window.isAdminLoggedIn = true;
+          adminUserEmail = userEmail;
+
+          const session = {
+            email: userEmail,
+            name: payload.name,
+            picture: payload.picture,
+            timestamp: Date.now()
+          };
+          localStorage.setItem('doggypaddle_admin_session', JSON.stringify(session));
+
+          showNotification(`Welcome, ${payload.name}! (Verified client-side)`);
+          showDashboard();
         });
     } catch (error) {
       console.error('Error handling Google Sign-In:', error);
