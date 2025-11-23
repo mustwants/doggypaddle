@@ -40,9 +40,12 @@
         throw new Error(data.message || 'Backend did not return an allowlist');
       }
     } catch (error) {
-      console.error('Error loading admin allowlist:', error);
+      console.warn('Backend admin allowlist not available, using config fallback:', error.message);
+
+      // Fall back to config file allowlist
+      allowedAdmins = window.DoggyPaddleConfig?.GOOGLE_AUTH?.allowedAdmins || [];
       if (adminListElement) {
-        adminListElement.textContent = 'Unable to load allowlist';
+        adminListElement.textContent = allowedAdmins.join(', ');
       }
     }
 
@@ -51,20 +54,30 @@
 
   async function waitForAdminEnhancements() {
     const start = Date.now();
-    const timeout = 5000;
+    const timeout = 10000;
     const pollInterval = 100;
+    let lastLog = 0;
 
     return new Promise((resolve, reject) => {
       const checkReady = () => {
         const productsReady = typeof window.loadAdminProducts === 'function';
         const slotsReady = typeof window.loadTimeSlots === 'function';
+        const elapsed = Date.now() - start;
+
+        // Log status every 2 seconds
+        if (elapsed - lastLog >= 2000) {
+          console.log(`Waiting for admin enhancements... (${Math.round(elapsed/1000)}s) Products: ${productsReady}, Slots: ${slotsReady}`);
+          lastLog = elapsed;
+        }
 
         if (productsReady && slotsReady) {
+          console.log('✓ Admin enhancements loaded successfully');
           resolve();
           return;
         }
 
-        if (Date.now() - start >= timeout) {
+        if (elapsed >= timeout) {
+          console.error(`Admin enhancements timeout after ${timeout}ms. Products: ${productsReady}, Slots: ${slotsReady}`);
           reject(new Error('Admin enhancements failed to initialize'));
           return;
         }
