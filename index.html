@@ -136,6 +136,51 @@
       transform: translateY(-2px);
     }
 
+    .nav-cart-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      background: var(--primary);
+      color: var(--white);
+      border: none;
+      border-radius: 999px;
+      padding: 0.55rem 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 2px 8px var(--shadow);
+      transition: var(--transition);
+    }
+
+    .nav-cart-button:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+    }
+
+    .nav-cart-button:focus {
+      outline: 3px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .nav-cart-amount {
+      background: rgba(255, 255, 255, 0.15);
+      padding: 0.15rem 0.55rem;
+      border-radius: 999px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .nav-cart-count {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      min-width: 22px;
+      height: 22px;
+      background: var(--accent);
+      color: var(--white);
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+    
     /* Container */
     .container {
       max-width: 1200px;
@@ -655,6 +700,14 @@
         <li><a href="#pricing">Book Session</a></li>
         <li><a href="/store">Store</a></li>
         <li><a href="/photos">Share Photos</a></li>
+               <li>
+          <button id="header-cart-button" class="nav-cart-button" type="button">
+            <span aria-hidden="true">🛒</span>
+            <span class="nav-cart-label">Cart</span>
+            <span id="header-cart-amount" class="nav-cart-amount">$0.00</span>
+            <span id="header-cart-count" class="nav-cart-count" aria-label="Items in cart">0</span>
+          </button>
+        </li>
         <li><a href="/waiver/waiver.html" class="btn-waiver">Waiver</a></li>
       </ul>
     </div>
@@ -1444,6 +1497,7 @@
     integrity="sha384-pNJeT57fMQgdfQqdUDN4WMrPr2SeB1blyWWS4mclup3xNflqyBtv7PI5sw5zQdRo"
     crossorigin="anonymous"
   ></script>
+            <script src="/scripts/header-cart.js"></script>
   <script>
     // Subscription modal handler
     function showSubscriptionModal(event) {
