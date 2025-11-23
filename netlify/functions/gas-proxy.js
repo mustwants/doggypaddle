@@ -43,16 +43,52 @@ exports.handler = async function handler(event) {
     };
   }
 
-  const targetUrl = event.rawQuery ? `${upstream}?${event.rawQuery}` : upstream;
+  let targetUrl = event.rawQuery ? `${upstream}?${event.rawQuery}` : upstream;
 
   try {
-    const response = await fetch(targetUrl, {
-      method: event.httpMethod,
-      headers: {
-        'Content-Type': event.headers['content-type'] || 'application/json'
-      },
-      body: event.httpMethod === 'GET' ? undefined : event.body
-    });
+    // For POST requests, manually handle redirects to preserve POST method
+    // Google Apps Script often redirects POST requests, which browsers convert to GET
+    let response;
+
+    if (event.httpMethod === 'POST') {
+      // First, send request with redirect: 'manual' to get redirect location
+      const initialResponse = await fetch(targetUrl, {
+        method: event.httpMethod,
+        headers: {
+          'Content-Type': event.headers['content-type'] || 'application/json'
+        },
+        body: event.body,
+        redirect: 'manual'
+      });
+
+      // If redirected, follow to the new location while preserving POST
+      if (initialResponse.status >= 300 && initialResponse.status < 400) {
+        const redirectUrl = initialResponse.headers.get('location');
+        if (redirectUrl) {
+          response = await fetch(redirectUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': event.headers['content-type'] || 'application/json'
+            },
+            body: event.body,
+            redirect: 'follow'
+          });
+        } else {
+          response = initialResponse;
+        }
+      } else {
+        response = initialResponse;
+      }
+    } else {
+      // GET requests can use normal redirect handling
+      response = await fetch(targetUrl, {
+        method: event.httpMethod,
+        headers: {
+          'Content-Type': event.headers['content-type'] || 'application/json'
+        },
+        redirect: 'follow'
+      });
+    }
 
     const responseBody = await response.text();
 
@@ -68,7 +104,12 @@ exports.handler = async function handler(event) {
     return {
       statusCode: 502,
       headers: corsHeaders,
-      body: JSON.stringify({ status: 'error', message: 'Proxy request failed', detail: error.message })
+      body: JSON.stringify({
+        status: 'error',
+        message: 'Proxy request failed',
+        detail: error.message,
+        upstream: upstream
+      })
     };
   }
 };
