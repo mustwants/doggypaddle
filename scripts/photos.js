@@ -20,7 +20,56 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Check if backend is configured
   const isBackendConfigured = API_ENDPOINT && !API_ENDPOINT.includes('YOUR_DEPLOYED_WEBAPP_ID');
 
-    async function fileToDataUrl(file) {
+  // Compress and optimize image before upload
+  async function compressImage(file, maxWidth = 1920, maxHeight = 1080, quality = 0.85) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          // Calculate new dimensions while maintaining aspect ratio
+          let width = img.width;
+          let height = img.height;
+
+          if (width > maxWidth || height > maxHeight) {
+            const aspectRatio = width / height;
+            if (width > height) {
+              width = maxWidth;
+              height = width / aspectRatio;
+            } else {
+              height = maxHeight;
+              width = height * aspectRatio;
+            }
+          }
+
+          // Create canvas and draw resized image
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+
+          // Draw image on canvas (this strips EXIF data automatically)
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Convert to data URL with compression
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+
+          // Log compression results
+          const originalSize = (file.size / 1024).toFixed(2);
+          const compressedSize = (compressedDataUrl.length * 0.75 / 1024).toFixed(2); // Approximate size
+          console.log(`Image compressed: ${originalSize}KB → ${compressedSize}KB (${((1 - compressedSize/originalSize) * 100).toFixed(1)}% reduction)`);
+
+          resolve(compressedDataUrl);
+        };
+        img.onerror = reject;
+        img.src = e.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function fileToDataUrl(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => resolve(reader.result);
@@ -100,7 +149,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     submitBtn.disabled = true;
     submitBtn.textContent = 'Uploading...';
 
-  try {
+    try {
       // Get form data
       const formData = new FormData(photoForm);
       const photoData = {
@@ -115,34 +164,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         timestamp: new Date().toISOString()
       };
 
-      // For now, we'll use a placeholder URL
-      // In production, you'd upload to imgur, cloudinary, or firebase
-      // Here's how you'd upload to imgur:
-      /*
-      const imgurClientId = window.DoggyPaddleConfig?.IMAGE_UPLOAD?.clientId;
-      if (imgurClientId) {
-        const imgurFormData = new FormData();
-        imgurFormData.append('image', selectedFile);
-
-        const imgurResponse = await fetch('https://api.imgur.com/3/image', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Client-ID ${imgurClientId}`
-          },
-          body: imgurFormData
-        });
-
-        if (imgurResponse.ok) {
-          const imgurData = await imgurResponse.json();
-          photoData.imageUrl = imgurData.data.link;
-        }
+      // Step 1: Compress and optimize image
+      submitBtn.textContent = 'Optimizing image...';
+      try {
+        photoData.imageUrl = await compressImage(selectedFile);
+      } catch (compressionError) {
+        console.warn('Image compression failed, using original:', compressionError);
+        // Fallback to uncompressed if compression fails
+        photoData.imageUrl = await fileToDataUrl(selectedFile);
       }
-      */
 
-     // Convert to data URL for storage (keeps implementation compatible with GAS backend)
-      photoData.imageUrl = await fileToDataUrl(selectedFile);
+      // Step 2: Validate compressed size isn't too large for Google Sheets
+      const estimatedSize = photoData.imageUrl.length * 0.75; // Approximate bytes
+      if (estimatedSize > 1024 * 1024 * 2) { // 2MB limit for data URLs in sheets
+        throw new Error('Image is too large even after compression. Please use a smaller image or lower resolution photo.');
+      }
 
-      // Check if backend is configured
+      // Step 3: Check if backend is configured
       if (!isBackendConfigured) {
         throw new Error(
           "Backend not configured. Please set up the Google Apps Script backend to enable photo uploads. " +
@@ -150,47 +188,55 @@ document.addEventListener('DOMContentLoaded', async () => {
         );
       }
 
-      // Save to backend
-      try {
-        const response = await fetch(API_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'savePhoto', photo: photoData })
-        });
+      // Step 4: Save to backend
+      submitBtn.textContent = 'Submitting photo...';
+      const response = await fetch(API_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'savePhoto', photo: photoData })
+      });
 
-        if (response.ok) {
-          const result = await response.json();
-          if (result.status === 'success') {
-            // Show success message
-            successMessage.style.display = 'block';
-            photoForm.reset();
-            previewContainer.style.display = 'none';
-            selectedFile = null;
-
-            // Scroll to success message
-            successMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-            // Reload gallery after 2 seconds
-            setTimeout(() => {
-              loadGallery();
-            }, 2000);
-          } else {
-            throw new Error(result.message || 'Submission failed');
-          }
-        } else {
-          throw new Error('Server error');
-        }
-      } catch (error) {
-        console.error('Photo submission error:', error);
-        alert('Failed to submit photo. Please try again.');
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Submit Photo for Review';
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => 'Unknown error');
+        throw new Error(`Server error (${response.status}): ${errorText}`);
       }
+
+      const result = await response.json();
+      if (result.status !== 'success') {
+        throw new Error(result.message || 'Submission failed');
+      }
+
+      // Success! Show success message
+      successMessage.style.display = 'block';
+      photoForm.reset();
+      previewContainer.style.display = 'none';
+      selectedFile = null;
+
+      // Scroll to success message
+      successMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+      // Reload gallery after 2 seconds
+      setTimeout(() => {
+        loadGallery();
+      }, 2000);
 
     } catch (error) {
       console.error('Upload error:', error);
-      alert('Failed to upload photo. Please try again.');
+
+      // Show user-friendly error message
+      let errorMessage = 'Failed to upload photo. ';
+      if (error.message.includes('Backend not configured')) {
+        errorMessage += 'The backend is not set up yet. Please contact the administrator.';
+      } else if (error.message.includes('too large')) {
+        errorMessage += error.message;
+      } else if (error.message.includes('Server error')) {
+        errorMessage += 'There was a server error. Please try again later.';
+      } else {
+        errorMessage += 'Please check your internet connection and try again.';
+      }
+
+      alert(errorMessage);
+    } finally {
       submitBtn.disabled = false;
       submitBtn.textContent = 'Submit Photo for Review';
     }
