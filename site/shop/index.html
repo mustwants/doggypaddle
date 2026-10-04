@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Shop | PupSwim</title>
+  <meta name="description" content="Pool-day gear picks and PupSwim merch for dogs who love to swim.">
+  <link rel="canonical" href="https://pupswim.com/shop/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="PupSwim">
+  <meta property="og:title" content="Shop | PupSwim">
+  <meta property="og:description" content="Pool-day gear picks and PupSwim merch for dogs who love to swim.">
+  <meta property="og:url" content="https://pupswim.com/shop/">
+  <meta property="og:image" content="https://pupswim.com/assets/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#0a7a8f">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="preload" href="/assets/fonts/fredoka-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/assets/styles.css">
+  <script src="/scripts/config.js" defer></script>
+  <script src="/scripts/api.js" defer></script>
+  <script src="/scripts/site.js" defer></script>
+  <script src="/scripts/shop.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="/" aria-label="PupSwim home">
+        <img src="/assets/logo.svg" alt="" width="42" height="42">
+        <span>Pup<span class="brand-swim">Swim</span></span>
+      </a>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">Menu</button>
+      <nav class="site-nav" id="site-nav" aria-label="Main">
+        <ul>
+          <li><a href="/#pricing">Pricing</a></li>
+          <li><a href="/#rules">Pool Rules</a></li>
+          <li><a href="/club/">Passes</a></li>
+          <li><a href="/shop/" aria-current="page">Shop</a></li>
+          <li><a href="/waiver/">Waiver</a></li>
+          <li><a class="btn" href="/book/">Rent the Pool</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="page-hero">
+      <div class="wrap">
+        <h1>Shop</h1>
+        <p>Pool-day gear we like, plus PupSwim merch. Each item links to the store that sells it, where you complete your purchase.</p>
+      </div>
+    <svg class="wave" viewBox="0 0 1200 48" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+      <path fill="currentColor" d="M0 24c100-24 200-24 300 0s200 24 300 0 200-24 300 0 200 24 300 0v24H0z"/>
+    </svg>
+    </section>
+
+    <section class="section">
+      <div class="wrap stack">
+        <div id="merch-card" class="cta-band" hidden>
+          <div>
+            <h2>PupSwim merch</h2>
+            <p>Shirts and gear printed to order in our merch store.</p>
+          </div>
+          <a class="btn" id="merch-link" href="#" target="_blank" rel="noopener">Open the Merch Store</a>
+        </div>
+
+        <div id="shop-notice" class="notice" role="status" aria-live="polite" hidden></div>
+        <p id="shop-loading" class="muted"><span class="spinner" aria-hidden="true"></span>Loading picks...</p>
+
+        <div id="shop-empty" class="card center" hidden>
+          <h2>Picks are on the way</h2>
+          <p class="mb-0">We are choosing our favorite pool-day gear. Check back soon.</p>
+        </div>
+
+        <div id="shop-content" hidden>
+          <div class="chip-row" id="shop-filters" role="group" aria-label="Filter by category"></div>
+          <div class="grid grid-3" id="shop-grid"></div>
+        </div>
+
+        <p id="amazon-disclosure" class="notice" hidden>As an Amazon Associate I earn from qualifying purchases. Links marked "paid link" go to Amazon.</p>
+        <p class="small muted">Prices and availability are set by each store and can change. PupSwim does not process these orders.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="footer-grid">
+        <div>
+          <a class="brand" href="/" aria-label="PupSwim home">
+            <img src="/assets/logo.svg" alt="" width="42" height="42">
+            <span>Pup<span class="brand-swim">Swim</span></span>
+          </a>
+          <p>Private pool rentals for dogs in St. Augustine, Florida.</p>
+        </div>
+        <div>
+          <h2 class="footer-title">Explore</h2>
+          <ul class="footer-links">
+            <li><a href="/book/">Rent the Pool</a></li>
+            <li><a href="/club/">Passes and Swim Club</a></li>
+            <li><a href="/shop/">Shop</a></li>
+            <li><a href="/waiver/">Liability Waiver</a></li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="footer-title">Contact</h2>
+          <p>Questions? Email <a href="mailto:pupswim@mustwants.com" data-contact-email data-show-email>pupswim@mustwants.com</a>.</p>
+        </div>
+      </div>
+      <p class="footer-fine">&copy; <span data-year>2026</span> PupSwim. A MustWants Inc service in St. Augustine, FL. &middot; <a href="/admin/">Admin</a></p>
+    </div>
+  </footer>
+</body>
+</html>

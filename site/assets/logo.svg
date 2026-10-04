@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="PupSwim">
+  <defs>
+    <clipPath id="ps-clip"><circle cx="32" cy="32" r="32"/></clipPath>
+  </defs>
+  <g clip-path="url(#ps-clip)">
+    <rect width="64" height="64" fill="#0a7a8f"/>
+    <circle cx="50" cy="13" r="6" fill="#ffc145"/>
+    <ellipse cx="18.5" cy="27" rx="5.5" ry="10" transform="rotate(18 18.5 27)" fill="#9a3f12"/>
+    <ellipse cx="45.5" cy="27" rx="5.5" ry="10" transform="rotate(-18 45.5 27)" fill="#9a3f12"/>
+    <ellipse cx="32" cy="28" rx="13" ry="12.5" fill="#cf6a2a"/>
+    <ellipse cx="32" cy="34" rx="7.5" ry="6" fill="#f8dfc8"/>
+    <ellipse cx="32" cy="31.2" rx="2.9" ry="2.2" fill="#0b2b3a"/>
+    <circle cx="26.5" cy="25.5" r="1.7" fill="#0b2b3a"/>
+    <circle cx="37.5" cy="25.5" r="1.7" fill="#0b2b3a"/>
+    <path d="M32 33.4v2.4" stroke="#0b2b3a" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M-2 41c5.5-4.5 11-4.5 16.500 0s11 4.500 16.500 0 11-4.500 16.500 0 11 4.500 18.500 0V70H-2z" fill="#35b8cc"/>
+    <path d="M-2 49c5.5-4.500 11-4.500 16.500 0s11 4.500 16.500 0 11-4.500 16.500 0 11 4.500 18.500 0V70H-2z" fill="#b9e8ef"/>
+  </g>
+</svg>

@@ -1,109 +1,45 @@
-# DoggyPaddle - Dog Swimming Pool Booking Website
+# PupSwim
 
-A complete website for managing dog swimming pool bookings, including online scheduling, payments via Stripe, waiver management, product sales, and photo gallery.
+Website for PupSwim, private pool rentals for dogs in St. Augustine, Florida. Live address: https://pupswim.com (the old address, dogpaddle.club, redirects to it).
 
-## 🚨 Important: Backend Setup Required
+## How it fits together
 
-**If you're seeing CORS errors or "Failed to fetch" errors**, you need to set up the Google Apps Script backend first.
+| Part | Where it lives | What it does |
+| --- | --- | --- |
+| Website | `site/` | Static HTML, CSS, and JavaScript. Netlify publishes this folder only. |
+| Proxy | `netlify/functions/gas-proxy.js` | Netlify Function. Passes requests from the site to the backend. Returns JSON only. |
+| Backend | `backend/Code.gs` | Google Apps Script Web App attached to the PupSwim Google Sheet. `doGet` and `doPost` return JSON only (ContentService), never HTML. |
+| Data | Google Sheet tabs named `PupSwim Slots`, `PupSwim Bookings`, `PupSwim Waivers`, `PupSwim Passes`, `PupSwim Shop` | Created automatically by the backend. Tabs from the old site are not touched. |
+| Tests | `tests/` | Run locally. Never deployed. |
 
-📖 **See [QUICK_START.md](./QUICK_START.md) for setup instructions**
+## Pages
 
-## Features
+- `/` home, pricing, pool rules
+- `/book/` choose a time and reserve a rental
+- `/waiver/` sign the liability waiver
+- `/club/` request a 5-Session Pack or Swim Club pass, check a pass balance
+- `/shop/` product picks that link out to Amazon, Etsy, Printify, or Shopify (no on-site checkout)
+- `/admin/` admin dashboard (bookings, time slots, passes, shop items, waivers)
 
-- 🏊 **Interactive Booking System** - Calendar-based time slot selection
-- 💳 **Stripe Payment Integration** - Secure online payments
-- 📝 **Digital Waiver System** - Liability waiver with e-signature
-- 🏪 **Product Store** - Sell merchandise, treats, and accessories
-- 📸 **Photo Gallery** - Customer photo submissions with admin approval
-- 👨‍💼 **Admin Dashboard** - Manage bookings, products, and time slots
-- 📱 **Fully Responsive** - Works on desktop, tablet, and mobile
+## Security model
 
-## Quick Setup
+- The backend is the only security boundary. Every admin action requires a session token that the backend issues and checks. Nothing the browser stores or claims is trusted.
+- Admin sign-in is a one-time link emailed to an address on the allowlist (Apps Script property `ADMIN_ALLOWLIST`, default `scott@mustwants.com`). Links expire in 15 minutes and work once. Sessions last 12 hours.
+- Public actions are limited to: list open slots, list shop items, create a booking, sign a waiver, request a pass, check a pass balance.
+- A pass requested from the site is always created as pending with zero sessions. Only an admin can activate it.
+- Text typed by visitors is cleaned before it is written to the sheet so it cannot run as a spreadsheet formula, and the site never inserts it as HTML.
+- Known limit: bookings and pass lookups identify a customer by email address only. Someone who knows a pass holder's email could book with that pass. The pass holder receives a confirmation email for every booking, and an admin can cancel it to return the session.
 
-### 1. Backend Configuration (Required)
+## Settings you can change without code knowledge
 
-The website uses Google Apps Script as a backend. Follow the detailed setup guide:
+`site/scripts/config.js`: contact email, Stripe Payment Link addresses, merch store address.
 
-📖 **[QUICK_START.md](./QUICK_START.md)** - 15-minute setup guide
-
-Or see the complete guide:
-
-📖 **[backend/README.md](./backend/README.md)** - Detailed backend setup instructions
-
-### 2. Deploy to Netlify (or any static host)
-
-1. Push this repository to GitHub
-2. Connect to Netlify (or Vercel, GitHub Pages, etc.)
-3. Deploy settings:
-   - Build command: (leave empty)
-   - Publish directory: `/` (root)
-4. Your site will be live!
-
-### 3. Configure Custom Domain (Optional)
-
-See Netlify documentation for adding a custom domain.
-
-## Project Structure
+## Commands (optional, for a developer)
 
 ```
-doggypaddle/
-├── index.html              # Home page
-├── about.html              # About page
-├── booking.html            # Booking system
-├── store.html              # Product store
-├── photos.html             # Photo gallery
-├── admin.html              # Admin dashboard
-├── waiver/                 # Waiver system
-│   └── waiver.html
-├── scripts/                # JavaScript files
-│   ├── config.js          # ⚠️ UPDATE THIS with your backend URL
-│   ├── booking.js
-│   ├── calendar.js
-│   ├── store.js
-│   └── photos.js
-├── backend/                # Google Apps Script backend
-│   ├── README.md          # Backend setup guide
-│   └── google-apps-script.gs
-├── assets/                 # Images and media
-└── QUICK_START.md         # Quick setup guide
+npm test            # backend and proxy tests, no install needed (Node 20 or newer)
+npm run preview     # local preview at http://localhost:8788 with an in-memory backend
+npm run test:e2e    # browser test, needs Playwright installed
 ```
 
-## Configuration Files
-
-### scripts/config.js
-
-**⚠️ Important**: You must update this file with your Google Apps Script deployment URL.
-
-```javascript
-API_ENDPOINT: 'https://script.google.com/macros/s/YOUR_ACTUAL_DEPLOYMENT_URL/exec'
-```
-
-See [QUICK_START.md](./QUICK_START.md) for details.
-
-## Troubleshooting
-
-### CORS Errors / "Failed to fetch"
-
-This means the backend hasn't been configured yet. See [QUICK_START.md](./QUICK_START.md).
-
-### Photos Not Uploading
-
-Make sure:
-1. Backend is configured (see above)
-2. Image size is under 5MB
-3. Browser console shows no errors
-
-### Bookings Not Saving
-
-The backend must be configured. Until then, the site uses mock data for demonstration.
-
-## Support
-
-For issues or questions:
-1. Check [QUICK_START.md](./QUICK_START.md)
-2. Check [backend/README.md](./backend/README.md)
-3. Review browser console for error messages
-
-## License
-
-Proprietary - All rights reserved
+Deployment steps are in `docs/DEPLOY.md`.
