@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin | PupSwim</title>
+  <meta name="description" content="PupSwim admin dashboard.">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="canonical" href="https://pupswim.com/admin/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="PupSwim">
+  <meta property="og:title" content="Admin | PupSwim">
+  <meta property="og:description" content="PupSwim admin dashboard.">
+  <meta property="og:url" content="https://pupswim.com/admin/">
+  <meta property="og:image" content="https://pupswim.com/assets/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#0a7a8f">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="preload" href="/assets/fonts/fredoka-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/assets/styles.css">
+  <script src="/scripts/config.js" defer></script>
+  <script src="/scripts/api.js" defer></script>
+  <script src="/scripts/site.js" defer></script>
+  <script src="/scripts/admin.js" defer></script>
+</head>
+<body class="admin-body">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="/" aria-label="PupSwim home">
+        <img src="/assets/logo.svg" alt="" width="42" height="42">
+        <span>Pup<span class="brand-swim">Swim</span></span>
+      </a>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">Menu</button>
+      <nav class="site-nav" id="site-nav" aria-label="Main">
+        <ul>
+          <li><a href="/#pricing">Pricing</a></li>
+          <li><a href="/#rules">Pool Rules</a></li>
+          <li><a href="/club/">Passes</a></li>
+          <li><a href="/shop/">Shop</a></li>
+          <li><a href="/waiver/">Waiver</a></li>
+          <li><a class="btn" href="/book/">Rent the Pool</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="section">
+      <div class="wrap">
+
+        <div id="boot-view" class="center muted"><span class="spinner" aria-hidden="true"></span>Loading...</div>
+
+        <div id="login-view" class="card login-card stack" hidden>
+          <h1>Admin sign in</h1>
+          <p>Enter your admin email address. If it is on the admin list, we email you a one-time sign-in link that expires in 15 minutes.</p>
+          <div id="login-notice" class="notice" role="status" aria-live="polite" hidden></div>
+          <form id="login-form" class="stack">
+            <div class="field">
+              <label for="login-email">Admin email</label>
+              <input type="email" id="login-email" name="email" autocomplete="email" maxlength="254" required>
+            </div>
+            <button type="submit" class="btn btn-block" id="login-submit">Email Me a Sign-In Link</button>
+          </form>
+        </div>
+
+        <div id="dash-view" hidden>
+          <div class="toolbar dash-head">
+            <h1 class="mb-0">Admin dashboard</h1>
+            <span class="muted" id="admin-email"></span>
+            <button type="button" class="btn btn-ghost btn-small" id="logout-btn">Sign Out</button>
+          </div>
+
+          <div class="tabs" role="tablist" aria-label="Admin sections">
+            <button type="button" class="tab" role="tab" id="tab-bookings" data-tab="bookings" aria-controls="panel-bookings" aria-selected="true">Bookings</button>
+            <button type="button" class="tab" role="tab" id="tab-slots" data-tab="slots" aria-controls="panel-slots" aria-selected="false">Time Slots</button>
+            <button type="button" class="tab" role="tab" id="tab-passes" data-tab="passes" aria-controls="panel-passes" aria-selected="false">Passes</button>
+            <button type="button" class="tab" role="tab" id="tab-shop" data-tab="shop" aria-controls="panel-shop" aria-selected="false">Shop</button>
+            <button type="button" class="tab" role="tab" id="tab-waivers" data-tab="waivers" aria-controls="panel-waivers" aria-selected="false">Waivers</button>
+          </div>
+
+          <div id="dash-notice" class="notice" role="status" aria-live="polite" hidden></div>
+
+          <section id="panel-bookings" role="tabpanel" aria-labelledby="tab-bookings">
+            <div class="toolbar">
+              <div class="field">
+                <label for="booking-filter">Show</label>
+                <select id="booking-filter">
+                  <option value="upcoming">Upcoming</option>
+                  <option value="unpaid">Unpaid</option>
+                  <option value="all">All</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+              <button type="button" class="btn btn-ghost btn-small" id="bookings-refresh">Refresh</button>
+              <button type="button" class="btn btn-ghost btn-small" id="bookings-export">Export CSV</button>
+            </div>
+            <div class="table-wrap" id="bookings-table"></div>
+          </section>
+
+          <section id="panel-slots" role="tabpanel" aria-labelledby="tab-slots" hidden>
+            <form id="slot-form" class="card stack">
+              <h2>Add open times</h2>
+              <div class="form-grid">
+                <div class="field">
+                  <label for="slot-start">First day</label>
+                  <input type="date" id="slot-start" name="startDate" required>
+                </div>
+                <div class="field">
+                  <label for="slot-end">Last day</label>
+                  <input type="date" id="slot-end" name="endDate" required>
+                </div>
+                <div class="field">
+                  <label for="slot-first">First start time</label>
+                  <input type="time" id="slot-first" name="firstTime" value="09:00" required>
+                </div>
+                <div class="field">
+                  <label for="slot-last">Last start time</label>
+                  <input type="time" id="slot-last" name="lastTime" value="16:00" required>
+                </div>
+                <div class="field">
+                  <label for="slot-every">A new slot every</label>
+                  <select id="slot-every" name="interval">
+                    <option value="30" selected>30 minutes</option>
+                    <option value="45">45 minutes</option>
+                    <option value="60">60 minutes</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="slot-length">Swim length</label>
+                  <select id="slot-length" name="duration">
+                    <option value="20" selected>20 minutes</option>
+                    <option value="30">30 minutes</option>
+                  </select>
+                </div>
+              </div>
+              <fieldset>
+                <legend>Days of the week</legend>
+                <div class="btn-row">
+                  <label class="check"><input type="checkbox" name="weekday" value="0" checked><span>Sun</span></label>
+                  <label class="check"><input type="checkbox" name="weekday" value="1" checked><span>Mon</span></label>
+                  <label class="check"><input type="checkbox" name="weekday" value="2" checked><span>Tue</span></label>
+                  <label class="check"><input type="checkbox" name="weekday" value="3" checked><span>Wed</span></label>
+                  <label class="check"><input type="checkbox" name="weekday" value="4" checked><span>Thu</span></label>
+                  <label class="check"><input type="checkbox" name="weekday" value="5" checked><span>Fri</span></label>
+                  <label class="check"><input type="checkbox" name="weekday" value="6" checked><span>Sat</span></label>
+                </div>
+              </fieldset>
+              <div class="btn-row">
+                <button type="submit" class="btn" id="slot-submit">Add These Times</button>
+                <span class="hint">Times that already exist are skipped. All times are Eastern.</span>
+              </div>
+            </form>
+
+            <div class="toolbar slots-toolbar">
+              <label class="check"><input type="checkbox" id="slots-past"><span>Include past dates</span></label>
+              <button type="button" class="btn btn-ghost btn-small" id="slots-refresh">Refresh</button>
+              <button type="button" class="btn btn-danger btn-small" id="slots-delete" disabled>Delete Selected</button>
+            </div>
+            <div class="table-wrap" id="slots-table"></div>
+          </section>
+
+          <section id="panel-passes" role="tabpanel" aria-labelledby="tab-passes" hidden>
+            <div class="toolbar">
+              <button type="button" class="btn btn-small" id="pass-add">Add Pass</button>
+              <button type="button" class="btn btn-ghost btn-small" id="passes-refresh">Refresh</button>
+            </div>
+            <p class="notice">A pass requested on the site starts as <strong>pending</strong> with zero sessions. Activate it only after you see the payment in Stripe. Swim Club sessions do not refill on their own: click Renew Month after each monthly payment.</p>
+            <div class="table-wrap" id="passes-table"></div>
+          </section>
+
+          <section id="panel-shop" role="tabpanel" aria-labelledby="tab-shop" hidden>
+            <div class="toolbar">
+              <button type="button" class="btn btn-small" id="item-add">Add Item</button>
+              <button type="button" class="btn btn-ghost btn-small" id="shop-refresh">Refresh</button>
+            </div>
+            <p class="notice">For Amazon items: paste your Amazon Associates link, write the description in your own words, use only a photo you took yourself (or no image), and do not type a price. The site adds the required "paid link" label and Associate disclosure automatically.</p>
+            <div class="table-wrap" id="shop-table"></div>
+          </section>
+
+          <section id="panel-waivers" role="tabpanel" aria-labelledby="tab-waivers" hidden>
+            <div class="toolbar">
+              <button type="button" class="btn btn-ghost btn-small" id="waivers-refresh">Refresh</button>
+            </div>
+            <div class="table-wrap" id="waivers-table"></div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <dialog id="dialog" aria-labelledby="dialog-title">
+      <div class="dialog-head">
+        <h2 id="dialog-title"></h2>
+        <button type="button" class="icon-btn" id="dialog-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="dialog-body" id="dialog-body"></div>
+      <div class="dialog-foot" id="dialog-foot"></div>
+    </dialog>
+
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="footer-grid">
+        <div>
+          <a class="brand" href="/" aria-label="PupSwim home">
+            <img src="/assets/logo.svg" alt="" width="42" height="42">
+            <span>Pup<span class="brand-swim">Swim</span></span>
+          </a>
+          <p>Private pool rentals for dogs in St. Augustine, Florida.</p>
+        </div>
+        <div>
+          <h2 class="footer-title">Explore</h2>
+          <ul class="footer-links">
+            <li><a href="/book/">Rent the Pool</a></li>
+            <li><a href="/club/">Passes and Swim Club</a></li>
+            <li><a href="/shop/">Shop</a></li>
+            <li><a href="/waiver/">Liability Waiver</a></li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="footer-title">Contact</h2>
+          <p>Questions? Email <a href="mailto:pupswim@mustwants.com" data-contact-email data-show-email>pupswim@mustwants.com</a>.</p>
+        </div>
+      </div>
+      <p class="footer-fine">&copy; <span data-year>2026</span> PupSwim. A MustWants Inc service in St. Augustine, FL. &middot; <a href="/admin/">Admin</a></p>
+    </div>
+  </footer>
+</body>
+</html>
